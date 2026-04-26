@@ -1,0 +1,51 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import kotlin.jvm.optionals.getOrNull
+
+plugins {
+    kotlin("multiplatform")
+}
+
+val libs = versionCatalogs.named("libs")
+
+kotlin {
+    compilerOptions {
+        apiVersion.set(KotlinVersion.KOTLIN_2_3)
+        languageVersion.set(KotlinVersion.KOTLIN_2_3)
+    }
+
+    sourceSets.commonMain.dependencies {
+        implementation(dependencies.platform("com.kelvsyc.internal.kotlin-tools:platform"))
+    }
+
+    sourceSets.commonTest.dependencies {
+        libs.findLibrary("kotest-assertions-core").getOrNull()?.let { implementation(it) }
+        libs.findLibrary("kotest-assertions-shared").getOrNull()?.let { implementation(it) }
+        libs.findLibrary("kotest-framework-engine").getOrNull()?.let { implementation(it) }
+    }
+}
+
+val checkCommonMainPlatformImports by tasks.registering {
+    description = "Fails if any commonMain Kotlin source contains platform-specific imports."
+    group = "verification"
+    val rootDir: File = projectDir
+    inputs.files(fileTree("src/commonMain") { include("**/*.kt") })
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    doLast {
+        val platformPrefixes = listOf("import java.", "import javax.", "import android.", "import sun.")
+        val violations = inputs.files.flatMap { file ->
+            file.readLines().mapIndexedNotNull { index, line ->
+                val trimmed = line.trimStart()
+                if (platformPrefixes.any { trimmed.startsWith(it) }) {
+                    "  ${file.relativeTo(rootDir)}:${index + 1}: ${line.trim()}"
+                } else null
+            }
+        }
+        if (violations.isNotEmpty()) {
+            error("Platform-specific imports found in commonMain:\n${violations.joinToString("\n")}")
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(checkCommonMainPlatformImports)
+}
