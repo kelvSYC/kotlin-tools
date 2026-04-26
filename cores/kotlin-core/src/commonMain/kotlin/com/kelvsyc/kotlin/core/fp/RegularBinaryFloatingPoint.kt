@@ -20,4 +20,6 @@ package com.kelvsyc.kotlin.core.fp
  * @param significand The significand of the floating point number. Unlike IEEE floating point formats, there is no
  *                    implicit leading 1 bit.
  */
-data class RegularBinaryFloatingPoint<T>(val sign: Boolean, val exponent: Int, val significand: T)
+data class RegularBinaryFloatingPoint<T>(val sign: Boolean, val exponent: Int, val significand: T) {
+    companion object
+}
