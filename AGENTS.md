@@ -8,6 +8,20 @@ Critical gotchas and quick reference for automated agents working in this Gradle
 - **Be concise.** Avoid unnecessary explanation or narrative.
 - **No unsolicited explanations.** Only explain what you're doing if explicitly asked.
 
+## Claude Setup
+
+Before using Claude Code in this repo, create `.claude/settings.local.json` (gitignored):
+```json
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ]
+  }
+}
+```
+
 ## Build Commands
 
 Root commands (aggregate across all cores):
