@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.collections
 
 import com.kelvsyc.internal.kotlin.core.collections.ImmutableListMultimap
+import com.kelvsyc.internal.kotlin.core.collections.LinkedHashListMultimap
 
 /**
  * Returns an empty read-only multimap of the specified type.
@@ -43,3 +44,17 @@ fun <K, V> Sequence<Pair<K, V>>.toListMultimap(): ListMultimap<K, V> {
     }
     return ImmutableListMultimap(result)
 }
+
+/**
+ * Builds a read-only [ListMultimap] by populating a [MutableListMultimap] using the given [builderAction] and
+ * returning a read-only snapshot of its contents.
+ */
+fun <K, V> buildListMultimap(builderAction: MutableListMultimap<K, V>.() -> Unit): ListMultimap<K, V> =
+    LinkedHashListMultimap<K, V>().apply(builderAction)
+
+/**
+ * Builds a read-only [ListMultimap] by populating a [MutableListMultimap] with the given initial key [capacity] and
+ * using the given [builderAction], returning a read-only snapshot of its contents.
+ */
+fun <K, V> buildListMultimap(capacity: Int, builderAction: MutableListMultimap<K, V>.() -> Unit): ListMultimap<K, V> =
+    LinkedHashListMultimap<K, V>(capacity).apply(builderAction)

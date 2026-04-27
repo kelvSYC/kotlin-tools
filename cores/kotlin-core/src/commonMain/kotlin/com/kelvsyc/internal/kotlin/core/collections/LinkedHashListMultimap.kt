@@ -3,8 +3,9 @@ package com.kelvsyc.internal.kotlin.core.collections
 import com.kelvsyc.kotlin.core.collections.ListMultimap
 import com.kelvsyc.kotlin.core.collections.MutableListMultimap
 
-internal class LinkedHashListMultimap<K, V> : MutableListMultimap<K, V> {
-    private val map: LinkedHashMap<K, MutableList<V>> = LinkedHashMap()
+internal class LinkedHashListMultimap<K, V>(initialCapacity: Int = -1) : MutableListMultimap<K, V> {
+    private val map: LinkedHashMap<K, MutableList<V>> =
+        if (initialCapacity >= 0) LinkedHashMap(initialCapacity) else LinkedHashMap()
 
     override val asMap: Map<K, List<V>> get() = map
 
