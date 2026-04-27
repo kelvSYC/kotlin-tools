@@ -73,38 +73,38 @@ class RegularFloatingPointExtensionsTest : FunSpec({
 
     context("RegularBinaryFloatingPoint<UInt>.toFloat") {
         test("+0 (zero significand, positive sign) returns +0.0f") {
-            val r = RegularBinaryFloatingPoint(false, -149, 0u)
+            val r = FiniteBinaryFloatingPoint(false, -149, 0u)
             r.toFloat() shouldBe 0.0f
             r.toFloat().toRawBits() shouldBe 0  // not -0
         }
 
         test("-0 (zero significand, negative sign) returns -0.0f") {
-            val r = RegularBinaryFloatingPoint(true, -149, 0u)
+            val r = FiniteBinaryFloatingPoint(true, -149, 0u)
             r.toFloat().toRawBits() shouldBe (-0.0f).toRawBits()
         }
 
         test("normal: exp=-23, sig=0x800000 reconstructs 1.0f") {
-            RegularBinaryFloatingPoint(false, -23, 0x800000u).toFloat() shouldBe 1.0f
+            FiniteBinaryFloatingPoint(false, -23, 0x800000u).toFloat() shouldBe 1.0f
         }
 
         test("normal: exp=-22, sig=0x800000 reconstructs 2.0f") {
-            RegularBinaryFloatingPoint(false, -22, 0x800000u).toFloat() shouldBe 2.0f
+            FiniteBinaryFloatingPoint(false, -22, 0x800000u).toFloat() shouldBe 2.0f
         }
 
         test("subnormal: exp=-149, sig=1 reconstructs Float.MIN_VALUE") {
-            RegularBinaryFloatingPoint(false, -149, 1u).toFloat() shouldBe Float.MIN_VALUE
+            FiniteBinaryFloatingPoint(false, -149, 1u).toFloat() shouldBe Float.MIN_VALUE
         }
 
         test("overflow produces positive infinity") {
-            RegularBinaryFloatingPoint(false, 128, 0x800000u).toFloat() shouldBe Float.POSITIVE_INFINITY
+            FiniteBinaryFloatingPoint(false, 128, 0x800000u).toFloat() shouldBe Float.POSITIVE_INFINITY
         }
 
         test("overflow produces negative infinity for negative sign") {
-            RegularBinaryFloatingPoint(true, 128, 0x800000u).toFloat() shouldBe Float.NEGATIVE_INFINITY
+            FiniteBinaryFloatingPoint(true, 128, 0x800000u).toFloat() shouldBe Float.NEGATIVE_INFINITY
         }
 
         test("underflow produces +0.0f") {
-            RegularBinaryFloatingPoint(false, -200, 1u).toFloat() shouldBe 0.0f
+            FiniteBinaryFloatingPoint(false, -200, 1u).toFloat() shouldBe 0.0f
         }
     }
 
@@ -205,33 +205,33 @@ class RegularFloatingPointExtensionsTest : FunSpec({
 
     context("RegularBinaryFloatingPoint<UShort>.toFloat16") {
         test("+0 (zero significand) returns +0") {
-            val r = RegularBinaryFloatingPoint(false, -24, 0u.toUShort())
+            val r = FiniteBinaryFloatingPoint(false, -24, 0u.toUShort())
             r.toFloat16().bits shouldBe 0.toShort()
         }
 
         test("-0 (zero significand, negative sign) returns -0") {
-            val r = RegularBinaryFloatingPoint(true, -24, 0u.toUShort())
+            val r = FiniteBinaryFloatingPoint(true, -24, 0u.toUShort())
             r.toFloat16().bits shouldBe 0x8000.toShort()
         }
 
         test("exp=-10, sig=1024 reconstructs 1.0") {
-            RegularBinaryFloatingPoint(false, -10, 1024u.toUShort()).toFloat16().bits shouldBe 0x3C00.toShort()
+            FiniteBinaryFloatingPoint(false, -10, 1024u.toUShort()).toFloat16().bits shouldBe 0x3C00.toShort()
         }
 
         test("exp=-10, sig=1024 with negative sign reconstructs -1.0") {
-            RegularBinaryFloatingPoint(true, -10, 1024u.toUShort()).toFloat16().bits shouldBe 0xBC00.toShort()
+            FiniteBinaryFloatingPoint(true, -10, 1024u.toUShort()).toFloat16().bits shouldBe 0xBC00.toShort()
         }
 
         test("overflow produces positive infinity") {
-            RegularBinaryFloatingPoint(false, 16, 1024u.toUShort()).toFloat16().bits shouldBe 0x7C00.toShort()
+            FiniteBinaryFloatingPoint(false, 16, 1024u.toUShort()).toFloat16().bits shouldBe 0x7C00.toShort()
         }
 
         test("underflow produces +0") {
-            RegularBinaryFloatingPoint(false, -100, 1u.toUShort()).toFloat16().bits shouldBe 0.toShort()
+            FiniteBinaryFloatingPoint(false, -100, 1u.toUShort()).toFloat16().bits shouldBe 0.toShort()
         }
 
         test("subnormal result: exp=-24, sig=1 gives MIN_VALUE") {
-            RegularBinaryFloatingPoint(false, -24, 1u.toUShort()).toFloat16().bits shouldBe 0x0001.toShort()
+            FiniteBinaryFloatingPoint(false, -24, 1u.toUShort()).toFloat16().bits shouldBe 0x0001.toShort()
         }
     }
 

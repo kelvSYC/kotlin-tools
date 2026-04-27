@@ -3,22 +3,22 @@ package com.kelvsyc.kotlin.core.fp
 import com.kelvsyc.kotlin.core.Float16
 
 /**
- * Converts this value to a [RegularBinaryFloatingPoint], preserving the full significand.
+ * Converts this value to a [FiniteBinaryFloatingPoint], preserving the full significand.
  *
  * For normal values, the implicit leading 1 bit is made explicit in the significand. For subnormal values, the
  * significand is the raw mantissa field with no leading bit added. Special values (infinity, NaN) are not supported
  * and will throw [IllegalArgumentException].
  */
-fun Float16.toRegularBinaryFloatingPoint(): RegularBinaryFloatingPoint<UShort> {
+fun Float16.toRegularBinaryFloatingPoint(): FiniteBinaryFloatingPoint<UShort> {
     require(isFinite()) { "Cannot convert non-finite Float16 (bits=${bits.toInt() and 0xFFFF}) to RegularBinaryFloatingPoint" }
     val sign = bits < 0
     val fraction = mantissa.toUShort()
     return if (biasedExponent == 0) {
         // Zero or subnormal: value = fraction × 2^(-24)
-        RegularBinaryFloatingPoint(sign, -24, fraction)
+        FiniteBinaryFloatingPoint(sign, -24, fraction)
     } else {
         // Normal: value = (2^10 | fraction) × 2^(biasedExponent - 25)
-        RegularBinaryFloatingPoint(sign, biasedExponent - 25, ((1 shl 10) or mantissa).toUShort())
+        FiniteBinaryFloatingPoint(sign, biasedExponent - 25, ((1 shl 10) or mantissa).toUShort())
     }
 }
 
@@ -28,7 +28,7 @@ fun Float16.toRegularBinaryFloatingPoint(): RegularBinaryFloatingPoint<UShort> {
  * Due to the need to pack the sign and exponent, not all values can be represented. A value that is too large or too
  * small will be converted into their respective infinity values.
  */
-fun RegularBinaryFloatingPoint<UShort>.toFloat16(): Float16 {
+fun FiniteBinaryFloatingPoint<UShort>.toFloat16(): Float16 {
     if (significand == 0u.toUShort()) return if (sign) Float16(0x8000.toShort()) else Float16(0)
 
     val signBit = if (sign) 0x8000 else 0
@@ -65,13 +65,13 @@ fun RegularBinaryFloatingPoint<UShort>.toFloat16(): Float16 {
 }
 
 /**
- * Converts this value to a [RegularBinaryFloatingPoint], preserving the full significand.
+ * Converts this value to a [FiniteBinaryFloatingPoint], preserving the full significand.
  *
  * For normal values, the implicit leading 1 bit is made explicit in the significand. For subnormal values, the
  * significand is the raw mantissa field with no leading bit added. Special values (infinity, NaN) are not supported
  * and will throw [IllegalArgumentException].
  */
-fun Float.toRegularBinaryFloatingPoint(): RegularBinaryFloatingPoint<UInt> {
+fun Float.toRegularBinaryFloatingPoint(): FiniteBinaryFloatingPoint<UInt> {
     require(isFinite()) { "Cannot convert non-finite value $this to RegularBinaryFloatingPoint" }
     val bits = toRawBits()
     val sign = bits < 0
@@ -79,21 +79,21 @@ fun Float.toRegularBinaryFloatingPoint(): RegularBinaryFloatingPoint<UInt> {
     val fraction = (bits and 0x7FFFFF).toUInt()
     return if (biasedExp == 0) {
         // Zero or subnormal: value = fraction × 2^(-149)
-        RegularBinaryFloatingPoint(sign, -149, fraction)
+        FiniteBinaryFloatingPoint(sign, -149, fraction)
     } else {
         // Normal: value = (2^23 | fraction) × 2^(biasedExp-150)
-        RegularBinaryFloatingPoint(sign, biasedExp - 150, (1u shl 23) or fraction)
+        FiniteBinaryFloatingPoint(sign, biasedExp - 150, (1u shl 23) or fraction)
     }
 }
 
 /**
- * Converts this value to a [RegularBinaryFloatingPoint], preserving the full significand.
+ * Converts this value to a [FiniteBinaryFloatingPoint], preserving the full significand.
  *
  * For normal values, the implicit leading 1 bit is made explicit in the significand. For subnormal values, the
  * significand is the raw mantissa field with no leading bit added. Special values (infinity, NaN) are not supported
  * and will throw [IllegalArgumentException].
  */
-fun Double.toRegularBinaryFloatingPoint(): RegularBinaryFloatingPoint<ULong> {
+fun Double.toRegularBinaryFloatingPoint(): FiniteBinaryFloatingPoint<ULong> {
     require(isFinite()) { "Cannot convert non-finite value $this to RegularBinaryFloatingPoint" }
     val bits = toRawBits()
     val sign = bits < 0
@@ -101,10 +101,10 @@ fun Double.toRegularBinaryFloatingPoint(): RegularBinaryFloatingPoint<ULong> {
     val fraction = (bits and 0x000FFFFFFFFFFFFFL).toULong()
     return if (biasedExp == 0) {
         // Zero or subnormal: value = fraction × 2^(-1074)
-        RegularBinaryFloatingPoint(sign, -1074, fraction)
+        FiniteBinaryFloatingPoint(sign, -1074, fraction)
     } else {
         // Normal: value = (2^52 | fraction) × 2^(biasedExp-1075)
-        RegularBinaryFloatingPoint(sign, biasedExp - 1075, (1uL shl 52) or fraction)
+        FiniteBinaryFloatingPoint(sign, biasedExp - 1075, (1uL shl 52) or fraction)
     }
 }
 
@@ -114,7 +114,7 @@ fun Double.toRegularBinaryFloatingPoint(): RegularBinaryFloatingPoint<ULong> {
  * Due to the need to pack the sign and exponent, not all values can be represented. A value that is too large or too
  * small will be converted into their respective infinity values.
  */
-fun RegularBinaryFloatingPoint<UInt>.toFloat(): Float {
+fun FiniteBinaryFloatingPoint<UInt>.toFloat(): Float {
     if (significand == 0u) return if (sign) -0.0f else 0.0f
 
     val signBit = if (sign) (1 shl 31) else 0
@@ -156,7 +156,7 @@ fun RegularBinaryFloatingPoint<UInt>.toFloat(): Float {
  * Due to the need to pack the sign and exponent, not all values can be represented. A value that is too large or too
  * small will be converted into their respective infinity values.
  */
-fun RegularBinaryFloatingPoint<ULong>.toDouble(): Double {
+fun FiniteBinaryFloatingPoint<ULong>.toDouble(): Double {
     if (significand == 0uL) return if (sign) -0.0 else 0.0
 
     val signBit = if (sign) (1L shl 63) else 0L

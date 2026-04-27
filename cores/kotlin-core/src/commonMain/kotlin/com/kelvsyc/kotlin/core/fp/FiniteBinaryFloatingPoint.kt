@@ -1,13 +1,11 @@
 package com.kelvsyc.kotlin.core.fp
 
 /**
- * `RegularFloatingPoint` is a generic representation of a floating-point value.
- *
- * Note that this only represents standard floating point numbers, and does not handle special values like infinity.
+ * `FiniteBinaryFloatingPoint` is a generic representation of a finite floating-point value.
  *
  * This type is intentionally not a number: it is a raw structural view of a floating-point encoding, not a numeric
  * type in its own right. Arithmetic, value-based equality, ordering, and human-readable formatting are all left to
- * native floating-point types such as `Float` and `Double`, which can perform these operations more efficiently and
+ * native floating-point types such as [Float] and [Double], which can perform these operations more efficiently and
  * accurately. As a consequence, [equals] and [hashCode] reflect structural identity of the fields rather than
  * numerical equality, and [toString] exposes the raw representation rather than the mathematical value. In
  * particular, this representation does not enforce a normalized form, so the same numerical value can be expressed
@@ -20,6 +18,6 @@ package com.kelvsyc.kotlin.core.fp
  * @param significand The significand of the floating point number. Unlike IEEE floating point formats, there is no
  *                    implicit leading 1 bit.
  */
-data class RegularBinaryFloatingPoint<T>(val sign: Boolean, val exponent: Int, val significand: T) {
+data class FiniteBinaryFloatingPoint<T>(val sign: Boolean, val exponent: Int, val significand: T) {
     companion object
 }

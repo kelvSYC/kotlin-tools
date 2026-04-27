@@ -5,7 +5,7 @@ package com.kelvsyc.kotlin.core.fp
  * by using two floating point numbers - a larger "high" value and a smaller non-overlapping "low" value; the number
  * represented is the sum of the two values.
  *
- * As with [RegularBinaryFloatingPoint], [equals] and [hashCode] reflect structural identity of the fields rather
+ * As with [FiniteBinaryFloatingPoint], [equals] and [hashCode] reflect structural identity of the fields rather
  * than numerical equality.
  */
 interface DoubleBinaryFloatingPoint<T> {
