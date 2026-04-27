@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.traits
 
+import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
 
 /**
@@ -18,6 +19,10 @@ interface FloatingPointSquareRoot<T> {
     fun T.sqrt(): T
 }
 
+private val bfloat16Instance: FloatingPointSquareRoot<BFloat16> = object : FloatingPointSquareRoot<BFloat16> {
+    override fun BFloat16.sqrt(): BFloat16 = calculate { kotlin.math.sqrt(it) }
+}
+
 private val float16Instance: FloatingPointSquareRoot<Float16> = object : FloatingPointSquareRoot<Float16> {
     override fun Float16.sqrt(): Float16 = calculate { kotlin.math.sqrt(it) }
 }
@@ -30,6 +35,7 @@ private val doubleInstance: FloatingPointSquareRoot<Double> = object : FloatingP
     override fun Double.sqrt(): Double = kotlin.math.sqrt(this)
 }
 
+val FloatingPointSquareRoot.Companion.bfloat16: FloatingPointSquareRoot<BFloat16> get() = bfloat16Instance
 val FloatingPointSquareRoot.Companion.float16: FloatingPointSquareRoot<Float16> get() = float16Instance
 val FloatingPointSquareRoot.Companion.float: FloatingPointSquareRoot<Float> get() = floatInstance
 val FloatingPointSquareRoot.Companion.double: FloatingPointSquareRoot<Double> get() = doubleInstance

@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.traits
 
+import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
 
 /**
@@ -69,6 +70,33 @@ interface Binary16<T> : BinaryFloatingPoint<T> {
 
         override val equivalenceEquality: ValueEquality<Float16> = object : ValueEquality<Float16> {
             override fun Float16.isEqualTo(other: Float16): Boolean = Float16.equalTo(this, other)
+        }
+    }
+}
+
+/**
+ * Trait type containing metadata on `bfloat16` floating-point numbers.
+ *
+ * `bfloat16` shares its 8-bit exponent (bias 127) with `binary32` but truncates the mantissa to 7 bits,
+ * giving the same dynamic range as `Float` at reduced precision.
+ */
+interface BinaryBFloat16<T> : BinaryFloatingPoint<T> {
+    override val sizeBits: Int get() = 16
+    override val mantissaBits: Int get() = 7
+    override val exponentBits: Int get() = 8
+    override val exponentBias: Int get() = 127
+    override val significandTraits: UInt16<UShort>
+
+    companion object : BinaryBFloat16<BFloat16> {
+        override val significandTraits: UInt16<UShort> get() = UInt16
+
+        override val numericalEquality: ValueEquality<BFloat16> = object : ValueEquality<BFloat16> {
+            // BFloat16 has no statically-typed ==, so widen to Float where IEEE 754 == applies.
+            override fun BFloat16.isEqualTo(other: BFloat16): Boolean = toFloat() == other.toFloat()
+        }
+
+        override val equivalenceEquality: ValueEquality<BFloat16> = object : ValueEquality<BFloat16> {
+            override fun BFloat16.isEqualTo(other: BFloat16): Boolean = BFloat16.equalTo(this, other)
         }
     }
 }

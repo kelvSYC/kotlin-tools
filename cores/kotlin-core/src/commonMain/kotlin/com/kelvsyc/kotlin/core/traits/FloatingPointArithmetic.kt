@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.traits
 
+import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
 
 /**
@@ -112,6 +113,27 @@ interface FloatingPointArithmetic<T> {
     companion object
 }
 
+// ── BFloat16 ──────────────────────────────────────────────────────────────────
+
+private val bfloat16Instance: FloatingPointArithmetic<BFloat16> = object : FloatingPointArithmetic<BFloat16> {
+    override val zero: BFloat16 get() = BFloat16(0)
+    override val one: BFloat16 get() = BFloat16(0x3F80.toShort())  // 1.0 in bfloat16
+
+    override fun BFloat16.isNaN(): Boolean = this.isNaN()
+    override fun BFloat16.isInfinite(): Boolean = this.isInfinite()
+    override fun BFloat16.isFinite(): Boolean = this.isFinite()
+
+    override fun BFloat16.unaryMinus(): BFloat16 = -this
+    override fun BFloat16.abs(): BFloat16 = this.abs()
+
+    override fun BFloat16.add(other: BFloat16): BFloat16 = this + other
+    override fun BFloat16.subtract(other: BFloat16): BFloat16 = this - other
+    override fun BFloat16.multiply(other: BFloat16): BFloat16 = this * other
+    override fun BFloat16.divide(other: BFloat16): BFloat16 = this / other
+
+    override fun BFloat16.compareTo(other: BFloat16): Int = toFloat().compareTo(other.toFloat())
+}
+
 // ── Float16 ───────────────────────────────────────────────────────────────────
 
 private val float16Instance: FloatingPointArithmetic<Float16> = object : FloatingPointArithmetic<Float16> {
@@ -189,6 +211,9 @@ private val doubleInstance: FloatingPointArithmetic<Double> = object : FloatingP
 
     override fun Double.compareTo(other: Double): Int = this.compareTo(other)
 }
+
+val FloatingPointArithmetic.Companion.bfloat16: FloatingPointArithmetic<BFloat16>
+    get() = bfloat16Instance
 
 val FloatingPointArithmetic.Companion.float16: FloatingPointArithmetic<Float16>
     get() = float16Instance
