@@ -27,10 +27,10 @@ fun <T> UnsignedIntegral<T>.cohortEquality(): ValueEquality<RegularBinaryFloatin
                     thisZero || otherZero -> false
                     sign != other.sign -> false
                     else -> {
-                        val thisTz = significand.countTrailingZeroBits()
-                        val otherTz = other.significand.countTrailingZeroBits()
+                        val thisTz = significand.countTrailingClearBits()
+                        val otherTz = other.significand.countTrailingClearBits()
                         exponent + thisTz == other.exponent + otherTz &&
-                            significand.shr(thisTz).isEqualTo(other.significand.shr(otherTz))
+                            significand.logicalRightShift(thisTz).isEqualTo(other.significand.logicalRightShift(otherTz))
                     }
                 }
             }
