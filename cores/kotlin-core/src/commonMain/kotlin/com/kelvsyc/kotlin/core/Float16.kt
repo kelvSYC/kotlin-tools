@@ -112,6 +112,15 @@ value class Float16(val bits: Short) {
         val comparator: Comparator<Float16> = compareBy { it.toFloat() }
 
         /**
+         * [PartialComparator] implementation for `Float16` values that returns `null` when either operand is NaN,
+         * reflecting the IEEE 754 rule that NaN is unordered with respect to every value including itself.
+         * Non-NaN values are compared by widening to [Float].
+         */
+        val partialComparator: PartialComparator<Float16> = PartialComparator { a, b ->
+            if (a.isNaN() || b.isNaN()) null else comparator.compare(a, b)
+        }
+
+        /**
          * Returns `true` if [a] and [b] are numerically equal using [Float]-like semantics: all NaN payloads are
          * considered equal to each other, and `+0` is not equal to `-0`.
          *

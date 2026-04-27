@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.fp
 
+import com.kelvsyc.kotlin.core.PartialComparator
 import com.kelvsyc.kotlin.core.traits.ValueEquality
 
 /**
@@ -55,6 +56,15 @@ class DoubleDouble internal constructor(override val high: Double, override val 
         val equivalenceEquality: ValueEquality<DoubleDouble> = object : ValueEquality<DoubleDouble> {
             // DoubleDouble.equals uses Double.equals on each component: NaN == NaN, +0 != -0.
             override fun DoubleDouble.isEqualTo(other: DoubleDouble): Boolean = this == other
+        }
+
+        /**
+         * [PartialComparator] that returns `null` when either operand is NaN, reflecting the IEEE 754 rule
+         * that NaN is unordered with respect to every value including itself. Non-NaN values are ordered by
+         * [compareTo].
+         */
+        val partialComparator: PartialComparator<DoubleDouble> = PartialComparator { a, b ->
+            if (a.isNaN() || b.isNaN()) null else a.compareTo(b)
         }
     }
 
