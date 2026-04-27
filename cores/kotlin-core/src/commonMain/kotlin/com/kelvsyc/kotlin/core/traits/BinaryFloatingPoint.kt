@@ -2,6 +2,7 @@ package com.kelvsyc.kotlin.core.traits
 
 import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
+import com.kelvsyc.kotlin.core.PartialComparator
 
 /**
  * `BinaryFloatingPoint` is a trait type that contains metadata on the type [T] relating to standard binary
@@ -48,6 +49,78 @@ interface BinaryFloatingPoint<T> {
      * negative zero. This follows [Float.equals] semantics.
      */
     val equivalenceEquality: ValueEquality<T>
+
+    /**
+     * Positive infinity: a value greater than [maxValue].
+     */
+    val positiveInfinity: T
+
+    /**
+     * Negative infinity: a value less than the negation of [maxValue].
+     */
+    val negativeInfinity: T
+
+    /**
+     * The largest finite value representable in this format.
+     *
+     * For a format with mantissa bits `p` and maximum unbiased exponent `emax`, this is
+     * `(2 - 2^(-p)) × 2^emax`.
+     */
+    val maxValue: T
+
+    /**
+     * The smallest positive value representable in this format.
+     *
+     * This is a subnormal value. For the smallest positive *normal* value see [minNormal].
+     */
+    val minValue: T
+
+    /**
+     * A canonical quiet NaN value.
+     *
+     * NaN is unordered and not equal to any value including itself under IEEE 754 numerical
+     * equality. There may be other NaN bit patterns; see the concrete type for details.
+     */
+    val NaN: T
+
+    /**
+     * The smallest positive normal value representable in this format.
+     *
+     * Values smaller than this are subnormals and have reduced precision. Equal to `2^emin`
+     * where `emin = 1 - emax` is the minimum normal unbiased exponent.
+     */
+    val minNormal: T
+
+    /**
+     * The machine epsilon: the difference between 1.0 and the next larger representable value.
+     *
+     * Equal to `2^(1-p)` where `p` is the number of significand bits including the implicit
+     * leading 1. This is the relative precision of the format near 1.0.
+     */
+    val epsilon: T
+
+    /**
+     * [Comparator] defining a total ordering over all values, including NaN.
+     *
+     * Consistent with [Float.compareTo] and [Double.compareTo]: negative zero compares as strictly
+     * less than positive zero, and NaN is ordered after all finite values and infinities. Every
+     * pair of values produces a defined result — use this for sorting and ordered collections.
+     *
+     * @see partialComparator
+     */
+    val comparator: Comparator<T>
+
+    /**
+     * [PartialComparator] for values, returning `null` when either operand is NaN, reflecting the
+     * IEEE 754 rule that NaN is unordered with respect to every value including itself. Non-NaN
+     * values are ordered consistently with [comparator].
+     *
+     * Use this when NaN-unordered semantics are required, e.g. implementing IEEE 754
+     * `compareQuietLess` or propagating the unordered result to the caller.
+     *
+     * @see comparator
+     */
+    val partialComparator: PartialComparator<T>
 }
 
 /**
@@ -71,6 +144,16 @@ interface Binary16<T> : BinaryFloatingPoint<T> {
         override val equivalenceEquality: ValueEquality<Float16> = object : ValueEquality<Float16> {
             override fun Float16.isEqualTo(other: Float16): Boolean = Float16.equalTo(this, other)
         }
+
+        override val positiveInfinity: Float16 get() = Float16.POSITIVE_INFINITY
+        override val negativeInfinity: Float16 get() = Float16.NEGATIVE_INFINITY
+        override val maxValue: Float16 get() = Float16.MAX_VALUE
+        override val minValue: Float16 get() = Float16.MIN_VALUE
+        override val NaN: Float16 get() = Float16.NaN
+        override val minNormal: Float16 get() = Float16.MIN_NORMAL
+        override val epsilon: Float16 get() = Float16.EPSILON
+        override val comparator: Comparator<Float16> get() = Float16.comparator
+        override val partialComparator: PartialComparator<Float16> get() = Float16.partialComparator
     }
 }
 
@@ -98,6 +181,16 @@ interface BinaryBFloat16<T> : BinaryFloatingPoint<T> {
         override val equivalenceEquality: ValueEquality<BFloat16> = object : ValueEquality<BFloat16> {
             override fun BFloat16.isEqualTo(other: BFloat16): Boolean = BFloat16.equalTo(this, other)
         }
+
+        override val positiveInfinity: BFloat16 get() = BFloat16.POSITIVE_INFINITY
+        override val negativeInfinity: BFloat16 get() = BFloat16.NEGATIVE_INFINITY
+        override val maxValue: BFloat16 get() = BFloat16.MAX_VALUE
+        override val minValue: BFloat16 get() = BFloat16.MIN_VALUE
+        override val NaN: BFloat16 get() = BFloat16.NaN
+        override val minNormal: BFloat16 get() = BFloat16.MIN_NORMAL
+        override val epsilon: BFloat16 get() = BFloat16.EPSILON
+        override val comparator: Comparator<BFloat16> get() = BFloat16.comparator
+        override val partialComparator: PartialComparator<BFloat16> get() = BFloat16.partialComparator
     }
 }
 
@@ -123,6 +216,19 @@ interface Binary32<T> : BinaryFloatingPoint<T> {
             // Float.equals uses equivalence semantics: NaN == NaN, +0 != -0.
             override fun Float.isEqualTo(other: Float): Boolean = this.equals(other)
         }
+
+        override val positiveInfinity: Float get() = Float.POSITIVE_INFINITY
+        override val negativeInfinity: Float get() = Float.NEGATIVE_INFINITY
+        override val maxValue: Float get() = Float.MAX_VALUE
+        override val minValue: Float get() = Float.MIN_VALUE
+        override val NaN: Float get() = Float.NaN
+        // 2^-126: the smallest positive normal binary32 value (not in Kotlin stdlib).
+        override val minNormal: Float get() = Float.fromBits(0x00800000)
+        // 2^-23: the gap between 1.0f and the next representable value (= 1 ULP at 1.0).
+        override val epsilon: Float get() = Float.fromBits(0x34000000)
+        override val comparator: Comparator<Float> get() = Comparator { a, b -> a.compareTo(b) }
+        override val partialComparator: PartialComparator<Float>
+            get() = PartialComparator { a, b -> if (a.isNaN() || b.isNaN()) null else a.compareTo(b) }
     }
 }
 
@@ -148,5 +254,18 @@ interface Binary64<T> : BinaryFloatingPoint<T> {
             // Double.equals uses equivalence semantics: NaN == NaN, +0 != -0.
             override fun Double.isEqualTo(other: Double): Boolean = this.equals(other)
         }
+
+        override val positiveInfinity: Double get() = Double.POSITIVE_INFINITY
+        override val negativeInfinity: Double get() = Double.NEGATIVE_INFINITY
+        override val maxValue: Double get() = Double.MAX_VALUE
+        override val minValue: Double get() = Double.MIN_VALUE
+        override val NaN: Double get() = Double.NaN
+        // 2^-1022: the smallest positive normal binary64 value (not in Kotlin stdlib).
+        override val minNormal: Double get() = Double.fromBits(0x0010000000000000L)
+        // 2^-52: the gap between 1.0 and the next representable value (= 1 ULP at 1.0).
+        override val epsilon: Double get() = Double.fromBits(0x3CB0000000000000L)
+        override val comparator: Comparator<Double> get() = Comparator { a, b -> a.compareTo(b) }
+        override val partialComparator: PartialComparator<Double>
+            get() = PartialComparator { a, b -> if (a.isNaN() || b.isNaN()) null else a.compareTo(b) }
     }
 }

@@ -1,6 +1,8 @@
 package com.kelvsyc.kotlin.core
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
@@ -218,6 +220,245 @@ class BidFloatTest : FunSpec({
             val nan2 = BidFloat(0x7C000001)
             BidFloat.equalTo(nan1, nan2) shouldBe true
             BidFloat.hash(nan1) shouldBe BidFloat.hash(nan2)
+        }
+    }
+
+    // ── Constants ─────────────────────────────────────────────────────────────
+    //
+    // Bit patterns for the companion constants:
+    //   NaN             0x7E000000 — G[0..4]=11111, G[5]=1 (quiet), no payload, sign=0
+    //   positiveInfinity 0x78000000 — G[0..4]=11110, sign=0
+    //   negativeInfinity 0xF8000000 — G[0..4]=11110, sign=1
+    //   maxValue        0x77F8967F — large-sig encoding: biasedExp=191, sig=9999999
+    //   minValue        0x00000001 — normal encoding:   biasedExp=0,   sig=1
+    //   minNormal       0x000F4240 — normal encoding:   biasedExp=0,   sig=1000000
+    //   epsilon         0x2F800001 — normal encoding:   biasedExp=95,  sig=1
+
+    context("constants") {
+        context("NaN") {
+            test("is classified as NaN") {
+                BidFloat.NaN.isNaN() shouldBe true
+            }
+            test("has positive sign bit") {
+                BidFloat.NaN.sign shouldBe false
+            }
+        }
+
+        context("positiveInfinity") {
+            test("is classified as infinite") {
+                BidFloat.positiveInfinity.isInfinite() shouldBe true
+            }
+            test("is not NaN") {
+                BidFloat.positiveInfinity.isNaN() shouldBe false
+            }
+            test("has positive sign bit") {
+                BidFloat.positiveInfinity.sign shouldBe false
+            }
+        }
+
+        context("negativeInfinity") {
+            test("is classified as infinite") {
+                BidFloat.negativeInfinity.isInfinite() shouldBe true
+            }
+            test("is not NaN") {
+                BidFloat.negativeInfinity.isNaN() shouldBe false
+            }
+            test("has negative sign bit") {
+                BidFloat.negativeInfinity.sign shouldBe true
+            }
+        }
+
+        context("maxValue") {
+            test("is finite") {
+                BidFloat.maxValue.isNaN() shouldBe false
+                BidFloat.maxValue.isInfinite() shouldBe false
+            }
+            test("has significand 9999999") {
+                BidFloat.maxValue.significand shouldBe 9999999
+            }
+            test("has biased exponent 191 (unbiased 90)") {
+                BidFloat.maxValue.biasedExponent shouldBe 191
+            }
+        }
+
+        context("minValue") {
+            test("is finite and non-zero") {
+                BidFloat.minValue.isNaN() shouldBe false
+                BidFloat.minValue.isInfinite() shouldBe false
+                BidFloat.minValue.isZero() shouldBe false
+            }
+            test("has significand 1") {
+                BidFloat.minValue.significand shouldBe 1
+            }
+            test("has minimum biased exponent 0 (unbiased -101)") {
+                BidFloat.minValue.biasedExponent shouldBe 0
+            }
+        }
+
+        context("minNormal") {
+            test("is finite and non-zero") {
+                BidFloat.minNormal.isNaN() shouldBe false
+                BidFloat.minNormal.isInfinite() shouldBe false
+                BidFloat.minNormal.isZero() shouldBe false
+            }
+            test("has significand 1000000 (= 10^(p-1), the minimum normal significand)") {
+                BidFloat.minNormal.significand shouldBe 1000000
+            }
+            test("has minimum biased exponent 0") {
+                BidFloat.minNormal.biasedExponent shouldBe 0
+            }
+            test("is strictly greater than minValue") {
+                BidFloat.comparator.compare(BidFloat.minNormal, BidFloat.minValue) shouldBeGreaterThan 0
+            }
+        }
+
+        context("epsilon") {
+            test("is finite and non-zero") {
+                BidFloat.epsilon.isNaN() shouldBe false
+                BidFloat.epsilon.isInfinite() shouldBe false
+                BidFloat.epsilon.isZero() shouldBe false
+            }
+            test("has significand 1") {
+                BidFloat.epsilon.significand shouldBe 1
+            }
+            test("has biased exponent 95 (unbiased -6, so value = 10^-6)") {
+                BidFloat.epsilon.biasedExponent shouldBe 95
+            }
+            test("is strictly less than maxValue") {
+                BidFloat.comparator.compare(BidFloat.epsilon, BidFloat.maxValue) shouldBeLessThan 0
+            }
+        }
+    }
+
+    // ── Total ordering (comparator) ───────────────────────────────────────────
+    //
+    // Additional bit patterns used in this section:
+    //   0x36000001 — +1 × 10^7  (biasedExp=108, sig=1; used for fast-path test where diff > 6)
+    //   0x3280000F — +15 × 10^0 (biasedExp=101, sig=15; scaling-path pair with 2×10^1)
+    //   0x33000002 — +2 × 10^1  (biasedExp=102, sig=2;  2×10^1 = 20 > 15)
+    //   0x32800019 — +25 × 10^0 (biasedExp=101, sig=25; scaling-path pair: 25 > 20)
+    //   0xB2800002 — −2 × 10^0
+
+    context("comparator") {
+        val cmp = BidFloat.comparator
+
+        context("NaN ordering") {
+            test("NaN compares equal to NaN in total order") {
+                cmp.compare(BidFloat(0x7E000000), BidFloat(0x7C000000)) shouldBe 0
+            }
+            test("NaN is ordered after positive infinity") {
+                cmp.compare(BidFloat(0x7E000000), BidFloat(0x78000000)) shouldBeGreaterThan 0
+            }
+            test("NaN is ordered after finite values") {
+                cmp.compare(BidFloat(0x7E000000), BidFloat(0x32800001)) shouldBeGreaterThan 0
+            }
+            test("finite value is ordered before NaN") {
+                cmp.compare(BidFloat(0x32800001), BidFloat(0x7E000000)) shouldBeLessThan 0
+            }
+        }
+
+        context("infinity ordering") {
+            test("+infinity is ordered after finite values") {
+                cmp.compare(BidFloat(0x78000000), BidFloat(0x32800001)) shouldBeGreaterThan 0
+            }
+            test("-infinity is ordered before finite values") {
+                cmp.compare(BidFloat(0xF8000000.toInt()), BidFloat(0x32800001)) shouldBeLessThan 0
+            }
+            test("+infinity is ordered after -infinity") {
+                cmp.compare(BidFloat(0x78000000), BidFloat(0xF8000000.toInt())) shouldBeGreaterThan 0
+            }
+            test("+infinity compares equal to itself") {
+                cmp.compare(BidFloat(0x78000000), BidFloat(0x78000000)) shouldBe 0
+            }
+        }
+
+        context("zero ordering") {
+            test("-0 is strictly less than +0") {
+                cmp.compare(BidFloat(0x80000000.toInt()), BidFloat(0x00000000)) shouldBeLessThan 0
+            }
+            test("+0 is strictly greater than -0") {
+                cmp.compare(BidFloat(0x00000000), BidFloat(0x80000000.toInt())) shouldBeGreaterThan 0
+            }
+            test("+0 with different biased exponents compare equal") {
+                // +0 (biasedExp=0) vs +0 (biasedExp=101)
+                cmp.compare(BidFloat(0x00000000), BidFloat(0x32800000)) shouldBe 0
+            }
+        }
+
+        context("sign ordering") {
+            test("positive value is greater than negative value") {
+                cmp.compare(BidFloat(0x32800001), BidFloat(0xB2800001.toInt())) shouldBeGreaterThan 0
+            }
+            test("negative value is less than positive value") {
+                cmp.compare(BidFloat(0xB2800001.toInt()), BidFloat(0x32800001)) shouldBeLessThan 0
+            }
+        }
+
+        context("finite value ordering") {
+            test("+1 < +2 (same exponent, significand differs)") {
+                cmp.compare(BidFloat(0x32800001), BidFloat(0x32800002)) shouldBeLessThan 0
+            }
+            test("+2 > +1") {
+                cmp.compare(BidFloat(0x32800002), BidFloat(0x32800001)) shouldBeGreaterThan 0
+            }
+            test("-1 > -2 (magnitudes reversed by sign)") {
+                cmp.compare(BidFloat(0xB2800001.toInt()), BidFloat(0xB2800002.toInt())) shouldBeGreaterThan 0
+            }
+            test("cohort-distinct representations of 1.0 compare equal") {
+                // 1×10^0 vs 10×10^-1
+                cmp.compare(BidFloat(0x32800001), BidFloat(0x3200000A)) shouldBe 0
+            }
+        }
+
+        context("exponent fast path (|diff| > 6)") {
+            test("1×10^7 > 1×10^0 when exponent difference is 7") {
+                cmp.compare(BidFloat(0x36000001), BidFloat(0x32800001)) shouldBeGreaterThan 0
+            }
+            test("1×10^0 < 1×10^7 when exponent difference is 7") {
+                cmp.compare(BidFloat(0x32800001), BidFloat(0x36000001)) shouldBeLessThan 0
+            }
+        }
+
+        context("exponent scaling path (|diff| ≤ 6)") {
+            test("15×10^0 < 2×10^1 (= 20) when exponent difference is 1") {
+                cmp.compare(BidFloat(0x3280000F), BidFloat(0x33000002)) shouldBeLessThan 0
+            }
+            test("25×10^0 > 2×10^1 (= 20) when exponent difference is 1") {
+                cmp.compare(BidFloat(0x32800019), BidFloat(0x33000002)) shouldBeGreaterThan 0
+            }
+        }
+    }
+
+    // ── Partial ordering (partialComparator) ──────────────────────────────────
+
+    context("partialComparator") {
+        val pcmp = BidFloat.partialComparator
+
+        context("NaN returns null") {
+            test("NaN vs finite returns null") {
+                pcmp.compare(BidFloat(0x7E000000), BidFloat(0x32800001)) shouldBe null
+            }
+            test("finite vs NaN returns null") {
+                pcmp.compare(BidFloat(0x32800001), BidFloat(0x7E000000)) shouldBe null
+            }
+            test("NaN vs NaN returns null") {
+                pcmp.compare(BidFloat(0x7E000000), BidFloat(0x7C000000)) shouldBe null
+            }
+            test("NaN vs infinity returns null") {
+                pcmp.compare(BidFloat(0x7E000000), BidFloat(0x78000000)) shouldBe null
+            }
+        }
+
+        context("non-NaN results are consistent with comparator") {
+            test("+1 < +2") {
+                pcmp.compare(BidFloat(0x32800001), BidFloat(0x32800002))!! shouldBeLessThan 0
+            }
+            test("+1 == 10×10^-1 (cohort)") {
+                pcmp.compare(BidFloat(0x32800001), BidFloat(0x3200000A)) shouldBe 0
+            }
+            test("-0 < +0") {
+                pcmp.compare(BidFloat(0x80000000.toInt()), BidFloat(0x00000000))!! shouldBeLessThan 0
+            }
         }
     }
 

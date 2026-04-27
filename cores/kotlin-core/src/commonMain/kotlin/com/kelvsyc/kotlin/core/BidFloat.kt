@@ -2,6 +2,27 @@ package com.kelvsyc.kotlin.core
 
 import com.kelvsyc.kotlin.core.traits.Bid32
 import com.kelvsyc.kotlin.core.traits.ValueEquality
+import com.kelvsyc.kotlin.core.PartialComparator
+
+// Powers of 10 used when scaling significands for comparison. Index is the exponent difference (0..6).
+private val DECIMAL32_POW10 = longArrayOf(1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L)
+
+/**
+ * Compares two positive finite [BidFloat] values without normalising first.
+ *
+ * The significand is at most 9,999,999 (< 10^7), so if the biased-exponent difference exceeds 6 the
+ * higher-exponent value is always larger. Otherwise both sides are scaled to a common quantum using
+ * [DECIMAL32_POW10] and compared as [Long]s, avoiding any heap allocation.
+ */
+private fun comparePositiveFinite(a: BidFloat, b: BidFloat): Int {
+    val diff = a.biasedExponent - b.biasedExponent
+    return when {
+        diff > 6  -> 1
+        diff < -6 -> -1
+        diff >= 0 -> (a.significand.toLong() * DECIMAL32_POW10[diff]).compareTo(b.significand.toLong())
+        else      -> a.significand.toLong().compareTo(b.significand.toLong() * DECIMAL32_POW10[-diff])
+    }
+}
 
 /**
  * Value representing a `decimal32` floating-point number with the significand in binary integer decimal format.
@@ -88,6 +109,48 @@ value class BidFloat(val bits: Int) {
         override val equivalenceEquality: ValueEquality<BidFloat> = object : ValueEquality<BidFloat> {
             override fun BidFloat.isEqualTo(other: BidFloat): Boolean = equalTo(this, other)
         }
+
+        override val comparator: Comparator<BidFloat> = Comparator { a, b ->
+            // NaN is ordered after everything else; two NaNs are equal in the total order.
+            val aNaN = a.isNaN(); val bNaN = b.isNaN()
+            if (aNaN && bNaN) return@Comparator 0
+            if (aNaN) return@Comparator 1
+            if (bNaN) return@Comparator -1
+            // Different signs: negative < positive.
+            if (a.sign != b.sign) return@Comparator if (a.sign) -1 else 1
+            // Both zero (any cohort, any sign): equal.
+            if (a.isZero() && b.isZero()) return@Comparator 0
+            // Zero vs non-zero, same sign.
+            if (a.isZero()) return@Comparator if (a.sign) 1 else -1
+            if (b.isZero()) return@Comparator if (b.sign) -1 else 1
+            // Both infinity, same sign: equal.
+            if (a.isInfinite() && b.isInfinite()) return@Comparator 0
+            // Infinity vs finite, same sign.
+            if (a.isInfinite()) return@Comparator if (a.sign) -1 else 1
+            if (b.isInfinite()) return@Comparator if (b.sign) 1 else -1
+            // Both finite and non-zero, same sign: compare magnitudes.
+            val absComp = comparePositiveFinite(a, b)
+            if (a.sign) -absComp else absComp
+        }
+
+        override val partialComparator: PartialComparator<BidFloat> = PartialComparator { a, b ->
+            if (a.isNaN() || b.isNaN()) null else comparator.compare(a, b)
+        }
+
+        // G[0..4]=11111, G[5]=1 (quiet), no payload, positive sign.
+        override val NaN: BidFloat get() = BidFloat(0x7E000000)
+        // G[0..4]=11110, positive sign.
+        override val positiveInfinity: BidFloat get() = BidFloat(0x78000000)
+        // G[0..4]=11110, negative sign.
+        override val negativeInfinity: BidFloat get() = BidFloat(Int.MIN_VALUE or 0x78000000)
+        // 9999999 × 10^90: large-significand encoding, biasedExponent=191, significand=9999999.
+        override val maxValue: BidFloat get() = BidFloat(0x77F8967F)
+        // 1 × 10^(-101): biasedExponent=0, significand=1.
+        override val minValue: BidFloat get() = BidFloat(1)
+        // 1000000 × 10^(-101) = 10^(-95): biasedExponent=0, significand=1000000.
+        override val minNormal: BidFloat get() = BidFloat(0x000F4240)
+        // 1 × 10^(-6): biasedExponent=95, significand=1.
+        override val epsilon: BidFloat get() = BidFloat(0x2F800001)
     }
 
     /**
