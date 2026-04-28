@@ -1,6 +1,69 @@
 package com.kelvsyc.kotlin.core.fp
 
+import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
+
+/**
+ * Converts this value to a [FiniteBinaryFloatingPoint], preserving the full significand.
+ *
+ * For normal values, the implicit leading 1 bit is made explicit in the significand. For subnormal values, the
+ * significand is the raw mantissa field with no leading bit added. Special values (infinity, NaN) are not supported
+ * and will throw [IllegalArgumentException].
+ */
+fun BFloat16.toRegularBinaryFloatingPoint(): FiniteBinaryFloatingPoint<UShort> {
+    require(isFinite()) { "Cannot convert non-finite BFloat16 (bits=$bits) to FiniteBinaryFloatingPoint" }
+    val sign = bits < 0
+    val fraction = mantissa.toUShort()
+    return if (biasedExponent == 0) {
+        // Zero or subnormal: value = fraction × 2^(-133)
+        FiniteBinaryFloatingPoint(sign, -133, fraction)
+    } else {
+        // Normal: value = (2^7 | fraction) × 2^(biasedExponent - 134)
+        FiniteBinaryFloatingPoint(sign, biasedExponent - 134, ((1 shl 7) or mantissa).toUShort())
+    }
+}
+
+/**
+ * Converts this floating point representation to a [BFloat16].
+ *
+ * Due to the need to pack the sign and exponent, not all values can be represented. A value that is too large or too
+ * small will be converted into their respective infinity or zero values.
+ */
+fun FiniteBinaryFloatingPoint<UShort>.toBFloat16(): BFloat16 {
+    if (significand == 0u.toUShort()) return if (sign) BFloat16(0x8000.toShort()) else BFloat16(0)
+
+    val signBit = if (sign) 0x8000 else 0
+    val lead = 31 - significand.toInt().countLeadingZeroBits()
+    val biasedExp = exponent.toLong() + lead + 127L
+
+    return when {
+        biasedExp >= 255L -> BFloat16((signBit or 0x7F80).toShort())
+        biasedExp > 0L -> {
+            val fraction: Int = if (lead <= 7) {
+                (significand.toInt() and ((1 shl lead) - 1)) shl (7 - lead)
+            } else {
+                val shift = lead - 7
+                val roundBit = (significand.toInt() ushr (shift - 1)) and 1
+                val sticky = (significand.toInt() and ((1 shl (shift - 1)) - 1)) != 0
+                val frac = (significand.toInt() ushr shift) and 0x7F
+                if (roundBit == 1 && (sticky || frac and 1 != 0)) frac + 1 else frac
+            }
+            BFloat16((signBit + (biasedExp.toInt() shl 7) + fraction).toShort())
+        }
+        else -> {
+            // Subnormal or underflow. A subnormal BFloat16 stores m in 7 bits where value = m × 2^(-133).
+            // Here m = significand × 2^(exponent + 133).
+            val subShift = exponent + 133
+            val m: Int = when {
+                subShift > 0 -> (significand.toInt() shl subShift) and 0x7F
+                subShift == 0 -> significand.toInt() and 0x7F
+                subShift > -16 -> (significand.toInt() ushr (-subShift)) and 0x7F
+                else -> 0
+            }
+            BFloat16((signBit or m).toShort())
+        }
+    }
+}
 
 /**
  * Converts this value to a [FiniteBinaryFloatingPoint], preserving the full significand.
@@ -26,7 +89,7 @@ fun Float16.toRegularBinaryFloatingPoint(): FiniteBinaryFloatingPoint<UShort> {
  * Converts this floating point representation to a [Float16].
  *
  * Due to the need to pack the sign and exponent, not all values can be represented. A value that is too large or too
- * small will be converted into their respective infinity values.
+ * small will be converted into their respective infinity or zero values.
  */
 fun FiniteBinaryFloatingPoint<UShort>.toFloat16(): Float16 {
     if (significand == 0u.toUShort()) return if (sign) Float16(0x8000.toShort()) else Float16(0)
@@ -109,10 +172,10 @@ fun Double.toRegularBinaryFloatingPoint(): FiniteBinaryFloatingPoint<ULong> {
 }
 
 /**
- * Converts this floating point representation to a `Float`.
+ * Converts this floating point representation to a [Float].
  *
  * Due to the need to pack the sign and exponent, not all values can be represented. A value that is too large or too
- * small will be converted into their respective infinity values.
+ * small will be converted into their respective infinity or zero values.
  */
 fun FiniteBinaryFloatingPoint<UInt>.toFloat(): Float {
     if (significand == 0u) return if (sign) -0.0f else 0.0f
@@ -151,10 +214,10 @@ fun FiniteBinaryFloatingPoint<UInt>.toFloat(): Float {
 }
 
 /**
- * Converts this floating point representation to a `Double`.
+ * Converts this floating point representation to a [Double].
  *
  * Due to the need to pack the sign and exponent, not all values can be represented. A value that is too large or too
- * small will be converted into their respective infinity values.
+ * small will be converted into their respective infinity or zero values.
  */
 fun FiniteBinaryFloatingPoint<ULong>.toDouble(): Double {
     if (significand == 0uL) return if (sign) -0.0 else 0.0

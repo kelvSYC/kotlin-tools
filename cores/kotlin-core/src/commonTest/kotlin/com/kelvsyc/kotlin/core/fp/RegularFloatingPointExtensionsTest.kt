@@ -1,11 +1,101 @@
 package com.kelvsyc.kotlin.core.fp
 
+import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 class RegularFloatingPointExtensionsTest : FunSpec({
+
+    // ── BFloat16 → RegularBinaryFloatingPoint ─────────────────────────────────
+
+    context("BFloat16.toRegularBinaryFloatingPoint") {
+        test("+0 produces zero significand and subnormal exponent") {
+            val r = BFloat16(0).toRegularBinaryFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe -133
+            r.significand shouldBe 0u.toUShort()
+        }
+
+        test("-0 sets the sign flag") {
+            val r = BFloat16(0x8000.toShort()).toRegularBinaryFloatingPoint()
+            r.sign shouldBe true
+            r.significand shouldBe 0u.toUShort()
+        }
+
+        test("1.0 encodes as normal with implicit leading bit") {
+            // BFloat16(1.0f) has biasedExponent=127, mantissa=0; significand = 2^7 = 128.
+            val r = BFloat16(1.0f).toRegularBinaryFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe -7   // 127 - 134
+            r.significand shouldBe 128u.toUShort()
+        }
+
+        test("-1.0 sets the sign flag") {
+            val r = BFloat16(-1.0f).toRegularBinaryFloatingPoint()
+            r.sign shouldBe true
+            r.exponent shouldBe -7
+            r.significand shouldBe 128u.toUShort()
+        }
+
+        test("MIN_VALUE (smallest subnormal) encodes as significand=1 at exp -133") {
+            val r = BFloat16.MIN_VALUE.toRegularBinaryFloatingPoint()
+            r.exponent shouldBe -133
+            r.significand shouldBe 1u.toUShort()
+        }
+
+        test("throws for positive infinity") {
+            shouldThrow<IllegalArgumentException> { BFloat16.POSITIVE_INFINITY.toRegularBinaryFloatingPoint() }
+        }
+
+        test("throws for NaN") {
+            shouldThrow<IllegalArgumentException> { BFloat16.NaN.toRegularBinaryFloatingPoint() }
+        }
+    }
+
+    context("FiniteBinaryFloatingPoint<UShort>.toBFloat16") {
+        test("+0 (zero significand, positive sign) returns +0") {
+            FiniteBinaryFloatingPoint(false, -133, 0u.toUShort()).toBFloat16().bits shouldBe 0.toShort()
+        }
+
+        test("-0 (zero significand, negative sign) returns -0") {
+            FiniteBinaryFloatingPoint(true, -133, 0u.toUShort()).toBFloat16().bits shouldBe 0x8000.toShort()
+        }
+
+        test("exp=-7, sig=128 reconstructs 1.0") {
+            FiniteBinaryFloatingPoint(false, -7, 128u.toUShort()).toBFloat16() shouldBe BFloat16(1.0f)
+        }
+
+        test("overflow produces positive infinity") {
+            FiniteBinaryFloatingPoint(false, 128, 128u.toUShort()).toBFloat16() shouldBe BFloat16.POSITIVE_INFINITY
+        }
+
+        test("underflow produces +0") {
+            FiniteBinaryFloatingPoint(false, -200, 1u.toUShort()).toBFloat16().bits shouldBe 0.toShort()
+        }
+
+        test("subnormal: exp=-133, sig=1 gives MIN_VALUE") {
+            FiniteBinaryFloatingPoint(false, -133, 1u.toUShort()).toBFloat16() shouldBe BFloat16.MIN_VALUE
+        }
+    }
+
+    context("BFloat16 round-trip through FiniteBinaryFloatingPoint") {
+        val cases = listOf(
+            BFloat16(1.0f),
+            BFloat16(-1.0f),
+            BFloat16(2.0f),
+            BFloat16(0.5f),
+            BFloat16.MIN_VALUE,
+            BFloat16.MIN_NORMAL,
+            BFloat16.MAX_VALUE,
+        )
+        cases.forEach { v ->
+            test("${v.bits.toInt().and(0xFFFF).toString(16)} round-trips") {
+                v.toRegularBinaryFloatingPoint().toBFloat16().bits shouldBe v.bits
+            }
+        }
+    }
 
     // ── Float → RegularBinaryFloatingPoint ────────────────────────────────────
 
