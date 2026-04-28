@@ -266,3 +266,83 @@ class BidFloatRemainderTest : FunSpec({
         }
     }
 })
+
+class BidFloatTruncatingRemainderTest : FunSpec({
+    val rem = FloatingPointRemainder.bidFloatTruncating
+
+    // ── special values (identical to ieee754) ─────────────────────────────────
+
+    context("special values") {
+        test("NaN rem finite = NaN") {
+            with(rem) { BidFloat.NaN.rem(bid(101, 1u)) } shouldBe BidFloat.NaN
+        }
+        test("∞ rem finite = NaN") {
+            with(rem) { BidFloat.positiveInfinity.rem(bid(101, 1u)) } shouldBe BidFloat.NaN
+        }
+        test("finite rem 0 = NaN") {
+            with(rem) { bid(101, 1u).rem(BidFloat.positiveZero) } shouldBe BidFloat.NaN
+        }
+        test("-0 rem finite = -0 (sign of x)") {
+            with(rem) { BidFloat.negativeZero.rem(bid(101, 1u)) } shouldBe BidFloat.negativeZero
+        }
+        test("finite rem ∞ = x") {
+            val x = bid(101, 3u)
+            with(rem) { x.rem(BidFloat.positiveInfinity) } shouldBe x
+        }
+    }
+
+    // ── truncating differs from ieee754 when |r| > |y|/2 ─────────────────────
+    // Truncating always keeps the floor remainder; ieee754 would round the quotient up.
+
+    context("truncating keeps floor remainder regardless of half") {
+        // 5 rem 3: trunc(5/3)=1, result = 5 - 3 = 2  (ieee754 would give -1)
+        test("5 rem 3 = 2 (not -1)") {
+            val result = with(rem) { bid(101, 5u).rem(bid(101, 3u)) }
+            result.significand shouldBe 2
+            result.sign shouldBe false
+        }
+        // 6 rem 4: trunc(6/4)=1, result = 6 - 4 = 2  (ieee754 also gives -2)
+        test("6 rem 4 = 2 (not -2 as ieee754 would give)") {
+            val result = with(rem) { bid(101, 6u).rem(bid(101, 4u)) }
+            result.significand shouldBe 2
+            result.sign shouldBe false
+        }
+        // 0.7 rem 1.0: trunc(0.7)=0, result = 0.7  (ieee754 gives -0.3)
+        test("0.7 rem 1.0 = 0.7 (not -0.3)") {
+            val result = with(rem) { bid(100, 7u).rem(bid(101, 1u)) }
+            result.significand shouldBe 7
+            result.biasedExponent shouldBe 100
+            result.sign shouldBe false
+        }
+        // 1.5 rem 1.0: trunc(1.5)=1, result = 0.5  (ieee754 gives -0.5 via round-up)
+        test("1.5 rem 1.0 = 0.5 (not -0.5)") {
+            val result = with(rem) { bid(100, 15u).rem(bid(101, 1u)) }
+            result.significand shouldBe 5
+            result.biasedExponent shouldBe 100
+            result.sign shouldBe false
+        }
+    }
+
+    // ── result always has sign of x ───────────────────────────────────────────
+
+    context("sign of result matches sign of x") {
+        // -5 rem 3: trunc(-5/3)=trunc(-1.667)=-1, result = -5 - (-1)(3) = -2
+        test("-5 rem 3 = -2") {
+            val result = with(rem) { bid(101, 5u, negative = true).rem(bid(101, 3u)) }
+            result.significand shouldBe 2
+            result.sign shouldBe true
+        }
+        // 5 rem -3: trunc(5/(-3))=trunc(-1.667)=-1, result = 5 - (-1)(-3) = 2
+        test("5 rem -3 = 2") {
+            val result = with(rem) { bid(101, 5u).rem(bid(101, 3u, negative = true)) }
+            result.significand shouldBe 2
+            result.sign shouldBe false
+        }
+        // Exact-zero: sign of x preserved
+        test("-4 rem 2 = -0") {
+            val result = with(rem) { bid(101, 4u, negative = true).rem(bid(101, 2u)) }
+            result.isZero() shouldBe true
+            result.sign shouldBe true
+        }
+    }
+})
