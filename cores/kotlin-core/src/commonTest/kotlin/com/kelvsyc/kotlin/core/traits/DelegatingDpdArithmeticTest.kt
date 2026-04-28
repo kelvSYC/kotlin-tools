@@ -1,12 +1,10 @@
 package com.kelvsyc.kotlin.core.traits
 
 import com.kelvsyc.kotlin.core.BidFloat
-import com.kelvsyc.kotlin.core.Converter
 import com.kelvsyc.kotlin.core.DpdFloat
 import com.kelvsyc.kotlin.core.fp.FiniteDecimalFloatingPoint
-import com.kelvsyc.kotlin.core.fp.toBidFloat
+import com.kelvsyc.kotlin.core.fp.bidDpdFloat
 import com.kelvsyc.kotlin.core.fp.toDpdFloat
-import com.kelvsyc.kotlin.core.fp.toRegularDecimalFloatingPoint
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -14,31 +12,8 @@ import io.kotest.matchers.shouldBe
 private fun dpd(biasedExp: Int, sig: UInt, negative: Boolean = false) =
     FiniteDecimalFloatingPoint(negative, biasedExp - 101, sig).toDpdFloat()
 
-/**
- * A full-value DPD↔BID converter that handles the entire value space.
- *
- * [com.kelvsyc.kotlin.core.fp.toRegularDecimalFloatingPoint] rejects non-finite inputs, so NaN and
- * infinity are mapped directly to their counterparts by bit-pattern convention.
- */
-private val dpdToBidConverter: Converter<BidFloat, DpdFloat> = Converter.of(
-    forward = { bid ->
-        when {
-            bid.isNaN() -> DpdFloat.NaN
-            bid.isInfinite() -> if (bid.sign) DpdFloat.negativeInfinity else DpdFloat.positiveInfinity
-            else -> bid.toRegularDecimalFloatingPoint().toDpdFloat()
-        }
-    },
-    backward = { dpd ->
-        when {
-            dpd.isNaN() -> BidFloat.NaN
-            dpd.isInfinite() -> if (dpd.sign) BidFloat.negativeInfinity else BidFloat.positiveInfinity
-            else -> dpd.toRegularDecimalFloatingPoint().toBidFloat()
-        }
-    }
-)
-
 class DelegatingDpdArithmeticTest : FunSpec({
-    val arith = DelegatingDpdArithmetic(FloatingPointArithmetic.bidFloat, dpdToBidConverter)
+    val arith = DelegatingDpdArithmetic(FloatingPointArithmetic.bidFloat, bidDpdFloat)
 
     // ── identity elements ─────────────────────────────────────────────────────
 
