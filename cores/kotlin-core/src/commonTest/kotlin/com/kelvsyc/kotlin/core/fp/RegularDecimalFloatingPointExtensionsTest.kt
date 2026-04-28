@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.fp
 
 import com.kelvsyc.kotlin.core.BidFloat
+import com.kelvsyc.kotlin.core.DpdFloat
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -184,6 +185,153 @@ class RegularDecimalFloatingPointExtensionsTest : FunSpec({
 
         test("structural equals reflects raw field identity, not cohort membership") {
             FiniteDecimalFloatingPoint(false, 0, 1u) shouldNotBe FiniteDecimalFloatingPoint(false, -1, 10u)
+        }
+    }
+
+    // ── DpdFloat → FiniteDecimalFloatingPoint ─────────────────────────────────
+
+    context("DpdFloat.toRegularDecimalFloatingPoint") {
+        test("+0 produces zero significand at minimum exponent") {
+            val r = DpdFloat.positiveZero.toRegularDecimalFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe -101
+            r.significand shouldBe 0u
+        }
+
+        test("-0 sets the sign flag") {
+            val r = DpdFloat.negativeZero.toRegularDecimalFloatingPoint()
+            r.sign shouldBe true
+            r.significand shouldBe 0u
+        }
+
+        test("minValue encodes as significand=1 at minimum exponent") {
+            val r = DpdFloat.minValue.toRegularDecimalFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe -101
+            r.significand shouldBe 1u
+        }
+
+        test("minNormal encodes as significand=1_000_000 at minimum exponent") {
+            val r = DpdFloat.minNormal.toRegularDecimalFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe -101
+            r.significand shouldBe 1_000_000u
+        }
+
+        test("epsilon encodes as significand=1 at exponent -6") {
+            val r = DpdFloat.epsilon.toRegularDecimalFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe -6
+            r.significand shouldBe 1u
+        }
+
+        test("maxValue encodes as significand=9_999_999 at maximum exponent") {
+            val r = DpdFloat.maxValue.toRegularDecimalFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe 90
+            r.significand shouldBe 9_999_999u
+        }
+
+        test("large-sig value (leadingDigit=9) extracts significand correctly") {
+            // 0x6CBE7F9F: 9_999_999 × 10^0, large-sig encoding
+            val r = DpdFloat(0x6CBE7F9F).toRegularDecimalFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe 0
+            r.significand shouldBe 9_999_999u
+        }
+
+        test("large-sig boundary (leadingDigit=8) extracts significand correctly") {
+            // 0x6CA00000: 8_000_000 × 10^0
+            val r = DpdFloat(0x6CA00000).toRegularDecimalFloatingPoint()
+            r.sign shouldBe false
+            r.exponent shouldBe 0
+            r.significand shouldBe 8_000_000u
+        }
+
+        test("throws for NaN") {
+            shouldThrow<IllegalArgumentException> { DpdFloat.NaN.toRegularDecimalFloatingPoint() }
+        }
+
+        test("throws for positive infinity") {
+            shouldThrow<IllegalArgumentException> { DpdFloat.positiveInfinity.toRegularDecimalFloatingPoint() }
+        }
+
+        test("throws for negative infinity") {
+            shouldThrow<IllegalArgumentException> { DpdFloat.negativeInfinity.toRegularDecimalFloatingPoint() }
+        }
+    }
+
+    // ── FiniteDecimalFloatingPoint<UInt> → DpdFloat ───────────────────────────
+
+    context("FiniteDecimalFloatingPoint<UInt>.toDpdFloat") {
+        test("+0 (zero significand, positive sign) returns positiveZero") {
+            FiniteDecimalFloatingPoint(false, -101, 0u).toDpdFloat() shouldBe DpdFloat.positiveZero
+        }
+
+        test("-0 (zero significand, negative sign) returns negativeZero") {
+            FiniteDecimalFloatingPoint(true, -101, 0u).toDpdFloat() shouldBe DpdFloat.negativeZero
+        }
+
+        test("significand=1 at minimum exponent reconstructs minValue") {
+            FiniteDecimalFloatingPoint(false, -101, 1u).toDpdFloat() shouldBe DpdFloat.minValue
+        }
+
+        test("significand=1_000_000 at minimum exponent reconstructs minNormal") {
+            FiniteDecimalFloatingPoint(false, -101, 1_000_000u).toDpdFloat() shouldBe DpdFloat.minNormal
+        }
+
+        test("significand=1 at exponent -6 reconstructs epsilon") {
+            FiniteDecimalFloatingPoint(false, -6, 1u).toDpdFloat() shouldBe DpdFloat.epsilon
+        }
+
+        test("significand=9_999_999 at maximum exponent reconstructs maxValue") {
+            FiniteDecimalFloatingPoint(false, 90, 9_999_999u).toDpdFloat() shouldBe DpdFloat.maxValue
+        }
+
+        test("large-sig value packs correctly") {
+            // 8_000_000 × 10^0 = 0x6CA00000 in DPD
+            FiniteDecimalFloatingPoint(false, 0, 8_000_000u).toDpdFloat().bits shouldBe 0x6CA00000
+        }
+
+        test("overflow biased exponent produces positive infinity") {
+            FiniteDecimalFloatingPoint(false, 91, 9_999_999u).toDpdFloat() shouldBe DpdFloat.positiveInfinity
+        }
+
+        test("overflow biased exponent produces negative infinity for negative sign") {
+            FiniteDecimalFloatingPoint(true, 91, 9_999_999u).toDpdFloat() shouldBe DpdFloat.negativeInfinity
+        }
+
+        test("underflow produces positive zero") {
+            FiniteDecimalFloatingPoint(false, -110, 1u).toDpdFloat() shouldBe DpdFloat.positiveZero
+        }
+
+        test("8-digit significand is rounded to 7 digits") {
+            // 12_345_678 rounded to 7 digits = 1_234_568 (round half-up); exponent adjusted by +1.
+            val r = FiniteDecimalFloatingPoint(false, 0, 12_345_678u).toDpdFloat()
+            r.significand shouldBe 1_234_568
+            r.biasedExponent shouldBe 102  // exponent=0+1=1, biasedExp=1+101=102
+        }
+    }
+
+    // ── DpdFloat round-trip ───────────────────────────────────────────────────
+
+    context("DpdFloat round-trip through FiniteDecimalFloatingPoint") {
+        val cases = listOf(
+            DpdFloat.positiveZero,
+            DpdFloat.negativeZero,
+            DpdFloat.minValue,
+            DpdFloat.minNormal,
+            DpdFloat.epsilon,
+            DpdFloat.maxValue,
+            DpdFloat(0x6CBE7F9F),  // 9_999_999 × 10^0, large-sig encoding
+            DpdFloat(0x6CA00000),  // 8_000_000 × 10^0, smallest large-sig value
+            DpdFloat(0x32800001),  // 1 × 10^0
+            DpdFloat(0x32000010),  // 10 × 10^-1, cohort of 1 × 10^0
+        )
+        cases.forEach { v ->
+            test("${v.bits.toString(16)} round-trips") {
+                v.toRegularDecimalFloatingPoint().toDpdFloat() shouldBe v
+            }
         }
     }
 })

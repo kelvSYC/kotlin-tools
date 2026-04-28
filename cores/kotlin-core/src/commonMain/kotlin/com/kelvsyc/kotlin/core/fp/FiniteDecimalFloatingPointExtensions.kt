@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.fp
 
 import com.kelvsyc.kotlin.core.BidFloat
+import com.kelvsyc.kotlin.core.DpdFloat
 
 // Powers of 10 indexed by exponent (0..9), used for digit counting and rounding.
 private val POW10 = intArrayOf(1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000)
@@ -112,4 +113,127 @@ fun FiniteDecimalFloatingPoint<UInt>.toBidFloat(): BidFloat {
     }
 
     return BidFloat(signBit or packBid(biasedExp, sig))
+}
+
+/**
+ * Encodes a 3-digit decimal value (0–999) into a 10-bit DPD declet.
+ *
+ * Implements the five encoding cases from IEEE 754-2008 Table 3.4, the inverse of the decode
+ * used in [DpdFloat.declet1] / [DpdFloat.declet2]. The result is always a canonical (non-redundant)
+ * declet: the don't-care bits in the all-large-digit sub-case are set to zero.
+ */
+private fun encodeDeclet(v: Int): Int {
+    val d3 = v % 10; val d2 = (v / 10) % 10; val d1 = v / 100
+    val p = d1 >= 8; val q = d2 >= 8; val r = d3 >= 8
+    return when {
+        !p && !q && !r ->
+            // Case 0: all small — straightforward 3+3+3 packing, b[3]=0
+            (d1 shl 7) or (d2 shl 4) or d3
+        !p && !q &&  r ->
+            // Case 1: b[3:1]=100, d3 large
+            (d1 shl 7) or (d2 shl 4) or 0x8 or (d3 - 8)
+        !p &&  q && !r -> {
+            // Case 2: b[3:1]=101, d2 large; d3[2:1] occupy b[6:5], d2[0] occupies b[4]
+            val d3hi = (d3 and 0x6) shl 4
+            (d1 shl 7) or d3hi or ((d2 - 8) shl 4) or 0xA or (d3 and 0x1)
+        }
+         p && !q && !r -> {
+            // Case 3: b[3:1]=110, d1 large; d3[2:1] occupy b[9:8], d1[0] occupies b[7]
+            val d3hi = (d3 and 0x6) shl 7
+            d3hi or ((d1 - 8) shl 7) or (d2 shl 4) or 0xC or (d3 and 0x1)
+        }
+         p &&  q && !r -> {
+            // Case 4, b[9:8]=00: d1,d2 large; d3[2:1] in b[6:5], d1[0] in b[7], d2[0] in b[4]
+            val d3hi = (d3 and 0x6) shl 4
+            ((d1 - 8) shl 7) or d3hi or ((d2 - 8) shl 4) or 0xE or (d3 and 0x1)
+        }
+         p && !q &&  r ->
+            // Case 4, b[9:8]=01: d1,d3 large; d2 in b[6:4], d1[0] in b[7], d3[0] in b[0]
+            0x100 or ((d1 - 8) shl 7) or (d2 shl 4) or 0xE or (d3 - 8)
+        !p &&  q &&  r ->
+            // Case 4, b[9:8]=10: d2,d3 large; d1 in b[7:5], d2[0] in b[4], d3[0] in b[0]
+            0x200 or (d1 shl 5) or ((d2 - 8) shl 4) or 0xE or (d3 - 8)
+        else ->
+            // Case 4, b[9:8]=11: all large; b[6:5] set to 0 (canonical)
+            0x300 or ((d1 - 8) shl 7) or ((d2 - 8) shl 4) or 0xE or (d3 - 8)
+    }
+}
+
+/**
+ * Packs a biased exponent and a leading digit into the DPD combination field (sign excluded),
+ * then combines with the two pre-encoded declets to form the lower 31 bits of a [DpdFloat].
+ */
+private fun packDpd(biasedExp: Int, leadingDigit: Int, declet1: Int, declet2: Int): Int {
+    val combination = if (leadingDigit < 8) {
+        (biasedExp shl 3) or leadingDigit
+    } else {
+        0x600 or (biasedExp shl 1) or (leadingDigit - 8)
+    }
+    return (combination shl 20) or (declet1 shl 10) or declet2
+}
+
+/**
+ * Converts this value to a [FiniteDecimalFloatingPoint], preserving the full significand and exponent.
+ *
+ * The returned representation is the structural view of this value: [FiniteDecimalFloatingPoint.sign]
+ * reflects the sign bit, [FiniteDecimalFloatingPoint.significand] is the integer coefficient
+ * (0–9,999,999) as a [UInt], and [FiniteDecimalFloatingPoint.exponent] is the unbiased quantum
+ * exponent (biased exponent − 101).
+ *
+ * The representation is not normalized: cohort-distinct `DpdFloat` values yield distinct
+ * `FiniteDecimalFloatingPoint` values.
+ *
+ * Special values (NaN, infinity) are not supported and will throw [IllegalArgumentException].
+ */
+fun DpdFloat.toRegularDecimalFloatingPoint(): FiniteDecimalFloatingPoint<UInt> {
+    require(!isNaN() && !isInfinite()) { "Cannot convert non-finite DpdFloat (bits=$bits) to FiniteDecimalFloatingPoint" }
+    return FiniteDecimalFloatingPoint(sign, biasedExponent - 101, significand.toUInt())
+}
+
+/**
+ * Converts this decimal floating-point representation to a [DpdFloat].
+ *
+ * The [FiniteDecimalFloatingPoint.significand] may be any [UInt]; if it has more than 7 decimal
+ * digits it is rounded to 7 using round-half-to-even before packing. Overflow (biased exponent
+ * > 191 after scaling) produces ±infinity. Underflow (biased exponent < 0 after scaling) is
+ * handled by scaling the significand toward zero; if the result rounds to zero, ±zero is returned.
+ *
+ * A zero significand always produces ±zero regardless of [FiniteDecimalFloatingPoint.exponent].
+ */
+fun FiniteDecimalFloatingPoint<UInt>.toDpdFloat(): DpdFloat {
+    val signBit = if (sign) Int.MIN_VALUE else 0
+    if (significand == 0u) return DpdFloat(signBit)
+
+    var sig = significand.toInt()
+    var biasedExp = exponent + 101
+
+    val digits = decimalDigits(significand)
+    if (digits > 7) {
+        val excess = digits - 7
+        val divisor = POW10[excess].toUInt()
+        val uSig = significand
+        sig = roundHalfEven(uSig / divisor, uSig % divisor, divisor).toInt()
+        biasedExp += excess
+        if (sig >= 10_000_000) { sig /= 10; biasedExp++ }
+    }
+
+    if (sig == 0) return DpdFloat(signBit)
+    if (biasedExp > 191) return DpdFloat(signBit or 0x78000000)
+
+    if (biasedExp < 0) {
+        val shift = -biasedExp
+        if (shift >= 8) return DpdFloat(signBit)
+        val divisor = POW10[shift].toUInt()
+        val uSig = sig.toUInt()
+        sig = roundHalfEven(uSig / divisor, uSig % divisor, divisor).toInt()
+        biasedExp = 0
+        if (sig == 0) return DpdFloat(signBit)
+    }
+
+    val leadingDigit = sig / 1_000_000
+    val remainder = sig % 1_000_000
+    val d1 = encodeDeclet(remainder / 1_000)
+    val d2 = encodeDeclet(remainder % 1_000)
+
+    return DpdFloat(signBit or packDpd(biasedExp, leadingDigit, d1, d2))
 }
