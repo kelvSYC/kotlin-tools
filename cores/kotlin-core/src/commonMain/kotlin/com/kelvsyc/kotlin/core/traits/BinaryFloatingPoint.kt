@@ -61,6 +61,22 @@ interface BinaryFloatingPoint<T> {
     val negativeInfinity: T
 
     /**
+     * Positive zero: the additive identity with a clear sign bit.
+     *
+     * Both zeros are equal under [numericalEquality] and under IEEE 754 `==`, but they are
+     * distinct under [equivalenceEquality] and under the total [comparator] (negative zero
+     * compares as strictly less than positive zero).
+     */
+    val positiveZero: T
+
+    /**
+     * Negative zero: the additive identity with the sign bit set.
+     *
+     * @see positiveZero
+     */
+    val negativeZero: T
+
+    /**
      * The largest finite value representable in this format.
      *
      * For a format with mantissa bits `p` and maximum unbiased exponent `emax`, this is
@@ -121,7 +137,28 @@ interface BinaryFloatingPoint<T> {
      * @see comparator
      */
     val partialComparator: PartialComparator<T>
+
+    /**
+     * Classification predicates for this format, providing `isNaN`, `isInfinite`, `isFinite`,
+     * `isZero`, `isNormal`, and `isSubnormal`.
+     *
+     * A value is *normal* when its biased exponent is neither all-zeros nor all-ones — that is,
+     * the implicit leading 1 bit is present and the value is neither subnormal, zero, infinite,
+     * nor NaN. A value is *subnormal* when the biased exponent is all-zeros and the mantissa is
+     * nonzero; such values have reduced precision and no implicit leading bit.
+     */
+    val classification: IeeeFloatingPointClassification<T>
+
+    /**
+     * IEEE 754-2008 §5.5.1 copy operations for this format: sign-bit manipulation defined for
+     * all bit patterns, including NaN, infinity, and both zeros.
+     *
+     * @see FloatingPointSign for the distinction between a sign-bit flip and arithmetic negation.
+     */
+    val sign: FloatingPointSign<T>
 }
+
+// ── Binary16 (Float16) ────────────────────────────────────────────────────────
 
 /**
  * Trait type containing metadata on standard `binary16` floating-point numbers.
@@ -147,6 +184,8 @@ interface Binary16<T> : BinaryFloatingPoint<T> {
 
         override val positiveInfinity: Float16 get() = Float16.POSITIVE_INFINITY
         override val negativeInfinity: Float16 get() = Float16.NEGATIVE_INFINITY
+        override val positiveZero: Float16 get() = Float16(0)
+        override val negativeZero: Float16 get() = Float16(0x8000.toShort())
         override val maxValue: Float16 get() = Float16.MAX_VALUE
         override val minValue: Float16 get() = Float16.MIN_VALUE
         override val NaN: Float16 get() = Float16.NaN
@@ -154,8 +193,32 @@ interface Binary16<T> : BinaryFloatingPoint<T> {
         override val epsilon: Float16 get() = Float16.EPSILON
         override val comparator: Comparator<Float16> get() = Float16.comparator
         override val partialComparator: PartialComparator<Float16> get() = Float16.partialComparator
+
+        // Float16 exposes all predicates as member functions; calling this.foo() inside an
+        // override of the same name resolves to the member function (no recursion).
+        override val classification: IeeeFloatingPointClassification<Float16> =
+            object : IeeeFloatingPointClassification<Float16> {
+                override fun Float16.isNaN(): Boolean = this.isNaN()
+                override fun Float16.isInfinite(): Boolean = this.isInfinite()
+                override fun Float16.isFinite(): Boolean = this.isFinite()
+                override fun Float16.isZero(): Boolean = this.isZero()
+                override fun Float16.isNormal(): Boolean = this.isNormal()
+                override fun Float16.isSubnormal(): Boolean = this.isSubnormal()
+            }
+
+        override val sign: FloatingPointSign<Float16> = object : FloatingPointSign<Float16> {
+            // All operations use bit-level methods on the backing Short.
+            override fun Float16.isNegative(): Boolean = this.sign
+            override fun Float16.negate(): Float16 = -this
+            override fun Float16.abs(): Float16 = this.abs()
+            // Bit manipulation avoids name-shadowing by the trait's own member extension copySign.
+            override fun Float16.copySign(other: Float16): Float16 =
+                Float16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
+        }
     }
 }
+
+// ── BinaryBFloat16 (BFloat16) ─────────────────────────────────────────────────
 
 /**
  * Trait type containing metadata on `bfloat16` floating-point numbers.
@@ -184,6 +247,8 @@ interface BinaryBFloat16<T> : BinaryFloatingPoint<T> {
 
         override val positiveInfinity: BFloat16 get() = BFloat16.POSITIVE_INFINITY
         override val negativeInfinity: BFloat16 get() = BFloat16.NEGATIVE_INFINITY
+        override val positiveZero: BFloat16 get() = BFloat16(0)
+        override val negativeZero: BFloat16 get() = BFloat16(0x8000.toShort())
         override val maxValue: BFloat16 get() = BFloat16.MAX_VALUE
         override val minValue: BFloat16 get() = BFloat16.MIN_VALUE
         override val NaN: BFloat16 get() = BFloat16.NaN
@@ -191,8 +256,30 @@ interface BinaryBFloat16<T> : BinaryFloatingPoint<T> {
         override val epsilon: BFloat16 get() = BFloat16.EPSILON
         override val comparator: Comparator<BFloat16> get() = BFloat16.comparator
         override val partialComparator: PartialComparator<BFloat16> get() = BFloat16.partialComparator
+
+        // BFloat16 exposes all predicates as member functions; same reasoning as Binary16.
+        override val classification: IeeeFloatingPointClassification<BFloat16> =
+            object : IeeeFloatingPointClassification<BFloat16> {
+                override fun BFloat16.isNaN(): Boolean = this.isNaN()
+                override fun BFloat16.isInfinite(): Boolean = this.isInfinite()
+                override fun BFloat16.isFinite(): Boolean = this.isFinite()
+                override fun BFloat16.isZero(): Boolean = this.isZero()
+                override fun BFloat16.isNormal(): Boolean = this.isNormal()
+                override fun BFloat16.isSubnormal(): Boolean = this.isSubnormal()
+            }
+
+        override val sign: FloatingPointSign<BFloat16> = object : FloatingPointSign<BFloat16> {
+            // All operations use bit-level methods on the backing Short.
+            override fun BFloat16.isNegative(): Boolean = this.sign
+            override fun BFloat16.negate(): BFloat16 = -this
+            override fun BFloat16.abs(): BFloat16 = this.abs()
+            override fun BFloat16.copySign(other: BFloat16): BFloat16 =
+                BFloat16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
+        }
     }
 }
+
+// ── Binary32 (Float) ──────────────────────────────────────────────────────────
 
 /**
  * Trait type containing metadata on standard `binary32` floating-point numbers.
@@ -219,6 +306,8 @@ interface Binary32<T> : BinaryFloatingPoint<T> {
 
         override val positiveInfinity: Float get() = Float.POSITIVE_INFINITY
         override val negativeInfinity: Float get() = Float.NEGATIVE_INFINITY
+        override val positiveZero: Float get() = 0.0f
+        override val negativeZero: Float get() = -0.0f
         override val maxValue: Float get() = Float.MAX_VALUE
         override val minValue: Float get() = Float.MIN_VALUE
         override val NaN: Float get() = Float.NaN
@@ -229,8 +318,39 @@ interface Binary32<T> : BinaryFloatingPoint<T> {
         override val comparator: Comparator<Float> get() = Comparator { a, b -> a.compareTo(b) }
         override val partialComparator: PartialComparator<Float>
             get() = PartialComparator { a, b -> if (a.isNaN() || b.isNaN()) null else a.compareTo(b) }
+
+        // Float.isNaN/isInfinite/isFinite are Kotlin stdlib extension functions, not member
+        // functions. All predicates here use bit manipulation to avoid the dispatch issue where
+        // calling this.isNaN() inside override fun Float.isNaN() would recurse into the override.
+        override val classification: IeeeFloatingPointClassification<Float> =
+            object : IeeeFloatingPointClassification<Float> {
+                override fun Float.isNaN(): Boolean = (toRawBits() and 0x7FFFFFFF) > 0x7F800000
+                override fun Float.isInfinite(): Boolean = (toRawBits() and 0x7FFFFFFF) == 0x7F800000
+                override fun Float.isFinite(): Boolean = (toRawBits() and 0x7F800000) != 0x7F800000
+                // IEEE 754 == treats +0 and -0 as equal; toRawBits clears the sign to test both.
+                override fun Float.isZero(): Boolean = (toRawBits() and 0x7FFFFFFF) == 0
+                // Biased exponent 1..254 → normal (0 = subnormal/zero, 255 = NaN/infinity).
+                override fun Float.isNormal(): Boolean = (toRawBits() ushr 23) and 0xFF in 1..254
+                override fun Float.isSubnormal(): Boolean {
+                    val b = toRawBits()
+                    return (b ushr 23) and 0xFF == 0 && b and 0x7FFFFFFF != 0
+                }
+            }
+
+        override val sign: FloatingPointSign<Float> = object : FloatingPointSign<Float> {
+            // All operations use bit manipulation on the raw Int representation.
+            // Float.unaryMinus() is a member operator (no dispatch issue like isNaN etc.).
+            override fun Float.isNegative(): Boolean = toRawBits() < 0
+            override fun Float.negate(): Float = -this
+            // Clear sign bit: Int.MAX_VALUE = 0x7FFFFFFF masks off bit 31.
+            override fun Float.abs(): Float = Float.fromBits(toRawBits() and Int.MAX_VALUE)
+            override fun Float.copySign(other: Float): Float =
+                Float.fromBits((toRawBits() and Int.MAX_VALUE) or (other.toRawBits() and Int.MIN_VALUE))
+        }
     }
 }
+
+// ── Binary64 (Double) ─────────────────────────────────────────────────────────
 
 /**
  * Trait type containing metadata on standard `binary64` floating-point numbers.
@@ -257,6 +377,8 @@ interface Binary64<T> : BinaryFloatingPoint<T> {
 
         override val positiveInfinity: Double get() = Double.POSITIVE_INFINITY
         override val negativeInfinity: Double get() = Double.NEGATIVE_INFINITY
+        override val positiveZero: Double get() = 0.0
+        override val negativeZero: Double get() = -0.0
         override val maxValue: Double get() = Double.MAX_VALUE
         override val minValue: Double get() = Double.MIN_VALUE
         override val NaN: Double get() = Double.NaN
@@ -267,5 +389,33 @@ interface Binary64<T> : BinaryFloatingPoint<T> {
         override val comparator: Comparator<Double> get() = Comparator { a, b -> a.compareTo(b) }
         override val partialComparator: PartialComparator<Double>
             get() = PartialComparator { a, b -> if (a.isNaN() || b.isNaN()) null else a.compareTo(b) }
+
+        // Double.isNaN/isInfinite/isFinite are Kotlin stdlib extension functions; same
+        // bit-manipulation approach as Binary32 to avoid the dispatch/recursion issue.
+        override val classification: IeeeFloatingPointClassification<Double> =
+            object : IeeeFloatingPointClassification<Double> {
+                override fun Double.isNaN(): Boolean = (toRawBits() and Long.MAX_VALUE) > 0x7FF0000000000000L
+                override fun Double.isInfinite(): Boolean = (toRawBits() and Long.MAX_VALUE) == 0x7FF0000000000000L
+                override fun Double.isFinite(): Boolean = (toRawBits() and 0x7FF0000000000000L) != 0x7FF0000000000000L
+                // IEEE 754 == treats +0 and -0 as equal; masking the sign bit tests both.
+                override fun Double.isZero(): Boolean = (toRawBits() and Long.MAX_VALUE) == 0L
+                // Biased exponent 1..2046 → normal (0 = subnormal/zero, 2047 = NaN/infinity).
+                override fun Double.isNormal(): Boolean =
+                    ((toRawBits() ushr 52) and 0x7FFL).toInt() in 1..2046
+                override fun Double.isSubnormal(): Boolean {
+                    val b = toRawBits()
+                    return (b ushr 52) and 0x7FFL == 0L && b and Long.MAX_VALUE != 0L
+                }
+            }
+
+        override val sign: FloatingPointSign<Double> = object : FloatingPointSign<Double> {
+            // All operations use bit manipulation on the raw Long representation.
+            override fun Double.isNegative(): Boolean = toRawBits() < 0L
+            override fun Double.negate(): Double = -this
+            // Clear sign bit: Long.MAX_VALUE = 0x7FFFFFFFFFFFFFFF masks off bit 63.
+            override fun Double.abs(): Double = Double.fromBits(toRawBits() and Long.MAX_VALUE)
+            override fun Double.copySign(other: Double): Double =
+                Double.fromBits((toRawBits() and Long.MAX_VALUE) or (other.toRawBits() and Long.MIN_VALUE))
+        }
     }
 }

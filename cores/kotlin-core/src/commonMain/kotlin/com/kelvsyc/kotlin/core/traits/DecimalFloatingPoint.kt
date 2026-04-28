@@ -90,6 +90,10 @@ interface DecimalFloatingPoint<T> {
      */
     val negativeInfinity: T
 
+    val positiveZero: T
+
+    val negativeZero: T
+
     /**
      * The largest finite value representable in this format.
      *
@@ -160,6 +164,16 @@ interface DecimalFloatingPoint<T> {
      * @see comparator
      */
     val partialComparator: PartialComparator<T>
+
+    val classification: IeeeFloatingPointClassification<T>
+
+    /**
+     * IEEE 754-2008 §5.5.1 copy operations for this format: sign-bit manipulation defined for
+     * all bit patterns, including NaN, infinity, and both zeros.
+     *
+     * @see FloatingPointSign for the distinction between a sign-bit flip and arithmetic negation.
+     */
+    val sign: FloatingPointSign<T>
 }
 
 /**

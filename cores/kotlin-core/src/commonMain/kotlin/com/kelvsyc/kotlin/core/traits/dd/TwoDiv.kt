@@ -38,7 +38,7 @@ fun <T> TwoDiv.Companion.from(
     override fun T.twoDiv(other: T): Pair<T, T> {
         val self = this
         val q = with(arith) { self.divide(other) }
-        val e = with(arith) { fma.fma(q, other.unaryMinus(), self).divide(other) }
+        val e = with(arith) { fma.fma(q, other.negate(), self).divide(other) }
         return Pair(q, e)
     }
 }

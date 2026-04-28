@@ -38,10 +38,14 @@ fun <F : DoubleBinaryFloatingPoint<T>, T> DoubleBinaryFloatingPointArithmetic.Co
     override fun F.isNaN(): Boolean = with(arith) { high.isNaN() }
     override fun F.isInfinite(): Boolean = with(arith) { high.isInfinite() }
     override fun F.isFinite(): Boolean = with(arith) { high.isFinite() }
+    // A properly normalised double binary value is zero iff both components are zero.
+    override fun F.isZero(): Boolean = with(arith) { high.isZero() } && with(arith) { low.isZero() }
 
     // ── Sign ─────────────────────────────────────────────────────────────────
-    override fun F.unaryMinus(): F =
-        construct(with(arith) { high.unaryMinus() }, with(arith) { low.unaryMinus() })
+    // The sign of a normalised (hi, lo) pair is the sign of hi.
+    override fun F.isNegative(): Boolean = with(arith) { high.isNegative() }
+    override fun F.negate(): F =
+        construct(with(arith) { high.negate() }, with(arith) { low.negate() })
 
     // ── Total order ──────────────────────────────────────────────────────────
     override fun F.compareTo(other: F): Int {
@@ -70,7 +74,7 @@ fun <F : DoubleBinaryFloatingPoint<T>, T> DoubleBinaryFloatingPointArithmetic.Co
         return construct(hi, lo)
     }
 
-    override fun F.subtract(other: F): F = add(other.unaryMinus())
+    override fun F.subtract(other: F): F = add(other.negate())
 
     // Sloppy DD multiplication: full hi×hi via TwoProduct, first-order cross terms.
     override fun F.multiply(other: F): F {
@@ -107,7 +111,7 @@ fun <F : DoubleBinaryFloatingPoint<T>, T> DoubleBinaryFloatingPointArithmetic.Co
         val pb2 = with(arith) { pb2raw.add(q1.multiply(other.low)) }
         val (pbH, pbL) = with(twoSum) { pb1.fastTwoSum(pb2) }
 
-        val (rH1, rL1) = with(twoSum) { self.high.twoSum(with(arith) { pbH.unaryMinus() }) }
+        val (rH1, rL1) = with(twoSum) { self.high.twoSum(with(arith) { pbH.negate() }) }
         val rL = with(arith) { rL1.add(self.low).subtract(pbL) }
         val (rH, _) = with(twoSum) { rH1.fastTwoSum(rL) }
 

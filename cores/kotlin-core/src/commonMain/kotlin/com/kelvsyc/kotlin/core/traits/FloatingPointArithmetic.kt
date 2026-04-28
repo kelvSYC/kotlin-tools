@@ -4,13 +4,13 @@ import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
 
 /**
- * `FloatingPointArithmetic` is a trait type that provides a uniform interface for basic floating-point arithmetic
+ * `FloatingPointArithmetic` is a trait type providing a uniform interface for basic floating-point arithmetic
  * over a type [T].
  *
- * This trait is intended for generic algorithms that must operate over any floating-point type without knowing the
- * concrete representation. It covers the four fundamental arithmetic operations, negation, absolute value, the three
- * standard IEEE 754 classification predicates, and a total-order comparison. It does not cover remainder or square
- * root; those capabilities are expressed as separate, optional traits.
+ * This trait extends [FloatingPointClassification] (for `isNaN`, `isInfinite`, `isFinite`, `isZero`) and
+ * [FloatingPointSign] (for `negate`), and adds the four arithmetic operations, absolute value, and a
+ * total-order comparison.  It does not cover remainder or square root; those capabilities are expressed as
+ * separate, optional traits.
  *
  * ## Precision and error bounds
  *
@@ -29,10 +29,10 @@ import com.kelvsyc.kotlin.core.Float16
  *
  * ## Standard implementations
  *
- * Canonical instances for [Float16], [Float], and [Double] are available as [Companion.float16], [Companion.float],
- * and [Companion.double] respectively.
+ * Canonical instances for [Float16], [BFloat16], [Float], and [Double] are available as [Companion.float16],
+ * [Companion.bfloat16], [Companion.float], and [Companion.double] respectively.
  */
-interface FloatingPointArithmetic<T> {
+interface FloatingPointArithmetic<T> : FloatingPointClassification<T>, FloatingPointSign<T> {
     /**
      * The additive identity: the value such that `x.add(zero) == x` for all finite `x`.
      *
@@ -44,42 +44,6 @@ interface FloatingPointArithmetic<T> {
      * The multiplicative identity: the value such that `x.multiply(one) == x` for all finite `x`.
      */
     val one: T
-
-    /**
-     * Returns `true` if this value is Not-a-Number (NaN).
-     *
-     * NaN is unordered: it is not less than, equal to, or greater than any value including itself under IEEE 754
-     * semantics. [compareTo] defines a total order that places NaN after all other values.
-     */
-    fun T.isNaN(): Boolean
-
-    /**
-     * Returns `true` if this value is positive or negative infinity.
-     */
-    fun T.isInfinite(): Boolean
-
-    /**
-     * Returns `true` if this value is finite — that is, neither infinity nor NaN.
-     */
-    fun T.isFinite(): Boolean
-
-    /**
-     * Returns the negation of this value.
-     *
-     * This is a pure sign-bit flip with no rounding: `unaryMinus(unaryMinus(x)) == x` for all values including
-     * NaN, infinity, and both zeros.
-     */
-    fun T.unaryMinus(): T
-
-    /**
-     * Returns the absolute value of this value.
-     *
-     * This is a pure sign-bit clear with no rounding. `abs(NaN)` is NaN; `abs(-0)` is `+0`.
-     *
-     * The default implementation is correct but delegates through [compareTo] and [unaryMinus]. Override for
-     * efficiency when the concrete type supports a direct bit-clear.
-     */
-    fun T.abs(): T = if (compareTo(zero) < 0) unaryMinus() else this
 
     /**
      * Returns the sum `this + other`, rounded to the nearest representable value.
@@ -117,14 +81,21 @@ interface FloatingPointArithmetic<T> {
 
 private val bfloat16Instance: FloatingPointArithmetic<BFloat16> = object : FloatingPointArithmetic<BFloat16> {
     override val zero: BFloat16 get() = BFloat16(0)
-    override val one: BFloat16 get() = BFloat16(0x3F80.toShort())  // 1.0 in bfloat16
+    override val one: BFloat16 get() = BFloat16(0x3F80.toShort())
 
+    // BFloat16 has member functions for all predicates and sign operations; calling this.foo()
+    // inside an override of the same name resolves to the member function (no recursion).
     override fun BFloat16.isNaN(): Boolean = this.isNaN()
     override fun BFloat16.isInfinite(): Boolean = this.isInfinite()
     override fun BFloat16.isFinite(): Boolean = this.isFinite()
+    override fun BFloat16.isZero(): Boolean = this.isZero()
+    override fun BFloat16.isNegative(): Boolean = this.sign
 
-    override fun BFloat16.unaryMinus(): BFloat16 = -this
+    override fun BFloat16.negate(): BFloat16 = -this
     override fun BFloat16.abs(): BFloat16 = this.abs()
+    // Bit manipulation avoids name-shadowing by the trait's own member extension copySign.
+    override fun BFloat16.copySign(other: BFloat16): BFloat16 =
+        BFloat16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
 
     override fun BFloat16.add(other: BFloat16): BFloat16 = this + other
     override fun BFloat16.subtract(other: BFloat16): BFloat16 = this - other
@@ -138,14 +109,19 @@ private val bfloat16Instance: FloatingPointArithmetic<BFloat16> = object : Float
 
 private val float16Instance: FloatingPointArithmetic<Float16> = object : FloatingPointArithmetic<Float16> {
     override val zero: Float16 get() = Float16(0)
-    override val one: Float16 get() = Float16(0x3C00.toShort())  // 1.0 in binary16
+    override val one: Float16 get() = Float16(0x3C00.toShort())
 
+    // Float16 has member functions for all predicates and sign operations; same reasoning as BFloat16.
     override fun Float16.isNaN(): Boolean = this.isNaN()
     override fun Float16.isInfinite(): Boolean = this.isInfinite()
     override fun Float16.isFinite(): Boolean = this.isFinite()
+    override fun Float16.isZero(): Boolean = this.isZero()
+    override fun Float16.isNegative(): Boolean = this.sign
 
-    override fun Float16.unaryMinus(): Float16 = -this
+    override fun Float16.negate(): Float16 = -this
     override fun Float16.abs(): Float16 = this.abs()
+    override fun Float16.copySign(other: Float16): Float16 =
+        Float16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
 
     override fun Float16.add(other: Float16): Float16 = this + other
     override fun Float16.subtract(other: Float16): Float16 = this - other
@@ -174,9 +150,18 @@ private val floatInstance: FloatingPointArithmetic<Float> = object : FloatingPoi
     override fun Float.isNaN(): Boolean = _floatIsNaN(this)
     override fun Float.isInfinite(): Boolean = _floatIsInfinite(this)
     override fun Float.isFinite(): Boolean = _floatIsFinite(this)
+    // Float.isZero() does not exist in the stdlib, so there is no dispatch conflict.
+    // IEEE 754 == treats +0 and -0 as equal, which is the correct semantics for isZero.
+    override fun Float.isZero(): Boolean = this == 0.0f
+    // toRawBits() returns Int; Int is negative iff its sign bit (bit 31) is set.
+    override fun Float.isNegative(): Boolean = toRawBits() < 0
 
-    override fun Float.unaryMinus(): Float = -this
+    override fun Float.negate(): Float = -this
     override fun Float.abs(): Float = kotlin.math.abs(this)
+    // kotlin.math.copySign is not in the common stdlib; use bit manipulation instead.
+    // Take the magnitude bits (clear sign) from this and the sign bit from other.
+    override fun Float.copySign(other: Float): Float =
+        Float.fromBits((toRawBits() and Int.MAX_VALUE) or (other.toRawBits() and Int.MIN_VALUE))
 
     override fun Float.add(other: Float): Float = this + other
     override fun Float.subtract(other: Float): Float = this - other
@@ -200,9 +185,15 @@ private val doubleInstance: FloatingPointArithmetic<Double> = object : FloatingP
     override fun Double.isNaN(): Boolean = _doubleIsNaN(this)
     override fun Double.isInfinite(): Boolean = _doubleIsInfinite(this)
     override fun Double.isFinite(): Boolean = _doubleIsFinite(this)
+    // Double.isZero() does not exist in the stdlib; IEEE 754 == treats +0 and -0 as equal.
+    override fun Double.isZero(): Boolean = this == 0.0
+    // toRawBits() returns Long; Long is negative iff its sign bit (bit 63) is set.
+    override fun Double.isNegative(): Boolean = toRawBits() < 0L
 
-    override fun Double.unaryMinus(): Double = -this
+    override fun Double.negate(): Double = -this
     override fun Double.abs(): Double = kotlin.math.abs(this)
+    override fun Double.copySign(other: Double): Double =
+        Double.fromBits((toRawBits() and Long.MAX_VALUE) or (other.toRawBits() and Long.MIN_VALUE))
 
     override fun Double.add(other: Double): Double = this + other
     override fun Double.subtract(other: Double): Double = this - other

@@ -1,6 +1,8 @@
 package com.kelvsyc.kotlin.core
 
 import com.kelvsyc.kotlin.core.traits.Bid32
+import com.kelvsyc.kotlin.core.traits.FloatingPointSign
+import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
 import com.kelvsyc.kotlin.core.traits.ValueEquality
 import com.kelvsyc.kotlin.core.PartialComparator
 
@@ -143,6 +145,10 @@ value class BidFloat(val bits: Int) {
         override val positiveInfinity: BidFloat get() = BidFloat(0x78000000)
         // G[0..4]=11110, negative sign.
         override val negativeInfinity: BidFloat get() = BidFloat(Int.MIN_VALUE or 0x78000000)
+        // Sign bit clear, combination=0, continuation=0 → biasedExponent=0, significand=0, positive.
+        override val positiveZero: BidFloat get() = BidFloat(0)
+        // Sign bit set (Int.MIN_VALUE = 0x80000000), combination=0, continuation=0 → negative zero.
+        override val negativeZero: BidFloat get() = BidFloat(Int.MIN_VALUE)
         // 9999999 × 10^90: large-significand encoding, biasedExponent=191, significand=9999999.
         override val maxValue: BidFloat get() = BidFloat(0x77F8967F)
         // 1 × 10^(-101): biasedExponent=0, significand=1.
@@ -151,6 +157,32 @@ value class BidFloat(val bits: Int) {
         override val minNormal: BidFloat get() = BidFloat(0x000F4240)
         // 1 × 10^(-6): biasedExponent=95, significand=1.
         override val epsilon: BidFloat get() = BidFloat(0x2F800001)
+
+        // BidFloat exposes isNaN/isInfinite/isZero/isNormal/isSubnormal as member functions;
+        // calling this.foo() inside an override of the same name resolves to the member function
+        // (no recursion), since member functions take dispatch priority over member extensions.
+        override val classification: IeeeFloatingPointClassification<BidFloat> =
+            object : IeeeFloatingPointClassification<BidFloat> {
+                override fun BidFloat.isNaN(): Boolean = this.isNaN()
+                override fun BidFloat.isInfinite(): Boolean = this.isInfinite()
+                override fun BidFloat.isFinite(): Boolean = !this.isNaN() && !this.isInfinite()
+                override fun BidFloat.isZero(): Boolean = this.isZero()
+                override fun BidFloat.isNormal(): Boolean = this.isNormal()
+                override fun BidFloat.isSubnormal(): Boolean = this.isSubnormal()
+            }
+
+        // All sign operations use bit manipulation on the raw Int representation.
+        override val sign: FloatingPointSign<BidFloat> = object : FloatingPointSign<BidFloat> {
+            // Int is negative iff bit 31 is set, which is the IEEE 754 sign bit.
+            override fun BidFloat.isNegative(): Boolean = bits < 0
+            // Flip sign bit (bit 31); valid for all bit patterns including NaN.
+            override fun BidFloat.negate(): BidFloat = BidFloat(bits xor Int.MIN_VALUE)
+            // Clear sign bit: Int.MAX_VALUE = 0x7FFFFFFF masks off bit 31.
+            override fun BidFloat.abs(): BidFloat = BidFloat(bits and Int.MAX_VALUE)
+            // Replace sign bit with that of other: clear own sign bit, OR in other's sign bit.
+            override fun BidFloat.copySign(other: BidFloat): BidFloat =
+                BidFloat((bits and Int.MAX_VALUE) or (other.bits and Int.MIN_VALUE))
+        }
     }
 
     /**
@@ -258,4 +290,37 @@ value class BidFloat(val bits: Int) {
      * Both +0 and −0 return `true`. Use [sign] to distinguish them.
      */
     fun isZero(): Boolean = !isNaN() && !isInfinite() && significand == 0
+
+    /**
+     * Returns `true` if this value is a normal finite number.
+     *
+     * Per IEEE 754-2008 §5.7.2, a finite non-zero value is normal when its magnitude is at least
+     * `minNormal = 10^(Emin) = 10^(-95)`. Equivalently, `significand × 10^biasedExponent ≥ 10^6`
+     * — the significand, scaled to the minimum quantum exponent, has a non-zero leading digit.
+     *
+     * Note that a value with a non-zero biased exponent but a small enough significand can still be
+     * subnormal; and a value with a zero biased exponent and significand ≥ 10^(p−1) is the
+     * borderline normal. NaN, infinity, and zero all return `false`.
+     */
+    fun isNormal(): Boolean = !isNaN() && !isInfinite() && !isZero() && !isSubnormal()
+
+    /**
+     * Returns `true` if this value is subnormal.
+     *
+     * Per IEEE 754-2008 §5.7.2, a finite non-zero value is subnormal when its magnitude is less
+     * than `minNormal = 10^(Emin) = 10^(-95)`.  Equivalently, `significand × 10^biasedExponent < 10^6`
+     * — the significand, scaled to the minimum quantum exponent, has a zero leading digit.
+     *
+     * Unlike binary floating-point, a non-zero biased exponent does not guarantee normality:
+     * a value with `biasedExponent = k` (for `k` in 1..5) is subnormal if its significand is
+     * less than `10^(6 − k)`.  For `biasedExponent ≥ 6`, the scaled significand is always at
+     * least 1, so the value is always normal (given it is finite and non-zero).
+     *
+     * NaN, infinity, and zero all return `false`.
+     */
+    fun isSubnormal(): Boolean {
+        if (isNaN() || isInfinite() || isZero()) return false
+        if (biasedExponent >= 6) return false
+        return significand < DECIMAL32_POW10[6 - biasedExponent].toInt()
+    }
 }

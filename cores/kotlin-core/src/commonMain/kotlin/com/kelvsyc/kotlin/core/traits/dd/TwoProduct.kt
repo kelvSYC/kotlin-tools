@@ -36,7 +36,7 @@ fun <T> TwoProduct.Companion.from(
     override fun T.twoProduct(other: T): Pair<T, T> {
         val self = this
         val p = with(arith) { self.multiply(other) }
-        val e = fma.fma(self, other, with(arith) { p.unaryMinus() })
+        val e = fma.fma(self, other, with(arith) { p.negate() })
         return Pair(p, e)
     }
 }

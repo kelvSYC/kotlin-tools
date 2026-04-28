@@ -1,11 +1,163 @@
 package com.kelvsyc.kotlin.core.traits
 
+import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
 class FloatingPointArithmeticTest : FunSpec({
+
+    // ── BFloat16 ──────────────────────────────────────────────────────────────
+
+    context("FloatingPointArithmetic.Companion.bfloat16") {
+        val ops = FloatingPointArithmetic.bfloat16
+
+        context("constants") {
+            test("zero is positive zero") {
+                ops.zero shouldBe BFloat16(0)
+            }
+            test("one is 1.0") {
+                ops.one shouldBe BFloat16(0x3F80.toShort())
+            }
+        }
+
+        context("isNaN") {
+            test("NaN returns true") {
+                with(ops) { BFloat16.NaN.isNaN() } shouldBe true
+            }
+            test("positive infinity returns false") {
+                with(ops) { BFloat16.POSITIVE_INFINITY.isNaN() } shouldBe false
+            }
+            test("finite value returns false") {
+                with(ops) { BFloat16(0x3F80.toShort()).isNaN() } shouldBe false
+            }
+            test("zero returns false") {
+                with(ops) { BFloat16(0).isNaN() } shouldBe false
+            }
+        }
+
+        context("isInfinite") {
+            test("positive infinity returns true") {
+                with(ops) { BFloat16.POSITIVE_INFINITY.isInfinite() } shouldBe true
+            }
+            test("negative infinity returns true") {
+                with(ops) { BFloat16.NEGATIVE_INFINITY.isInfinite() } shouldBe true
+            }
+            test("NaN returns false") {
+                with(ops) { BFloat16.NaN.isInfinite() } shouldBe false
+            }
+            test("finite value returns false") {
+                with(ops) { BFloat16(0x3F80.toShort()).isInfinite() } shouldBe false
+            }
+        }
+
+        context("isFinite") {
+            test("finite value returns true") {
+                with(ops) { BFloat16(0x3F80.toShort()).isFinite() } shouldBe true
+            }
+            test("zero returns true") {
+                with(ops) { BFloat16(0).isFinite() } shouldBe true
+            }
+            test("positive infinity returns false") {
+                with(ops) { BFloat16.POSITIVE_INFINITY.isFinite() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(ops) { BFloat16.NaN.isFinite() } shouldBe false
+            }
+        }
+
+        context("isZero") {
+            test("positive zero returns true") {
+                with(ops) { BFloat16(0).isZero() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { BFloat16(0x8000.toShort()).isZero() } shouldBe true
+            }
+            test("nonzero finite returns false") {
+                with(ops) { BFloat16(0x3F80.toShort()).isZero() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(ops) { BFloat16.NaN.isZero() } shouldBe false
+            }
+            test("infinity returns false") {
+                with(ops) { BFloat16.POSITIVE_INFINITY.isZero() } shouldBe false
+            }
+        }
+
+        context("isNegative") {
+            test("negative value returns true") {
+                with(ops) { BFloat16(0xBF80.toShort()).isNegative() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { BFloat16(0x8000.toShort()).isNegative() } shouldBe true
+            }
+            test("positive value returns false") {
+                with(ops) { BFloat16(0x3F80.toShort()).isNegative() } shouldBe false
+            }
+            test("positive zero returns false") {
+                with(ops) { BFloat16(0).isNegative() } shouldBe false
+            }
+        }
+
+        context("negate") {
+            test("negating a positive value gives negative") {
+                with(ops) { BFloat16(0x3F80.toShort()).negate() }.bits shouldBe 0xBF80.toShort()
+            }
+            test("negating a negative value gives positive") {
+                with(ops) { BFloat16(0xBF80.toShort()).negate() }.bits shouldBe 0x3F80.toShort()
+            }
+            test("negating positive zero gives negative zero") {
+                with(ops) { BFloat16(0).negate() }.bits shouldBe 0x8000.toShort()
+            }
+            test("negating negative zero gives positive zero") {
+                with(ops) { BFloat16(0x8000.toShort()).negate() }.bits shouldBe 0.toShort()
+            }
+            test("double negation is identity") {
+                val v = BFloat16(0x3F80.toShort())
+                with(ops) { v.negate().negate() }.bits shouldBe v.bits
+            }
+            test("negating NaN produces NaN") {
+                with(ops) { BFloat16.NaN.negate() }.isNaN() shouldBe true
+            }
+        }
+
+        context("abs") {
+            test("abs of positive value is unchanged") {
+                with(ops) { BFloat16(0x3F80.toShort()).abs() }.bits shouldBe 0x3F80.toShort()
+            }
+            test("abs of negative value clears sign") {
+                with(ops) { BFloat16(0xBF80.toShort()).abs() }.bits shouldBe 0x3F80.toShort()
+            }
+            test("abs of negative zero is positive zero") {
+                with(ops) { BFloat16(0x8000.toShort()).abs() }.bits shouldBe 0.toShort()
+            }
+            test("abs of NaN is NaN") {
+                with(ops) { BFloat16.NaN.abs() }.isNaN() shouldBe true
+            }
+            test("abs of negative infinity is positive infinity") {
+                with(ops) { BFloat16.NEGATIVE_INFINITY.abs() }.bits shouldBe BFloat16.POSITIVE_INFINITY.bits
+            }
+        }
+
+        context("add") {
+            test("1.0 + 1.0 = 2.0") {
+                with(ops) { BFloat16(0x3F80.toShort()).add(BFloat16(0x3F80.toShort())) } shouldBe BFloat16(0x4000.toShort())
+            }
+            test("NaN + x = NaN") {
+                with(ops) { BFloat16.NaN.add(BFloat16(0x3F80.toShort())) }.isNaN() shouldBe true
+            }
+        }
+
+        context("compareTo") {
+            test("1.0 < 2.0") {
+                (with(ops) { BFloat16(0x3F80.toShort()).compareTo(BFloat16(0x4000.toShort())) } < 0) shouldBe true
+            }
+            test("NaN is ordered after +Infinity") {
+                (with(ops) { BFloat16.NaN.compareTo(BFloat16.POSITIVE_INFINITY) } > 0) shouldBe true
+            }
+        }
+    }
 
     // ── Float16 ───────────────────────────────────────────────────────────────
 
@@ -66,25 +218,58 @@ class FloatingPointArithmeticTest : FunSpec({
             }
         }
 
-        context("unaryMinus") {
+        context("isZero") {
+            test("positive zero returns true") {
+                with(ops) { Float16(0).isZero() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { Float16(0x8000.toShort()).isZero() } shouldBe true
+            }
+            test("nonzero finite returns false") {
+                with(ops) { Float16(0x3C00.toShort()).isZero() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(ops) { Float16.NaN.isZero() } shouldBe false
+            }
+            test("infinity returns false") {
+                with(ops) { Float16.POSITIVE_INFINITY.isZero() } shouldBe false
+            }
+        }
+
+        context("isNegative") {
+            test("negative value returns true") {
+                with(ops) { Float16(0xBC00.toShort()).isNegative() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { Float16(0x8000.toShort()).isNegative() } shouldBe true
+            }
+            test("positive value returns false") {
+                with(ops) { Float16(0x3C00.toShort()).isNegative() } shouldBe false
+            }
+            test("positive zero returns false") {
+                with(ops) { Float16(0).isNegative() } shouldBe false
+            }
+        }
+
+        context("negate") {
             test("negating a positive value gives negative") {
-                with(ops) { Float16(0x3C00.toShort()).unaryMinus() }.bits shouldBe 0xBC00.toShort()
+                with(ops) { Float16(0x3C00.toShort()).negate() }.bits shouldBe 0xBC00.toShort()
             }
             test("negating a negative value gives positive") {
-                with(ops) { Float16(0xBC00.toShort()).unaryMinus() }.bits shouldBe 0x3C00.toShort()
+                with(ops) { Float16(0xBC00.toShort()).negate() }.bits shouldBe 0x3C00.toShort()
             }
             test("negating positive zero gives negative zero") {
-                with(ops) { Float16(0).unaryMinus() }.bits shouldBe 0x8000.toShort()
+                with(ops) { Float16(0).negate() }.bits shouldBe 0x8000.toShort()
             }
             test("negating negative zero gives positive zero") {
-                with(ops) { Float16(0x8000.toShort()).unaryMinus() }.bits shouldBe 0.toShort()
+                with(ops) { Float16(0x8000.toShort()).negate() }.bits shouldBe 0.toShort()
             }
             test("double negation is identity") {
                 val v = Float16(0x3C00.toShort())
-                with(ops) { v.unaryMinus().unaryMinus() }.bits shouldBe v.bits
+                with(ops) { v.negate().negate() }.bits shouldBe v.bits
             }
             test("negating NaN produces NaN") {
-                with(ops) { Float16.NaN.unaryMinus() }.isNaN() shouldBe true
+                with(ops) { Float16.NaN.negate() }.isNaN() shouldBe true
             }
         }
 
@@ -260,24 +445,57 @@ class FloatingPointArithmeticTest : FunSpec({
             }
         }
 
-        context("unaryMinus") {
+        context("isZero") {
+            test("positive zero returns true") {
+                with(ops) { 0.0f.isZero() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { (-0.0f).isZero() } shouldBe true
+            }
+            test("nonzero finite returns false") {
+                with(ops) { 1.0f.isZero() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(ops) { Float.NaN.isZero() } shouldBe false
+            }
+            test("infinity returns false") {
+                with(ops) { Float.POSITIVE_INFINITY.isZero() } shouldBe false
+            }
+        }
+
+        context("isNegative") {
+            test("negative value returns true") {
+                with(ops) { (-1.0f).isNegative() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { (-0.0f).isNegative() } shouldBe true
+            }
+            test("positive value returns false") {
+                with(ops) { 1.0f.isNegative() } shouldBe false
+            }
+            test("positive zero returns false") {
+                with(ops) { 0.0f.isNegative() } shouldBe false
+            }
+        }
+
+        context("negate") {
             test("negating a positive value gives negative") {
-                with(ops) { 1.0f.unaryMinus() } shouldBe -1.0f
+                with(ops) { 1.0f.negate() } shouldBe -1.0f
             }
             test("negating a negative value gives positive") {
-                with(ops) { (-1.0f).unaryMinus() } shouldBe 1.0f
+                with(ops) { (-1.0f).negate() } shouldBe 1.0f
             }
             test("negating positive zero gives negative zero") {
-                with(ops) { 0.0f.unaryMinus() }.toRawBits() shouldBe (-0.0f).toRawBits()
+                with(ops) { 0.0f.negate() }.toRawBits() shouldBe (-0.0f).toRawBits()
             }
             test("negating negative zero gives positive zero") {
-                with(ops) { (-0.0f).unaryMinus() } shouldBe 0.0f
+                with(ops) { (-0.0f).negate() } shouldBe 0.0f
             }
             test("double negation is identity") {
-                with(ops) { 1.5f.unaryMinus().unaryMinus() } shouldBe 1.5f
+                with(ops) { 1.5f.negate().negate() } shouldBe 1.5f
             }
             test("negating NaN produces NaN") {
-                with(ops) { Float.NaN.unaryMinus() }.isNaN() shouldBe true
+                with(ops) { Float.NaN.negate() }.isNaN() shouldBe true
             }
         }
 
@@ -449,24 +667,57 @@ class FloatingPointArithmeticTest : FunSpec({
             }
         }
 
-        context("unaryMinus") {
+        context("isZero") {
+            test("positive zero returns true") {
+                with(ops) { 0.0.isZero() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { (-0.0).isZero() } shouldBe true
+            }
+            test("nonzero finite returns false") {
+                with(ops) { 1.0.isZero() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(ops) { Double.NaN.isZero() } shouldBe false
+            }
+            test("infinity returns false") {
+                with(ops) { Double.POSITIVE_INFINITY.isZero() } shouldBe false
+            }
+        }
+
+        context("isNegative") {
+            test("negative value returns true") {
+                with(ops) { (-1.0).isNegative() } shouldBe true
+            }
+            test("negative zero returns true") {
+                with(ops) { (-0.0).isNegative() } shouldBe true
+            }
+            test("positive value returns false") {
+                with(ops) { 1.0.isNegative() } shouldBe false
+            }
+            test("positive zero returns false") {
+                with(ops) { 0.0.isNegative() } shouldBe false
+            }
+        }
+
+        context("negate") {
             test("negating a positive value gives negative") {
-                with(ops) { 1.0.unaryMinus() } shouldBe -1.0
+                with(ops) { 1.0.negate() } shouldBe -1.0
             }
             test("negating a negative value gives positive") {
-                with(ops) { (-1.0).unaryMinus() } shouldBe 1.0
+                with(ops) { (-1.0).negate() } shouldBe 1.0
             }
             test("negating positive zero gives negative zero") {
-                with(ops) { 0.0.unaryMinus() }.toRawBits() shouldBe (-0.0).toRawBits()
+                with(ops) { 0.0.negate() }.toRawBits() shouldBe (-0.0).toRawBits()
             }
             test("negating negative zero gives positive zero") {
-                with(ops) { (-0.0).unaryMinus() } shouldBe 0.0
+                with(ops) { (-0.0).negate() } shouldBe 0.0
             }
             test("double negation is identity") {
-                with(ops) { 1.5.unaryMinus().unaryMinus() } shouldBe 1.5
+                with(ops) { 1.5.negate().negate() } shouldBe 1.5
             }
             test("negating NaN produces NaN") {
-                with(ops) { Double.NaN.unaryMinus() }.isNaN() shouldBe true
+                with(ops) { Double.NaN.negate() }.isNaN() shouldBe true
             }
         }
 
@@ -585,6 +836,9 @@ class FloatingPointArithmeticTest : FunSpec({
     // ── Singleton identity ────────────────────────────────────────────────────
 
     context("singleton identity") {
+        test("Companion.bfloat16 returns the same instance on repeated access") {
+            FloatingPointArithmetic.bfloat16 shouldBe FloatingPointArithmetic.bfloat16
+        }
         test("Companion.float16 returns the same instance on repeated access") {
             FloatingPointArithmetic.float16 shouldBe FloatingPointArithmetic.float16
         }
@@ -594,10 +848,11 @@ class FloatingPointArithmeticTest : FunSpec({
         test("Companion.double returns the same instance on repeated access") {
             FloatingPointArithmetic.double shouldBe FloatingPointArithmetic.double
         }
-        test("all three instances are distinct") {
+        test("all four instances are distinct") {
+            FloatingPointArithmetic.bfloat16 shouldNotBe FloatingPointArithmetic.float16
             FloatingPointArithmetic.float16 shouldNotBe FloatingPointArithmetic.float
             FloatingPointArithmetic.float shouldNotBe FloatingPointArithmetic.double
-            FloatingPointArithmetic.float16 shouldNotBe FloatingPointArithmetic.double
+            FloatingPointArithmetic.bfloat16 shouldNotBe FloatingPointArithmetic.double
         }
     }
 })
