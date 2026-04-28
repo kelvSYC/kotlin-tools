@@ -195,6 +195,25 @@ interface DecimalFloatingPoint<T> {
      * @see FloatingPointSign for the distinction between a sign-bit flip and arithmetic negation.
      */
     val sign: FloatingPointSign<T>
+
+    /**
+     * Encoding-level predicates for this format: [DecimalFloatingPointEncoding.isCanonical],
+     * [DecimalFloatingPointEncoding.canonical], [DecimalFloatingPointEncoding.isQuietNaN], and
+     * [DecimalFloatingPointEncoding.isSignalingNaN].
+     *
+     * Non-canonical encodings arise in the large-significand BID path (significand > `10^p − 1`) and from
+     * undefined DPD declet patterns. Arithmetic operations canonicalize inputs before computing results.
+     */
+    val encoding: DecimalFloatingPointEncoding<T>
+
+    /**
+     * Cohort operations for this format: [DecimalFloatingPointCohorts.reduce],
+     * [DecimalFloatingPointCohorts.quantum], and [DecimalFloatingPointCohorts.quantize].
+     *
+     * A *cohort* is the set of all finite bit patterns representing the same mathematical value. Cohort
+     * operations manipulate the quantum exponent of a value without changing its mathematical meaning.
+     */
+    val cohorts: DecimalFloatingPointCohorts<T>
 }
 
 /**

@@ -1,13 +1,41 @@
 package com.kelvsyc.kotlin.core
 
 import com.kelvsyc.kotlin.core.traits.Bid32
+import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointCohorts
+import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointEncoding
 import com.kelvsyc.kotlin.core.traits.FloatingPointSign
 import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
 import com.kelvsyc.kotlin.core.traits.ValueEquality
 import com.kelvsyc.kotlin.core.PartialComparator
 
-// Powers of 10 used when scaling significands for comparison. Index is the exponent difference (0..6).
-private val DECIMAL32_POW10 = longArrayOf(1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L)
+// Powers of 10 used when scaling significands for comparison and cohort operations. Index 0..8.
+private val DECIMAL32_POW10 = longArrayOf(1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L, 100_000_000L)
+
+/**
+ * Packs a biased exponent and a significand into the lower 31 bits of a [BidFloat] word (sign excluded).
+ *
+ * Uses the normal encoding path when `sig < 2^23`, and the large-significand path otherwise.
+ */
+private fun bidPack(biasedExp: Int, sig: Int): Int {
+    return if (sig < 0x800000) {
+        val combination = (biasedExp shl 3) or (sig ushr 20)
+        val continuation = sig and 0xFFFFF
+        (combination shl 20) or continuation
+    } else {
+        val combination = 0x600 or (biasedExp shl 1) or ((sig ushr 20) and 1)
+        val low21 = sig and 0x1FFFFF
+        (combination shl 20) or low21
+    }
+}
+
+private fun bidRoundHalfEven(trunc: Long, rem: Long, div: Long): Long {
+    val half = div / 2L
+    return when {
+        rem > half -> trunc + 1L
+        rem < half -> trunc
+        else -> if (trunc % 2L == 0L) trunc else trunc + 1L
+    }
+}
 
 /**
  * Compares two positive finite [BidFloat] values without normalising first.
@@ -182,6 +210,84 @@ value class BidFloat(val bits: Int) {
             // Replace sign bit with that of other: clear own sign bit, OR in other's sign bit.
             override fun BidFloat.copySign(other: BidFloat): BidFloat =
                 BidFloat((bits and Int.MAX_VALUE) or (other.bits and Int.MIN_VALUE))
+        }
+
+        override val encoding: DecimalFloatingPointEncoding<BidFloat> = object : DecimalFloatingPointEncoding<BidFloat> {
+            // G[5] is combination bit 5. NaN canonical: G[5]=1 (quiet), no payload in combination or continuation.
+            // For NaN, combination[10..6]=11111 (0x7C0). Quiet NaN: combination[5]=1 → combination & 0x3F == 0x20.
+            // Canonical NaN: combination == 0x7E0 (11111 1 00000) and continuation == 0.
+            override fun BidFloat.isCanonical(): Boolean {
+                if (isNaN()) return combination == 0x7E0 && continuation == 0
+                if (isInfinite()) return true
+                // Large-significand encoding: significand = 0x800000 | low21; non-canonical if > 9,999,999.
+                return (combination ushr 9) != 3 || significand <= 9_999_999
+            }
+
+            override fun BidFloat.canonical(): BidFloat {
+                if (isCanonical()) return this
+                val signBit = if (sign) Int.MIN_VALUE else 0
+                // Non-canonical NaN → canonical quiet NaN (sign preserved).
+                if (isNaN()) return BidFloat(signBit or 0x7E000000)
+                // Non-canonical finite (large-sig significand > 9,999,999) → ±zero.
+                return BidFloat(signBit)
+            }
+
+            // G[5] = combination bit 5. NaN with G[5]=1 is quiet.
+            override fun BidFloat.isQuietNaN(): Boolean = isNaN() && (combination and 0x20) != 0
+            override fun BidFloat.isSignalingNaN(): Boolean = isNaN() && (combination and 0x20) == 0
+        }
+
+        override val cohorts: DecimalFloatingPointCohorts<BidFloat> = object : DecimalFloatingPointCohorts<BidFloat> {
+            override fun BidFloat.reduce(): BidFloat {
+                if (isNaN() || isInfinite()) return this
+                val signBit = if (sign) Int.MIN_VALUE else 0
+                // Zero: preferred exponent 0 (biasedExp = 101), per IEEE 754-2008 §5.3.3.
+                if (isZero()) return BidFloat(signBit or bidPack(101, 0))
+                var sig = significand
+                var biasedExp = biasedExponent
+                while (sig % 10 == 0 && biasedExp < 191) { sig /= 10; biasedExp++ }
+                return BidFloat(signBit or bidPack(biasedExp, sig))
+            }
+
+            override fun BidFloat.quantum(): BidFloat {
+                if (isNaN() || isInfinite()) return this
+                val signBit = if (sign) Int.MIN_VALUE else 0
+                return BidFloat(signBit or bidPack(biasedExponent, 1))
+            }
+
+            override fun BidFloat.quantize(quantum: BidFloat): BidFloat {
+                if (isNaN() || quantum.isNaN() || quantum.isInfinite() || isInfinite()) return NaN
+                val signBit = if (sign) Int.MIN_VALUE else 0
+                val targetExp = quantum.biasedExponent
+                if (isZero()) return BidFloat(signBit or bidPack(targetExp, 0))
+
+                val expDiff = targetExp - biasedExponent
+                var sig = significand.toLong()
+
+                when {
+                    expDiff == 0 -> { /* no scaling */ }
+                    expDiff > 0 -> {
+                        // Scale down: divide significand by 10^expDiff, round half-to-even.
+                        if (expDiff > 7) {
+                            sig = 0L
+                        } else {
+                            val divisor = DECIMAL32_POW10[expDiff]
+                            sig = bidRoundHalfEven(sig / divisor, sig % divisor, divisor)
+                        }
+                    }
+                    else -> {
+                        // Scale up: multiply significand by 10^(-expDiff).
+                        val scale = -expDiff
+                        if (scale > 7) return NaN  // cannot represent — too many digits
+                        sig *= DECIMAL32_POW10[scale]
+                        if (sig > 9_999_999L) return NaN  // overflow in significand digits
+                    }
+                }
+
+                if (sig == 0L) return BidFloat(signBit or bidPack(targetExp, 0))
+                if (targetExp > 191 || targetExp < 0) return NaN  // exponent out of range
+                return BidFloat(signBit or bidPack(targetExp, sig.toInt()))
+            }
         }
     }
 

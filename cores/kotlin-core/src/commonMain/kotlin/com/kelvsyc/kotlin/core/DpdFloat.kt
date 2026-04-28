@@ -1,12 +1,16 @@
 package com.kelvsyc.kotlin.core
 
+import com.kelvsyc.kotlin.core.fp.encodeDeclet
+import com.kelvsyc.kotlin.core.fp.packDpd
+import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointCohorts
+import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointEncoding
 import com.kelvsyc.kotlin.core.traits.Dpd32
 import com.kelvsyc.kotlin.core.traits.FloatingPointSign
 import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
 import com.kelvsyc.kotlin.core.traits.ValueEquality
 
-// Powers of 10 indexed by exponent (0..6), used when comparing scaled significands.
-private val DECIMAL32_POW10 = longArrayOf(1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L)
+// Powers of 10 indexed by exponent (0..7), used when comparing and scaling significands.
+private val DECIMAL32_POW10 = longArrayOf(1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L)
 
 /**
  * Decodes a 10-bit DPD declet into a 3-digit decimal value (0–999).
@@ -231,6 +235,90 @@ value class DpdFloat(val bits: Int) {
             override fun DpdFloat.abs(): DpdFloat = DpdFloat(bits and Int.MAX_VALUE)
             override fun DpdFloat.copySign(other: DpdFloat): DpdFloat =
                 DpdFloat((bits and Int.MAX_VALUE) or (other.bits and Int.MIN_VALUE))
+        }
+
+        override val encoding: DecimalFloatingPointEncoding<DpdFloat> = object : DecimalFloatingPointEncoding<DpdFloat> {
+            // A declet is non-canonical when b[3:1]=111 (case 4), b[9:8]=11 (all-large sub-case),
+            // and b[6:5] != 00 (don't-care bits are set — the 24 undefined patterns).
+            private fun isNonCanonicalDeclet(d: Int): Boolean =
+                (d and 0xE) == 0xE && (d and 0x300) == 0x300 && (d and 0x60) != 0
+
+            override fun DpdFloat.isCanonical(): Boolean {
+                if (isNaN()) return combination == 0x7E0 && continuation == 0
+                if (isInfinite()) return true
+                return !isNonCanonicalDeclet(declet1) && !isNonCanonicalDeclet(declet2)
+            }
+
+            override fun DpdFloat.canonical(): DpdFloat {
+                if (isCanonical()) return this
+                val signBit = if (sign) Int.MIN_VALUE else 0
+                if (isNaN()) return DpdFloat(signBit or 0x7E000000)
+                return DpdFloat(signBit)
+            }
+
+            override fun DpdFloat.isQuietNaN(): Boolean = isNaN() && (combination and 0x20) != 0
+            override fun DpdFloat.isSignalingNaN(): Boolean = isNaN() && (combination and 0x20) == 0
+        }
+
+        override val cohorts: DecimalFloatingPointCohorts<DpdFloat> = object : DecimalFloatingPointCohorts<DpdFloat> {
+            private fun dpdRepack(sign: Boolean, biasedExp: Int, sig: Int): DpdFloat {
+                val signBit = if (sign) Int.MIN_VALUE else 0
+                val ld = sig / 1_000_000
+                val rem = sig % 1_000_000
+                return DpdFloat(signBit or packDpd(biasedExp, ld, encodeDeclet(rem / 1_000), encodeDeclet(rem % 1_000)))
+            }
+
+            override fun DpdFloat.reduce(): DpdFloat {
+                if (isNaN() || isInfinite()) return this
+                if (isZero()) return dpdRepack(sign, 101, 0)  // preferred exponent 0 → biasedExp=101
+                var sig = significand
+                var biasedExp = biasedExponent
+                while (sig % 10 == 0 && biasedExp < 191) { sig /= 10; biasedExp++ }
+                return dpdRepack(sign, biasedExp, sig)
+            }
+
+            override fun DpdFloat.quantum(): DpdFloat {
+                if (isNaN() || isInfinite()) return this
+                return dpdRepack(sign, biasedExponent, 1)
+            }
+
+            override fun DpdFloat.quantize(quantum: DpdFloat): DpdFloat {
+                if (isNaN() || quantum.isNaN() || quantum.isInfinite() || isInfinite()) return NaN
+                val targetExp = quantum.biasedExponent
+                if (isZero()) return dpdRepack(sign, targetExp, 0)
+
+                val expDiff = targetExp - biasedExponent
+                var sig = significand.toLong()
+
+                when {
+                    expDiff == 0 -> { /* no scaling */ }
+                    expDiff > 0 -> {
+                        if (expDiff > 7) {
+                            sig = 0L
+                        } else {
+                            val divisor = DECIMAL32_POW10[expDiff]
+                            val half = divisor / 2L
+                            val trunc = sig / divisor
+                            val rem = sig % divisor
+                            sig = when {
+                                rem > half -> trunc + 1L
+                                rem < half -> trunc
+                                else -> if (trunc % 2L == 0L) trunc else trunc + 1L
+                            }
+                        }
+                    }
+                    else -> {
+                        val scale = -expDiff
+                        if (scale > 7) return NaN
+                        sig *= DECIMAL32_POW10[scale]
+                        if (sig > 9_999_999L) return NaN
+                    }
+                }
+
+                if (sig == 0L) return dpdRepack(sign, targetExp, 0)
+                if (targetExp > 191 || targetExp < 0) return NaN
+                return dpdRepack(sign, targetExp, sig.toInt())
+            }
         }
     }
 

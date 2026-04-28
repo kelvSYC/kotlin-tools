@@ -122,7 +122,7 @@ fun FiniteDecimalFloatingPoint<UInt>.toBidFloat(): BidFloat {
  * used in [DpdFloat.declet1] / [DpdFloat.declet2]. The result is always a canonical (non-redundant)
  * declet: the don't-care bits in the all-large-digit sub-case are set to zero.
  */
-private fun encodeDeclet(v: Int): Int {
+internal fun encodeDeclet(v: Int): Int {
     val d3 = v % 10; val d2 = (v / 10) % 10; val d1 = v / 100
     val p = d1 >= 8; val q = d2 >= 8; val r = d3 >= 8
     return when {
@@ -163,7 +163,7 @@ private fun encodeDeclet(v: Int): Int {
  * Packs a biased exponent and a leading digit into the DPD combination field (sign excluded),
  * then combines with the two pre-encoded declets to form the lower 31 bits of a [DpdFloat].
  */
-private fun packDpd(biasedExp: Int, leadingDigit: Int, declet1: Int, declet2: Int): Int {
+internal fun packDpd(biasedExp: Int, leadingDigit: Int, declet1: Int, declet2: Int): Int {
     val combination = if (leadingDigit < 8) {
         (biasedExp shl 3) or leadingDigit
     } else {
