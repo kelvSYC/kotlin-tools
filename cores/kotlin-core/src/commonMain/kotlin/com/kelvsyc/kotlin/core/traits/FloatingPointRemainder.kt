@@ -28,18 +28,8 @@ interface FloatingPointRemainder<T> {
 }
 
 // ── IEEE 754 remainder helpers ────────────────────────────────────────────────
-// IEEE 754 remainder: r = x - round(x/y)*y, where round uses round-half-to-even.
-// kotlin.math.round rounds to nearest even, which matches the IEEE 754 specification.
-
-private fun ieee754RemFloat(x: Float, y: Float): Float {
-    val q = kotlin.math.round(x / y)
-    return x - q * y
-}
-
-private fun ieee754RemDouble(x: Double, y: Double): Double {
-    val q = kotlin.math.round(x / y)
-    return x - q * y
-}
+// Declared as expect in FloatingPointRemainderPlatform.kt; platform actuals
+// supply hardware-backed implementations where available.
 
 // ── BFloat16 ─────────────────────────────────────────────────────────────────
 
