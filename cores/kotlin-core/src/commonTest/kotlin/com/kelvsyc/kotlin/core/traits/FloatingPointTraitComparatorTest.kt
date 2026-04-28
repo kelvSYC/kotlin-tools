@@ -12,16 +12,13 @@ import io.kotest.matchers.shouldBe
  * Verifies that [BinaryFloatingPoint.comparator] and [BinaryFloatingPoint.partialComparator] are
  * correctly implemented for each format's companion, and that [DecimalFloatingPoint.comparator]
  * and [DecimalFloatingPoint.partialComparator] work for [BidFloat].
- *
- * These tests exercise the trait interface rather than the concrete companions directly, ensuring the
- * correct properties are exposed through the right abstraction.
  */
 class FloatingPointTraitComparatorTest : FunSpec({
 
-    // ── Binary16 (Float16) ────────────────────────────────────────────────────
+    // ── Float16 (binary16) ────────────────────────────────────────────────────
 
-    context("Binary16.comparator") {
-        val trait: BinaryFloatingPoint<Float16> = Binary16
+    context("Float16.comparator") {
+        val trait: Binary16<Float16> = Float16
         val cmp = trait.comparator
 
         test("NaN is ordered after finite values") {
@@ -38,8 +35,8 @@ class FloatingPointTraitComparatorTest : FunSpec({
         }
     }
 
-    context("Binary16.partialComparator") {
-        val trait: BinaryFloatingPoint<Float16> = Binary16
+    context("Float16.partialComparator") {
+        val trait: Binary16<Float16> = Float16
         val pcmp = trait.partialComparator
 
         test("NaN vs finite returns null") {
@@ -56,10 +53,10 @@ class FloatingPointTraitComparatorTest : FunSpec({
         }
     }
 
-    // ── BinaryBFloat16 (BFloat16) ─────────────────────────────────────────────
+    // ── BFloat16 (bfloat16) ───────────────────────────────────────────────────
 
-    context("BinaryBFloat16.comparator") {
-        val trait: BinaryFloatingPoint<BFloat16> = BinaryBFloat16
+    context("BFloat16.comparator") {
+        val trait: BinaryBFloat16<BFloat16> = BFloat16
         val cmp = trait.comparator
 
         test("NaN is ordered after finite values") {
@@ -76,8 +73,8 @@ class FloatingPointTraitComparatorTest : FunSpec({
         }
     }
 
-    context("BinaryBFloat16.partialComparator") {
-        val trait: BinaryFloatingPoint<BFloat16> = BinaryBFloat16
+    context("BFloat16.partialComparator") {
+        val trait: BinaryBFloat16<BFloat16> = BFloat16
         val pcmp = trait.partialComparator
 
         test("NaN vs finite returns null") {

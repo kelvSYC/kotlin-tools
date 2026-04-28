@@ -1,7 +1,5 @@
 package com.kelvsyc.kotlin.core.traits
 
-import com.kelvsyc.kotlin.core.BFloat16
-import com.kelvsyc.kotlin.core.Float16
 import com.kelvsyc.kotlin.core.PartialComparator
 
 /**
@@ -170,52 +168,6 @@ interface Binary16<T> : BinaryFloatingPoint<T> {
     override val exponentBias: Int get() = 15
     override val significandTraits: UInt16<UShort>
 
-    companion object : Binary16<Float16> {
-        override val significandTraits: UInt16<UShort> get() = UInt16
-
-        override val numericalEquality: ValueEquality<Float16> = object : ValueEquality<Float16> {
-            // Float16 has no statically-typed ==, so widen to Float where IEEE 754 == applies.
-            override fun Float16.isEqualTo(other: Float16): Boolean = toFloat() == other.toFloat()
-        }
-
-        override val equivalenceEquality: ValueEquality<Float16> = object : ValueEquality<Float16> {
-            override fun Float16.isEqualTo(other: Float16): Boolean = Float16.equalTo(this, other)
-        }
-
-        override val positiveInfinity: Float16 get() = Float16.POSITIVE_INFINITY
-        override val negativeInfinity: Float16 get() = Float16.NEGATIVE_INFINITY
-        override val positiveZero: Float16 get() = Float16(0)
-        override val negativeZero: Float16 get() = Float16(0x8000.toShort())
-        override val maxValue: Float16 get() = Float16.MAX_VALUE
-        override val minValue: Float16 get() = Float16.MIN_VALUE
-        override val NaN: Float16 get() = Float16.NaN
-        override val minNormal: Float16 get() = Float16.MIN_NORMAL
-        override val epsilon: Float16 get() = Float16.EPSILON
-        override val comparator: Comparator<Float16> get() = Float16.comparator
-        override val partialComparator: PartialComparator<Float16> get() = Float16.partialComparator
-
-        // Float16 exposes all predicates as member functions; calling this.foo() inside an
-        // override of the same name resolves to the member function (no recursion).
-        override val classification: IeeeFloatingPointClassification<Float16> =
-            object : IeeeFloatingPointClassification<Float16> {
-                override fun Float16.isNaN(): Boolean = this.isNaN()
-                override fun Float16.isInfinite(): Boolean = this.isInfinite()
-                override fun Float16.isFinite(): Boolean = this.isFinite()
-                override fun Float16.isZero(): Boolean = this.isZero()
-                override fun Float16.isNormal(): Boolean = this.isNormal()
-                override fun Float16.isSubnormal(): Boolean = this.isSubnormal()
-            }
-
-        override val sign: FloatingPointSign<Float16> = object : FloatingPointSign<Float16> {
-            // All operations use bit-level methods on the backing Short.
-            override fun Float16.isNegative(): Boolean = this.sign
-            override fun Float16.negate(): Float16 = -this
-            override fun Float16.abs(): Float16 = this.abs()
-            // Bit manipulation avoids name-shadowing by the trait's own member extension copySign.
-            override fun Float16.copySign(other: Float16): Float16 =
-                Float16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
-        }
-    }
 }
 
 // ── BinaryBFloat16 (BFloat16) ─────────────────────────────────────────────────
@@ -233,50 +185,6 @@ interface BinaryBFloat16<T> : BinaryFloatingPoint<T> {
     override val exponentBias: Int get() = 127
     override val significandTraits: UInt16<UShort>
 
-    companion object : BinaryBFloat16<BFloat16> {
-        override val significandTraits: UInt16<UShort> get() = UInt16
-
-        override val numericalEquality: ValueEquality<BFloat16> = object : ValueEquality<BFloat16> {
-            // BFloat16 has no statically-typed ==, so widen to Float where IEEE 754 == applies.
-            override fun BFloat16.isEqualTo(other: BFloat16): Boolean = toFloat() == other.toFloat()
-        }
-
-        override val equivalenceEquality: ValueEquality<BFloat16> = object : ValueEquality<BFloat16> {
-            override fun BFloat16.isEqualTo(other: BFloat16): Boolean = BFloat16.equalTo(this, other)
-        }
-
-        override val positiveInfinity: BFloat16 get() = BFloat16.POSITIVE_INFINITY
-        override val negativeInfinity: BFloat16 get() = BFloat16.NEGATIVE_INFINITY
-        override val positiveZero: BFloat16 get() = BFloat16(0)
-        override val negativeZero: BFloat16 get() = BFloat16(0x8000.toShort())
-        override val maxValue: BFloat16 get() = BFloat16.MAX_VALUE
-        override val minValue: BFloat16 get() = BFloat16.MIN_VALUE
-        override val NaN: BFloat16 get() = BFloat16.NaN
-        override val minNormal: BFloat16 get() = BFloat16.MIN_NORMAL
-        override val epsilon: BFloat16 get() = BFloat16.EPSILON
-        override val comparator: Comparator<BFloat16> get() = BFloat16.comparator
-        override val partialComparator: PartialComparator<BFloat16> get() = BFloat16.partialComparator
-
-        // BFloat16 exposes all predicates as member functions; same reasoning as Binary16.
-        override val classification: IeeeFloatingPointClassification<BFloat16> =
-            object : IeeeFloatingPointClassification<BFloat16> {
-                override fun BFloat16.isNaN(): Boolean = this.isNaN()
-                override fun BFloat16.isInfinite(): Boolean = this.isInfinite()
-                override fun BFloat16.isFinite(): Boolean = this.isFinite()
-                override fun BFloat16.isZero(): Boolean = this.isZero()
-                override fun BFloat16.isNormal(): Boolean = this.isNormal()
-                override fun BFloat16.isSubnormal(): Boolean = this.isSubnormal()
-            }
-
-        override val sign: FloatingPointSign<BFloat16> = object : FloatingPointSign<BFloat16> {
-            // All operations use bit-level methods on the backing Short.
-            override fun BFloat16.isNegative(): Boolean = this.sign
-            override fun BFloat16.negate(): BFloat16 = -this
-            override fun BFloat16.abs(): BFloat16 = this.abs()
-            override fun BFloat16.copySign(other: BFloat16): BFloat16 =
-                BFloat16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
-        }
-    }
 }
 
 // ── Binary32 (Float) ──────────────────────────────────────────────────────────

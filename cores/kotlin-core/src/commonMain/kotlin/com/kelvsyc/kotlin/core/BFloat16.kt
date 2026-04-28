@@ -1,5 +1,10 @@
 package com.kelvsyc.kotlin.core
 
+import com.kelvsyc.kotlin.core.traits.BinaryBFloat16
+import com.kelvsyc.kotlin.core.traits.FloatingPointSign
+import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
+import com.kelvsyc.kotlin.core.traits.UInt16
+import com.kelvsyc.kotlin.core.traits.ValueEquality
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -25,7 +30,9 @@ import kotlin.math.sqrt
  */
 @JvmInline
 value class BFloat16(val bits: Short) {
-    companion object {
+    companion object : BinaryBFloat16<BFloat16> {
+        override val significandTraits: UInt16<UShort> get() = UInt16
+
         /**
          * [Converter] used to convert between `Float` values and the bits of a `BFloat16`.
          *
@@ -63,18 +70,26 @@ value class BFloat16(val bits: Short) {
             }
         )
 
+        override val numericalEquality: ValueEquality<BFloat16> = object : ValueEquality<BFloat16> {
+            override fun BFloat16.isEqualTo(other: BFloat16): Boolean = toFloat() == other.toFloat()
+        }
+
+        override val equivalenceEquality: ValueEquality<BFloat16> = object : ValueEquality<BFloat16> {
+            override fun BFloat16.isEqualTo(other: BFloat16): Boolean = equalTo(this, other)
+        }
+
         /**
          * [Comparator] implementation used to compare `BFloat16` values by widening them to [Float] and performing
          * the comparison as [Float] values.
          */
-        val comparator: Comparator<BFloat16> = compareBy { it.toFloat() }
+        override val comparator: Comparator<BFloat16> = compareBy { it.toFloat() }
 
         /**
          * [PartialComparator] implementation for `BFloat16` values that returns `null` when either operand is NaN,
          * reflecting the IEEE 754 rule that NaN is unordered with respect to every value including itself.
          * Non-NaN values are compared by widening to [Float].
          */
-        val partialComparator: PartialComparator<BFloat16> = PartialComparator { a, b ->
+        override val partialComparator: PartialComparator<BFloat16> = PartialComparator { a, b ->
             if (a.isNaN() || b.isNaN()) null else comparator.compare(a, b)
         }
 
@@ -124,7 +139,7 @@ value class BFloat16(val bits: Short) {
         fun max(a: BFloat16, b: BFloat16): BFloat16 = BFloat16(kotlin.math.max(a.toFloat(), b.toFloat()))
 
         /** A canonical quiet NaN value. Note that there are 63 other NaN bit patterns; see [equalTo]. */
-        val NaN: BFloat16 = BFloat16(0x7FC0.toShort())
+        override val NaN: BFloat16 = BFloat16(0x7FC0.toShort())
 
         /** Positive infinity. */
         val POSITIVE_INFINITY: BFloat16 = BFloat16(0x7F80.toShort())
@@ -155,6 +170,33 @@ value class BFloat16(val bits: Short) {
          * This is the machine epsilon for `BFloat16`: the relative precision of the format near 1.0.
          */
         val EPSILON: BFloat16 = BFloat16(0x3C00.toShort())
+
+        override val positiveInfinity: BFloat16 get() = POSITIVE_INFINITY
+        override val negativeInfinity: BFloat16 get() = NEGATIVE_INFINITY
+        override val positiveZero: BFloat16 get() = BFloat16(0)
+        override val negativeZero: BFloat16 get() = BFloat16(0x8000.toShort())
+        override val maxValue: BFloat16 get() = MAX_VALUE
+        override val minValue: BFloat16 get() = MIN_VALUE
+        override val minNormal: BFloat16 get() = MIN_NORMAL
+        override val epsilon: BFloat16 get() = EPSILON
+
+        override val classification: IeeeFloatingPointClassification<BFloat16> =
+            object : IeeeFloatingPointClassification<BFloat16> {
+                override fun BFloat16.isNaN(): Boolean = this.isNaN()
+                override fun BFloat16.isInfinite(): Boolean = this.isInfinite()
+                override fun BFloat16.isFinite(): Boolean = this.isFinite()
+                override fun BFloat16.isZero(): Boolean = this.isZero()
+                override fun BFloat16.isNormal(): Boolean = this.isNormal()
+                override fun BFloat16.isSubnormal(): Boolean = this.isSubnormal()
+            }
+
+        override val sign: FloatingPointSign<BFloat16> = object : FloatingPointSign<BFloat16> {
+            override fun BFloat16.isNegative(): Boolean = this.sign
+            override fun BFloat16.negate(): BFloat16 = -this
+            override fun BFloat16.abs(): BFloat16 = this.abs()
+            override fun BFloat16.copySign(other: BFloat16): BFloat16 =
+                BFloat16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
+        }
     }
 
     /**

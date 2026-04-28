@@ -8,10 +8,10 @@ import io.kotest.matchers.shouldBe
 
 class FloatingPointClassificationTest : FunSpec({
 
-    // ── Binary16 (Float16) ────────────────────────────────────────────────────
+    // ── Float16 (binary16) ────────────────────────────────────────────────────
 
-    context("Binary16.Companion classification") {
-        val cls = Binary16.classification
+    context("Float16.Companion classification") {
+        val cls = Float16.classification
 
         context("isNaN") {
             test("NaN returns true") {
@@ -107,8 +107,8 @@ class FloatingPointClassificationTest : FunSpec({
         }
     }
 
-    context("Binary16.Companion sign") {
-        val sgn = Binary16.sign
+    context("Float16.Companion sign") {
+        val sgn = Float16.sign
 
         context("isNegative") {
             test("negative value returns true") {
@@ -197,10 +197,10 @@ class FloatingPointClassificationTest : FunSpec({
         }
     }
 
-    // ── BinaryBFloat16 (BFloat16) ─────────────────────────────────────────────
+    // ── BFloat16 (bfloat16) ───────────────────────────────────────────────────
 
-    context("BinaryBFloat16.Companion classification") {
-        val cls = BinaryBFloat16.classification
+    context("BFloat16.Companion classification") {
+        val cls = BFloat16.classification
 
         context("isNaN") {
             test("NaN returns true") {
@@ -297,8 +297,8 @@ class FloatingPointClassificationTest : FunSpec({
         }
     }
 
-    context("BinaryBFloat16.Companion sign") {
-        val sgn = BinaryBFloat16.sign
+    context("BFloat16.Companion sign") {
+        val sgn = BFloat16.sign
 
         context("isNegative") {
             test("negative value returns true") {

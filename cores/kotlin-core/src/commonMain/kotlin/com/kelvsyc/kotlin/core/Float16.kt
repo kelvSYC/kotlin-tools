@@ -1,5 +1,10 @@
 package com.kelvsyc.kotlin.core
 
+import com.kelvsyc.kotlin.core.traits.Binary16
+import com.kelvsyc.kotlin.core.traits.FloatingPointSign
+import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
+import com.kelvsyc.kotlin.core.traits.UInt16
+import com.kelvsyc.kotlin.core.traits.ValueEquality
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -28,7 +33,9 @@ import kotlin.math.sqrt
  */
 @JvmInline
 value class Float16(val bits: Short) {
-    companion object {
+    companion object : Binary16<Float16> {
+        override val significandTraits: UInt16<UShort> get() = UInt16
+
         /**
          * [Converter] used to convert between `Float` values and the bits of a `Float16`.
          *
@@ -105,18 +112,26 @@ value class Float16(val bits: Short) {
             }
         )
 
+        override val numericalEquality: ValueEquality<Float16> = object : ValueEquality<Float16> {
+            override fun Float16.isEqualTo(other: Float16): Boolean = toFloat() == other.toFloat()
+        }
+
+        override val equivalenceEquality: ValueEquality<Float16> = object : ValueEquality<Float16> {
+            override fun Float16.isEqualTo(other: Float16): Boolean = equalTo(this, other)
+        }
+
         /**
          * [Comparator] implementation used to compare `Float16` values by widening them to [Float] and performing the
          * comparison as [Float] values.
          */
-        val comparator: Comparator<Float16> = compareBy { it.toFloat() }
+        override val comparator: Comparator<Float16> = compareBy { it.toFloat() }
 
         /**
          * [PartialComparator] implementation for `Float16` values that returns `null` when either operand is NaN,
          * reflecting the IEEE 754 rule that NaN is unordered with respect to every value including itself.
          * Non-NaN values are compared by widening to [Float].
          */
-        val partialComparator: PartialComparator<Float16> = PartialComparator { a, b ->
+        override val partialComparator: PartialComparator<Float16> = PartialComparator { a, b ->
             if (a.isNaN() || b.isNaN()) null else comparator.compare(a, b)
         }
 
@@ -171,7 +186,7 @@ value class Float16(val bits: Short) {
         fun max(a: Float16, b: Float16): Float16 = Float16(kotlin.math.max(a.toFloat(), b.toFloat()))
 
         /** A canonical quiet NaN value. Note that there are 1023 other NaN bit patterns; see [equalTo]. */
-        val NaN: Float16 = Float16(0x7E00.toShort())
+        override val NaN: Float16 = Float16(0x7E00.toShort())
 
         /** Positive infinity: a value greater than [MAX_VALUE]. */
         val POSITIVE_INFINITY: Float16 = Float16(0x7C00.toShort())
@@ -202,6 +217,33 @@ value class Float16(val bits: Short) {
          * This is the machine epsilon for `Float16`: the relative precision of the format near 1.0.
          */
         val EPSILON: Float16 = Float16(0x1400.toShort())
+
+        override val positiveInfinity: Float16 get() = POSITIVE_INFINITY
+        override val negativeInfinity: Float16 get() = NEGATIVE_INFINITY
+        override val positiveZero: Float16 get() = Float16(0)
+        override val negativeZero: Float16 get() = Float16(0x8000.toShort())
+        override val maxValue: Float16 get() = MAX_VALUE
+        override val minValue: Float16 get() = MIN_VALUE
+        override val minNormal: Float16 get() = MIN_NORMAL
+        override val epsilon: Float16 get() = EPSILON
+
+        override val classification: IeeeFloatingPointClassification<Float16> =
+            object : IeeeFloatingPointClassification<Float16> {
+                override fun Float16.isNaN(): Boolean = this.isNaN()
+                override fun Float16.isInfinite(): Boolean = this.isInfinite()
+                override fun Float16.isFinite(): Boolean = this.isFinite()
+                override fun Float16.isZero(): Boolean = this.isZero()
+                override fun Float16.isNormal(): Boolean = this.isNormal()
+                override fun Float16.isSubnormal(): Boolean = this.isSubnormal()
+            }
+
+        override val sign: FloatingPointSign<Float16> = object : FloatingPointSign<Float16> {
+            override fun Float16.isNegative(): Boolean = this.sign
+            override fun Float16.negate(): Float16 = -this
+            override fun Float16.abs(): Float16 = this.abs()
+            override fun Float16.copySign(other: Float16): Float16 =
+                Float16(((bits.toInt() and 0x7FFF) or (other.bits.toInt() and 0x8000)).toShort())
+        }
     }
 
     /**
