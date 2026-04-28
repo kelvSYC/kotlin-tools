@@ -3,35 +3,14 @@ package com.kelvsyc.kotlin.core.traits
 import com.kelvsyc.kotlin.core.PartialComparator
 
 /**
- * `BinaryFloatingPoint` is a trait type that contains metadata on the type [T] relating to standard binary
- * floating-point numbers.
+ * `BinaryFloatingPoint` is a trait type containing metadata on a type [T] that uses a base-2
+ * floating-point representation.
+ *
+ * This covers both standard IEEE 754 interchange formats (see [IeeeBinaryFloatingPoint]) and
+ * compound formats that achieve higher precision by pairing two IEEE values (see
+ * [DoubleBinaryFloatingPoint]).
  */
 interface BinaryFloatingPoint<T> {
-    /**
-     * The number of bits used to represent the floating-point number
-     */
-    val sizeBits: Int
-
-    /**
-     * The number of bits used to represent the mantissa (significand without the implicit leading 1 bit).
-     */
-    val mantissaBits: Int
-
-    /**
-     * The number of bits used to represent the exponent.
-     */
-    val exponentBits: Int
-
-    /**
-     * The bias value used for the exponent.
-     */
-    val exponentBias: Int
-
-    /**
-     * The type traits for an unsigned integral type that can hold the significand.
-     */
-    val significandTraits: UnsignedIntegral<*>
-
     /**
      * Value equality suitable for numerical comparisons.
      *
@@ -44,7 +23,7 @@ interface BinaryFloatingPoint<T> {
      * Value equality suitable for use in collections and as an equivalence relation.
      *
      * All NaN payloads are considered equal to each other, and positive zero is not equal to
-     * negative zero. This follows [Float.equals] semantics.
+     * negative zero.
      */
     val equivalenceEquality: ValueEquality<T>
 
@@ -76,16 +55,14 @@ interface BinaryFloatingPoint<T> {
 
     /**
      * The largest finite value representable in this format.
-     *
-     * For a format with mantissa bits `p` and maximum unbiased exponent `emax`, this is
-     * `(2 - 2^(-p)) × 2^emax`.
      */
     val maxValue: T
 
     /**
      * The smallest positive value representable in this format.
      *
-     * This is a subnormal value. For the smallest positive *normal* value see [minNormal].
+     * This is a subnormal value. For the smallest positive *normal* value see
+     * [IeeeBinaryFloatingPoint.minNormal].
      */
     val minValue: T
 
@@ -98,18 +75,9 @@ interface BinaryFloatingPoint<T> {
     val NaN: T
 
     /**
-     * The smallest positive normal value representable in this format.
-     *
-     * Values smaller than this are subnormals and have reduced precision. Equal to `2^emin`
-     * where `emin = 1 - emax` is the minimum normal unbiased exponent.
-     */
-    val minNormal: T
-
-    /**
      * The machine epsilon: the difference between 1.0 and the next larger representable value.
      *
-     * Equal to `2^(1-p)` where `p` is the number of significand bits including the implicit
-     * leading 1. This is the relative precision of the format near 1.0.
+     * This is the relative precision of the format near 1.0.
      */
     val epsilon: T
 
@@ -138,6 +106,82 @@ interface BinaryFloatingPoint<T> {
 
     /**
      * Classification predicates for this format, providing `isNaN`, `isInfinite`, `isFinite`,
+     * and `isZero`.
+     *
+     * IEEE 754 interchange formats narrow this to [IeeeFloatingPointClassification], which adds
+     * `isNormal` and `isSubnormal`. Compound formats such as `DoubleDouble` expose only the four
+     * base predicates.
+     */
+    val classification: FloatingPointClassification<T>
+
+    /**
+     * IEEE 754-2008 §5.5.1 copy operations for this format: sign-bit manipulation defined for
+     * all bit patterns, including NaN, infinity, and both zeros.
+     *
+     * For compound types the sign is that of the high component; [FloatingPointSign.negate] must
+     * flip every component to preserve the canonical pair invariant.
+     *
+     * @see FloatingPointSign for the distinction between a sign-bit flip and arithmetic negation.
+     */
+    val sign: FloatingPointSign<T>
+}
+
+/**
+ * `DoubleBinaryFloatingPoint` is a marker trait for compound binary floating-point types that
+ * represent a value as the unevaluated sum of two non-overlapping IEEE values (`high` + `low`).
+ *
+ * This includes `DoubleDouble` (Double + Double, ~106 significant bits) and a hypothetical
+ * `DoubleFloat` (Float + Float, ~46 significant bits). These types provide no fixed exponent
+ * field or significand integer, so the IEEE structural metadata in [IeeeBinaryFloatingPoint]
+ * does not apply.
+ */
+interface DoubleBinaryFloatingPoint<T> : BinaryFloatingPoint<T>
+
+/**
+ * `IeeeBinaryFloatingPoint` is a trait type that contains metadata on the type [T] relating to
+ * standard IEEE 754 binary floating-point numbers.
+ *
+ * Extends [BinaryFloatingPoint] with the structural layout fields that are specific to IEEE 754
+ * interchange formats: bit widths, exponent bias, the significand integer type, and the smallest
+ * normal value. Also narrows [classification] to [IeeeFloatingPointClassification], which adds
+ * `isNormal` and `isSubnormal`.
+ */
+interface IeeeBinaryFloatingPoint<T> : BinaryFloatingPoint<T> {
+    /**
+     * The number of bits used to represent the floating-point number
+     */
+    val sizeBits: Int
+
+    /**
+     * The number of bits used to represent the mantissa (significand without the implicit leading 1 bit).
+     */
+    val mantissaBits: Int
+
+    /**
+     * The number of bits used to represent the exponent.
+     */
+    val exponentBits: Int
+
+    /**
+     * The bias value used for the exponent.
+     */
+    val exponentBias: Int
+
+    /**
+     * The type traits for an unsigned integral type that can hold the significand.
+     */
+    val significandTraits: UnsignedIntegral<*>
+
+    /**
+     * The smallest positive normal value representable in this format.
+     *
+     * Values smaller than this are subnormals and have reduced precision. Equal to `2^emin`
+     * where `emin = 1 - emax` is the minimum normal unbiased exponent.
+     */
+    val minNormal: T
+
+    /**
+     * Classification predicates for this format, providing `isNaN`, `isInfinite`, `isFinite`,
      * `isZero`, `isNormal`, and `isSubnormal`.
      *
      * A value is *normal* when its biased exponent is neither all-zeros nor all-ones — that is,
@@ -145,15 +189,7 @@ interface BinaryFloatingPoint<T> {
      * nor NaN. A value is *subnormal* when the biased exponent is all-zeros and the mantissa is
      * nonzero; such values have reduced precision and no implicit leading bit.
      */
-    val classification: IeeeFloatingPointClassification<T>
-
-    /**
-     * IEEE 754-2008 §5.5.1 copy operations for this format: sign-bit manipulation defined for
-     * all bit patterns, including NaN, infinity, and both zeros.
-     *
-     * @see FloatingPointSign for the distinction between a sign-bit flip and arithmetic negation.
-     */
-    val sign: FloatingPointSign<T>
+    override val classification: IeeeFloatingPointClassification<T>
 }
 
 // ── Binary16 (Float16) ────────────────────────────────────────────────────────
@@ -161,7 +197,7 @@ interface BinaryFloatingPoint<T> {
 /**
  * Trait type containing metadata on standard `binary16` floating-point numbers.
  */
-interface Binary16<T> : BinaryFloatingPoint<T> {
+interface Binary16<T> : IeeeBinaryFloatingPoint<T> {
     override val sizeBits: Int get() = 16
     override val mantissaBits: Int get() = 10
     override val exponentBits: Int get() = 5
@@ -178,7 +214,7 @@ interface Binary16<T> : BinaryFloatingPoint<T> {
  * `bfloat16` shares its 8-bit exponent (bias 127) with `binary32` but truncates the mantissa to 7 bits,
  * giving the same dynamic range as `Float` at reduced precision.
  */
-interface BinaryBFloat16<T> : BinaryFloatingPoint<T> {
+interface BinaryBFloat16<T> : IeeeBinaryFloatingPoint<T> {
     override val sizeBits: Int get() = 16
     override val mantissaBits: Int get() = 7
     override val exponentBits: Int get() = 8
@@ -192,7 +228,7 @@ interface BinaryBFloat16<T> : BinaryFloatingPoint<T> {
 /**
  * Trait type containing metadata on standard `binary32` floating-point numbers.
  */
-interface Binary32<T> : BinaryFloatingPoint<T> {
+interface Binary32<T> : IeeeBinaryFloatingPoint<T> {
     override val sizeBits: Int get() = 32
     override val mantissaBits: Int get() = 23
     override val exponentBits: Int get() = 8
@@ -263,7 +299,7 @@ interface Binary32<T> : BinaryFloatingPoint<T> {
 /**
  * Trait type containing metadata on standard `binary64` floating-point numbers.
  */
-interface Binary64<T> : BinaryFloatingPoint<T> {
+interface Binary64<T> : IeeeBinaryFloatingPoint<T> {
     override val sizeBits: Int get() = 64
     override val mantissaBits: Int get() = 52
     override val exponentBits: Int get() = 11

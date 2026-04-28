@@ -1,6 +1,6 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.BinaryFloatingPoint
+import com.kelvsyc.kotlin.core.traits.IeeeBinaryFloatingPoint
 import com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic
 import com.kelvsyc.kotlin.core.traits.FusedMultiplyAdd
 
@@ -45,7 +45,7 @@ fun <T> TwoProduct.Companion.from(
  * Returns a [TwoProduct] implementation using Veltkamp-Dekker splitting.
  *
  * Splits each operand into two non-overlapping halves using a splitting constant derived from
- * [BinaryFloatingPoint.mantissaBits], then recovers the exact rounding error using only ordinary
+ * [IeeeBinaryFloatingPoint.mantissaBits], then recovers the exact rounding error using only ordinary
  * floating-point arithmetic. Works on all platforms, including JavaScript.
  *
  * Note: intermediate values during splitting are scaled by the splitting constant
@@ -54,7 +54,7 @@ fun <T> TwoProduct.Companion.from(
  */
 fun <T> TwoProduct.Companion.from(
     arith: FloatingPointArithmetic<T>,
-    meta: BinaryFloatingPoint<T>,
+    meta: IeeeBinaryFloatingPoint<T>,
 ): TwoProduct<T> {
     // Precompute the Veltkamp splitting constant: 2^⌈(mantissaBits+1)/2⌉ + 1
     val halfP = (meta.mantissaBits + 2) / 2

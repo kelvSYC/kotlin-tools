@@ -90,8 +90,20 @@ interface DecimalFloatingPoint<T> {
      */
     val negativeInfinity: T
 
+    /**
+     * Positive zero: the additive identity with a clear sign bit.
+     *
+     * Both zeros are equal under [numericalEquality] and under IEEE 754 `==`, but they are
+     * distinct under [equivalenceEquality] and under the total [comparator] (negative zero
+     * compares as strictly less than positive zero).
+     */
     val positiveZero: T
 
+    /**
+     * Negative zero: the additive identity with the sign bit set.
+     *
+     * @see positiveZero
+     */
     val negativeZero: T
 
     /**
@@ -136,7 +148,7 @@ interface DecimalFloatingPoint<T> {
      *
      * For decimal floating-point with `p` significant digits, 1.0 is represented as
      * `10^(p-1) × 10^(1-p)`, and the adjacent value is `(10^(p-1) + 1) × 10^(1-p)`. Their
-     * difference is `10^(1-p)`. For decimal32 (`p = 7`) this is `10^(-6)`.
+     * difference is `10^(1-p)`.
      */
     val epsilon: T
 
@@ -165,6 +177,15 @@ interface DecimalFloatingPoint<T> {
      */
     val partialComparator: PartialComparator<T>
 
+    /**
+     * Classification predicates for this format, providing `isNaN`, `isInfinite`, `isFinite`,
+     * `isZero`, `isNormal`, and `isSubnormal`.
+     *
+     * A value is *normal* when its significand is at least `10^(p-1)` — that is, the leading
+     * decimal digit is nonzero and the full precision of the format is in use. A value is
+     * *subnormal* when the significand is nonzero but less than `10^(p-1)` at the minimum
+     * quantum exponent; such values have reduced precision.
+     */
     val classification: IeeeFloatingPointClassification<T>
 
     /**

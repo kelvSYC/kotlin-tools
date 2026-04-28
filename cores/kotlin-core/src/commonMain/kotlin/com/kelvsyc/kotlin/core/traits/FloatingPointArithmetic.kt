@@ -25,7 +25,7 @@ import com.kelvsyc.kotlin.core.Float16
  * [compareTo] implements a *total* ordering consistent with [Float.compareTo] and [Double.compareTo]. This differs
  * from the IEEE 754 partial order in two ways: NaN is ordered after all finite values and infinities rather than
  * being unordered, and negative zero compares as strictly less than positive zero. Callers that need IEEE 754
- * `compareQuietEqual` semantics should use [BinaryFloatingPoint.numericalEquality] instead.
+ * `compareQuietEqual` semantics should use [IeeeBinaryFloatingPoint.numericalEquality] instead.
  *
  * ## Standard implementations
  *

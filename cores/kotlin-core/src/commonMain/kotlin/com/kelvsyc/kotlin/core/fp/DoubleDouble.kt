@@ -1,7 +1,10 @@
 package com.kelvsyc.kotlin.core.fp
 
 import com.kelvsyc.kotlin.core.PartialComparator
+import com.kelvsyc.kotlin.core.traits.FloatingPointClassification
+import com.kelvsyc.kotlin.core.traits.FloatingPointSign
 import com.kelvsyc.kotlin.core.traits.ValueEquality
+import com.kelvsyc.kotlin.core.traits.DoubleBinaryFloatingPoint as Trait
 
 /**
  * `DoubleDouble` is a non-standard floating-point type that represents a value as the unevaluated sum
@@ -16,19 +19,34 @@ import com.kelvsyc.kotlin.core.traits.ValueEquality
  *
  * Arithmetic operators (`+`, `-`, `*`, `/`) are available on JVM and delegate to
  * `DoubleBinaryFloatingPointArithmetic.doubleDouble` (FMA-backed, sloppy Dekker, ~2p-4 bits of precision).
- * The same instance is available for generic algorithms that operate through the [DoubleBinaryFloatingPoint]
- * typeclass.
+ * The same instance is available for generic algorithms that operate through the `BinaryFloatingPoint`
+ * trait.
  */
 class DoubleDouble internal constructor(override val high: Double, override val low: Double)
     : DoubleBinaryFloatingPoint<Double>, Comparable<DoubleDouble> {
 
-    companion object {
+    companion object : Trait<DoubleDouble> {
+
+        // ── Special values ────────────────────────────────────────────────────
+
         /** Not-a-Number. Equal to itself under [equals]; ordered last under [compareTo]. */
-        val NaN: DoubleDouble = DoubleDouble(Double.NaN, 0.0)
+        override val NaN: DoubleDouble = DoubleDouble(Double.NaN, 0.0)
         val POSITIVE_INFINITY: DoubleDouble = DoubleDouble(Double.POSITIVE_INFINITY, 0.0)
         val NEGATIVE_INFINITY: DoubleDouble = DoubleDouble(Double.NEGATIVE_INFINITY, 0.0)
         val ZERO: DoubleDouble = DoubleDouble(0.0, 0.0)
         val ONE: DoubleDouble = DoubleDouble(1.0, 0.0)
+        override val positiveInfinity: DoubleDouble get() = POSITIVE_INFINITY
+        override val negativeInfinity: DoubleDouble get() = NEGATIVE_INFINITY
+        override val positiveZero: DoubleDouble get() = ZERO
+        override val negativeZero: DoubleDouble = DoubleDouble(-0.0, 0.0)
+        // 2^970 = ulp(Double.MAX_VALUE) / 2, the largest valid low when high = Double.MAX_VALUE.
+        override val maxValue: DoubleDouble = DoubleDouble(Double.MAX_VALUE, Double.fromBits(0x7C90000000000000L))
+        // Smallest positive DoubleDouble: high is the smallest positive subnormal Double, low must be 0.
+        override val minValue: DoubleDouble = DoubleDouble(Double.MIN_VALUE, 0.0)
+        // 2^(-105): DoubleDouble unit roundoff (~2p−2 significant bits, p = 53).
+        override val epsilon: DoubleDouble = DoubleDouble(Double.fromBits(0x3960000000000000L), 0.0)
+
+        // ── Factory ───────────────────────────────────────────────────────────
 
         /**
          * Creates a [DoubleDouble] from an explicit (high, low) pair.
@@ -43,8 +61,10 @@ class DoubleDouble internal constructor(override val high: Double, override val 
             return DoubleDouble(high, low)
         }
 
+        // ── Equality ──────────────────────────────────────────────────────────
+
         /** Numerical equality: NaN is not equal to anything including itself; +0 equals −0. */
-        val numericalEquality: ValueEquality<DoubleDouble> = object : ValueEquality<DoubleDouble> {
+        override val numericalEquality: ValueEquality<DoubleDouble> = object : ValueEquality<DoubleDouble> {
             // isNaN() short-circuits NaN cases; Double == then handles +0 == -0 per IEEE 754.
             override fun DoubleDouble.isEqualTo(other: DoubleDouble): Boolean {
                 if (isNaN() || other.isNaN()) return false
@@ -53,18 +73,43 @@ class DoubleDouble internal constructor(override val high: Double, override val 
         }
 
         /** Equivalence equality: NaN equals NaN; +0 does not equal −0. Consistent with [equals]. */
-        val equivalenceEquality: ValueEquality<DoubleDouble> = object : ValueEquality<DoubleDouble> {
+        override val equivalenceEquality: ValueEquality<DoubleDouble> = object : ValueEquality<DoubleDouble> {
             // DoubleDouble.equals uses Double.equals on each component: NaN == NaN, +0 != -0.
             override fun DoubleDouble.isEqualTo(other: DoubleDouble): Boolean = this == other
         }
+
+        // ── Ordering ──────────────────────────────────────────────────────────
+
+        override val comparator: Comparator<DoubleDouble> = Comparator { a, b -> a.compareTo(b) }
 
         /**
          * [PartialComparator] that returns `null` when either operand is NaN, reflecting the IEEE 754 rule
          * that NaN is unordered with respect to every value including itself. Non-NaN values are ordered by
          * [compareTo].
          */
-        val partialComparator: PartialComparator<DoubleDouble> = PartialComparator { a, b ->
+        override val partialComparator: PartialComparator<DoubleDouble> = PartialComparator { a, b ->
             if (a.isNaN() || b.isNaN()) null else a.compareTo(b)
+        }
+
+        // ── Classification ────────────────────────────────────────────────────
+
+        override val classification: FloatingPointClassification<DoubleDouble> =
+            object : FloatingPointClassification<DoubleDouble> {
+                override fun DoubleDouble.isNaN(): Boolean = high.isNaN()
+                override fun DoubleDouble.isInfinite(): Boolean = high.isInfinite()
+                override fun DoubleDouble.isFinite(): Boolean = high.isFinite()
+                // +0 and -0 both satisfy high == 0.0 under IEEE 754 ==; by the representation
+                // invariant, if high is zero then low must also be zero.
+                override fun DoubleDouble.isZero(): Boolean = high == 0.0
+            }
+
+        // ── Sign ──────────────────────────────────────────────────────────────
+
+        override val sign: FloatingPointSign<DoubleDouble> = object : FloatingPointSign<DoubleDouble> {
+            // Sign is determined entirely by the high component's sign bit.
+            override fun DoubleDouble.isNegative(): Boolean = high.toBits() < 0L
+            // Negate both components to preserve the canonical pair invariant.
+            override fun DoubleDouble.negate(): DoubleDouble = -this
         }
     }
 
