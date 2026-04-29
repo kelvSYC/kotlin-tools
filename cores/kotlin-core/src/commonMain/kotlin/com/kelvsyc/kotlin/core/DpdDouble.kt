@@ -203,7 +203,7 @@ value class DpdDouble(val bits: Long) {
         override val negativeZero: DpdDouble get() = DpdDouble(Long.MIN_VALUE)
         // 9,999,999,999,999,999 × 10^369: leadingDigit=9 (large-sig), biasedExp=767, all five declets=encodeDeclet(999)=0x39F.
         // combination = 0x1800 | (767 shl 1) | 1 = 0x1DFF; bits = packDpd64(767, 9, 0x39F, 0x39F, 0x39F, 0x39F, 0x39F).
-        override val maxValue: DpdDouble get() = DpdDouble(0x77FC_03FF_F9FE_7F9FL)
+        override val maxValue: DpdDouble get() = DpdDouble(0x77FF_9FE7_F9FE_7F9FL)
         // 1 × 10^(-398): leadingDigit=0, declets=(0,0,0,0,1). biasedExp=0, combination=0.
         override val minValue: DpdDouble get() = DpdDouble(1L)
         // 10^15 × 10^(-398) = 10^(-383): leadingDigit=1, declets=(0,0,0,0,0). biasedExp=0, combination=1.
