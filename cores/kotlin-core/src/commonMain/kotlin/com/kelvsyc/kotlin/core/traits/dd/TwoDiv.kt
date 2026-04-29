@@ -12,14 +12,11 @@ import com.kelvsyc.kotlin.core.traits.FusedMultiplyAdd
  * The pair components are ordered `(high, low)` — i.e. `first` is the rounded quotient and `second` is
  * the error correction term.
  *
- * A true FMA is required; without it there is no error-free way to recover `a - q * b` exactly.
- * A factory implementation is available via [Companion.from].
+ * A correctly-rounded FMA is required; without it there is no error-free way to recover `a - q * b` exactly.
+ * A factory implementation is available via [Companion.from]; see [FusedMultiplyAdd.Companion.from] for a
+ * software emulation that satisfies the contract on all platforms.
  */
 interface TwoDiv<T> {
-    /**
-     * Standard instances require a true FMA and are therefore platform-specific.
-     * They are not available in `commonMain`; see the platform source sets for concrete instances.
-     */
     companion object
 
     fun T.twoDiv(other: T): Pair<T, T>

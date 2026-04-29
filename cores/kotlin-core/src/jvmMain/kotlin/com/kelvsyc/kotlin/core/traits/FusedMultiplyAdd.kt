@@ -8,8 +8,8 @@ private val doubleInstance: FusedMultiplyAdd<Double> = object : FusedMultiplyAdd
     override fun fma(a: Double, b: Double, c: Double): Double = Math.fma(a, b, c)
 }
 
-val FusedMultiplyAdd.Companion.float: FusedMultiplyAdd<Float>
+actual val FusedMultiplyAdd.Companion.float: FusedMultiplyAdd<Float>
     get() = floatInstance
 
-val FusedMultiplyAdd.Companion.double: FusedMultiplyAdd<Double>
+actual val FusedMultiplyAdd.Companion.double: FusedMultiplyAdd<Double>
     get() = doubleInstance

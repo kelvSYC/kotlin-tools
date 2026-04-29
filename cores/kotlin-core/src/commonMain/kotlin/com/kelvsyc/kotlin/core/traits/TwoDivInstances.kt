@@ -4,15 +4,10 @@ import com.kelvsyc.kotlin.core.traits.dd.TwoDiv
 import com.kelvsyc.kotlin.core.traits.dd.from
 
 private val floatInstance: TwoDiv<Float> by lazy {
-    val arith: FloatingPointArithmetic<Float> = FloatingPointArithmetic.float
-    val fma: FusedMultiplyAdd<Float> = FusedMultiplyAdd.float
-    TwoDiv.from(arith, fma)
+    TwoDiv.from(FloatingPointArithmetic.float, FusedMultiplyAdd.float)
 }
-
 private val doubleInstance: TwoDiv<Double> by lazy {
-    val arith: FloatingPointArithmetic<Double> = FloatingPointArithmetic.double
-    val fma: FusedMultiplyAdd<Double> = FusedMultiplyAdd.double
-    TwoDiv.from(arith, fma)
+    TwoDiv.from(FloatingPointArithmetic.double, FusedMultiplyAdd.double)
 }
 
 val TwoDiv.Companion.float: TwoDiv<Float> get() = floatInstance

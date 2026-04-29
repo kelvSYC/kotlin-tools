@@ -14,17 +14,19 @@ package com.kelvsyc.kotlin.core.traits
  * error of the product `a * b`. With a naive implementation, this expression would evaluate to zero whenever
  * `-(a * b)` is taken from the already-rounded product.
  *
- * Implementations of this trait must perform a true fused multiply-add — that is, the multiplication and addition
- * are performed as a single operation with a single rounding step, with no intermediate rounding of the product.
- * Emulating FMA by performing separate multiply and add operations is explicitly prohibited, as this produces
- * results that are not guaranteed to be correctly rounded and defeats the purpose of the trait.
+ * Implementations of this trait must produce a correctly-rounded result — that is, the result must equal
+ * `round(a × b + c)` with a single rounding step applied to the infinite-precision value. The banned pattern
+ * is the naive `(a * b) + c`, which rounds the product before adding `c` and therefore cannot recover the
+ * rounding error. A correctly-rounded software emulation — such as [from] using [TwoProduct] and [TwoSum] —
+ * satisfies the contract and is a valid implementation on platforms without a hardware FMA instruction.
  *
- * As a consequence, this trait has no JavaScript implementation: JavaScript provides no mechanism to perform a
- * true FMA, and a software emulation would violate the contract above.
+ * Note that software emulations based on [TwoProduct] cannot handle the case where `a × b` overflows to
+ * infinity but the exact value `a × b + c` is finite; in that case the emulated result will be infinite.
+ * Hardware implementations (e.g. [java.lang.Math.fma]) do not have this limitation.
  */
 interface FusedMultiplyAdd<T> {
     /**
-     * Computes `a × b + c` as a single floating-point operation with a single rounding step.
+     * Computes `a × b + c` with a single rounding step applied to the infinite-precision value.
      *
      * The result is the value nearest to the infinite-precision value of `a × b + c`, rounded according to
      * the prevailing rounding mode. Special values follow IEEE 754 semantics: if any operand is NaN, or if
