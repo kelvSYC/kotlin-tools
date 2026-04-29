@@ -151,6 +151,29 @@ internal fun packDpd(biasedExp: Int, leadingDigit: Int, declet1: Int, declet2: I
 }
 
 /**
+ * Packs a biased exponent and a leading digit into the DPD combination field (sign excluded),
+ * then combines with the five pre-encoded declets to form the lower 63 bits of a [DpdDouble].
+ *
+ * The sign bit must be OR-ed in by the caller.
+ */
+internal fun packDpd64(
+    biasedExp: Int, leadingDigit: Int,
+    declet1: Int, declet2: Int, declet3: Int, declet4: Int, declet5: Int
+): Long {
+    val combination = if (leadingDigit < 8) {
+        (biasedExp shl 3) or leadingDigit
+    } else {
+        0x1800 or (biasedExp shl 1) or (leadingDigit - 8)
+    }
+    return (combination.toLong() shl 50) or
+        (declet1.toLong() shl 40) or
+        (declet2.toLong() shl 30) or
+        (declet3.toLong() shl 20) or
+        (declet4.toLong() shl 10) or
+        declet5.toLong()
+}
+
+/**
  * Converts this value to a [FiniteDecimalFloatingPoint], preserving the full significand and exponent.
  *
  * The returned representation is the structural view of this value: [FiniteDecimalFloatingPoint.sign]
