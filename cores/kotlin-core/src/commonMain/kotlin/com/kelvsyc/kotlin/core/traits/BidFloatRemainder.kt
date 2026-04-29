@@ -1,22 +1,13 @@
 package com.kelvsyc.kotlin.core.traits
 
 import com.kelvsyc.kotlin.core.BidFloat
+import com.kelvsyc.kotlin.core.bidFloat32Pack
 
 // Powers of 10, indices 0..7. Index 7 is needed for the rExp < yExp branch (diff up to 7).
 // Max intermediate in the main loop: 9_999_999 × 10^6 ≈ 10^13 < Long.MAX_VALUE ✓
 private val REM_POW10 = longArrayOf(
     1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L
 )
-
-private fun bidRemPackLong(biasedExp: Int, sig: Long): Int {
-    val s = sig.toInt()
-    return if (s < 0x800000) {
-        ((biasedExp shl 3) or (s ushr 20)) shl 20 or (s and 0xFFFFF)
-    } else {
-        val combination = 0x600 or (biasedExp shl 1) or ((s ushr 20) and 1)
-        (combination shl 20) or (s and 0x1FFFFF)
-    }
-}
 
 private fun BidFloat.canonRem(): BidFloat = with(BidFloat.encoding) { canonical() }
 
@@ -91,7 +82,7 @@ private inline fun bidFloatRemKernel(
 
     if (remSig == 0L) return zeroResult
     val remSignBit = if (remSign) Int.MIN_VALUE else 0
-    return BidFloat(remSignBit or bidRemPackLong(remExp, remSig))
+    return BidFloat(remSignBit or bidFloat32Pack(remExp, remSig.toInt()))
 }
 
 /**

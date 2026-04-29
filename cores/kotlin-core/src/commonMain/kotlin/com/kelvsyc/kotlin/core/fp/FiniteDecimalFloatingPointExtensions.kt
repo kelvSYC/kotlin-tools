@@ -2,6 +2,7 @@ package com.kelvsyc.kotlin.core.fp
 
 import com.kelvsyc.kotlin.core.BidFloat
 import com.kelvsyc.kotlin.core.DpdFloat
+import com.kelvsyc.kotlin.core.bidFloat32Pack
 
 // Powers of 10 indexed by exponent (0..9), used for digit counting and rounding.
 private val POW10 = intArrayOf(1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000)
@@ -25,29 +26,6 @@ private fun roundHalfEven(truncated: UInt, remainder: UInt, divisor: UInt): UInt
         remainder > half -> truncated + 1u
         remainder < half -> truncated
         else -> if (truncated % 2u == 0u) truncated else truncated + 1u
-    }
-}
-
-/**
- * Packs a biased exponent and a 7-digit significand into the BID combination + continuation fields (sign excluded).
- *
- * IEEE 754-2008 §3.5.2 defines two encoding cases for the combination field:
- * - Normal: significand < 2²³. The biased exponent occupies combination[10:3]; the top 3 significand bits occupy
- *   combination[2:0]; the low 20 bits are in the continuation field.
- * - Large-significand: significand ≥ 2²³ (decimal digits 8–9 in the leading position). combination[10:9] = 11,
- *   combination[8:1] = biased exponent, combination[0] = bit 20 of significand; the low 20 bits are in continuation.
- */
-private fun packBid(biasedExp: Int, sig: UInt): Int {
-    val s = sig.toInt()
-    return if (s < 0x800000) {
-        val combination = (biasedExp shl 3) or (s ushr 20)
-        val continuation = s and 0xFFFFF
-        (combination shl 20) or continuation
-    } else {
-        // Large-significand: combination[10:9]=11, combination[8:1]=biasedExp, combination[0]=sig bit 20.
-        val combination = 0x600 or (biasedExp shl 1) or ((s ushr 20) and 1)
-        val low21 = s and 0x1FFFFF
-        (combination shl 20) or low21
     }
 }
 
@@ -112,7 +90,7 @@ fun FiniteDecimalFloatingPoint<UInt>.toBidFloat(): BidFloat {
         if (sig == 0u) return BidFloat(signBit)
     }
 
-    return BidFloat(signBit or packBid(biasedExp, sig))
+    return BidFloat(signBit or bidFloat32Pack(biasedExp, sig.toInt()))
 }
 
 /**

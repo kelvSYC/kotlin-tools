@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.traits
 
 import com.kelvsyc.kotlin.core.BidFloat
+import com.kelvsyc.kotlin.core.bidFloat32Pack
 
 // Powers of 10 indexed 0..18; 10^18 is the largest power that fits in a signed Long.
 private val FMA_POW10 = longArrayOf(
@@ -32,16 +33,6 @@ private fun fmaDigits(n: Long): Int = when {
     n >= 100L                       -> 3
     n >= 10L                        -> 2
     else                            -> 1
-}
-
-private fun fmaPack(biasedExp: Int, sig: Long): Int {
-    val s = sig.toInt()
-    return if (s < 0x800000) {
-        ((biasedExp shl 3) or (s ushr 20)) shl 20 or (s and 0xFFFFF)
-    } else {
-        val combination = 0x600 or (biasedExp shl 1) or ((s ushr 20) and 1)
-        (combination shl 20) or (s and 0x1FFFFF)
-    }
 }
 
 private fun fmaRoundHalfEven(trunc: Long, rem: Long, div: Long): Long {
@@ -82,7 +73,7 @@ private fun fmaRound(sign: Boolean, sig: Long, biasedExp: Int): BidFloat {
         e = 0
         if (s == 0L) return BidFloat(signBit)
     }
-    return BidFloat(signBit or fmaPack(e, s))
+    return BidFloat(signBit or bidFloat32Pack(e, s.toInt()))
 }
 
 private fun bidFloatFma(a: BidFloat, b: BidFloat, c: BidFloat): BidFloat {

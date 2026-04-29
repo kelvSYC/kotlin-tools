@@ -11,23 +11,6 @@ import com.kelvsyc.kotlin.core.PartialComparator
 // Powers of 10 used when scaling significands for comparison and cohort operations. Index 0..8.
 private val DECIMAL32_POW10 = longArrayOf(1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L, 100_000_000L)
 
-/**
- * Packs a biased exponent and a significand into the lower 31 bits of a [BidFloat] word (sign excluded).
- *
- * Uses the normal encoding path when `sig < 2^23`, and the large-significand path otherwise.
- */
-private fun bidPack(biasedExp: Int, sig: Int): Int {
-    return if (sig < 0x800000) {
-        val combination = (biasedExp shl 3) or (sig ushr 20)
-        val continuation = sig and 0xFFFFF
-        (combination shl 20) or continuation
-    } else {
-        val combination = 0x600 or (biasedExp shl 1) or ((sig ushr 20) and 1)
-        val low21 = sig and 0x1FFFFF
-        (combination shl 20) or low21
-    }
-}
-
 private fun bidRoundHalfEven(trunc: Long, rem: Long, div: Long): Long {
     val half = div / 2L
     return when {
@@ -242,24 +225,24 @@ value class BidFloat(val bits: Int) {
                 if (isNaN() || isInfinite()) return this
                 val signBit = if (sign) Int.MIN_VALUE else 0
                 // Zero: preferred exponent 0 (biasedExp = 101), per IEEE 754-2008 §5.3.3.
-                if (isZero()) return BidFloat(signBit or bidPack(101, 0))
+                if (isZero()) return BidFloat(signBit or bidFloat32Pack(101, 0))
                 var sig = significand
                 var biasedExp = biasedExponent
                 while (sig % 10 == 0 && biasedExp < 191) { sig /= 10; biasedExp++ }
-                return BidFloat(signBit or bidPack(biasedExp, sig))
+                return BidFloat(signBit or bidFloat32Pack(biasedExp, sig))
             }
 
             override fun BidFloat.quantum(): BidFloat {
                 if (isNaN() || isInfinite()) return this
                 val signBit = if (sign) Int.MIN_VALUE else 0
-                return BidFloat(signBit or bidPack(biasedExponent, 1))
+                return BidFloat(signBit or bidFloat32Pack(biasedExponent, 1))
             }
 
             override fun BidFloat.quantize(quantum: BidFloat): BidFloat {
                 if (isNaN() || quantum.isNaN() || quantum.isInfinite() || isInfinite()) return NaN
                 val signBit = if (sign) Int.MIN_VALUE else 0
                 val targetExp = quantum.biasedExponent
-                if (isZero()) return BidFloat(signBit or bidPack(targetExp, 0))
+                if (isZero()) return BidFloat(signBit or bidFloat32Pack(targetExp, 0))
 
                 val expDiff = targetExp - biasedExponent
                 var sig = significand.toLong()
@@ -284,9 +267,9 @@ value class BidFloat(val bits: Int) {
                     }
                 }
 
-                if (sig == 0L) return BidFloat(signBit or bidPack(targetExp, 0))
+                if (sig == 0L) return BidFloat(signBit or bidFloat32Pack(targetExp, 0))
                 if (targetExp > 191 || targetExp < 0) return NaN  // exponent out of range
-                return BidFloat(signBit or bidPack(targetExp, sig.toInt()))
+                return BidFloat(signBit or bidFloat32Pack(targetExp, sig.toInt()))
             }
         }
     }

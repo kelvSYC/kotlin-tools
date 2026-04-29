@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.traits
 
 import com.kelvsyc.kotlin.core.BidFloat
+import com.kelvsyc.kotlin.core.bidFloat32Pack
 
 // Powers of 10 indexed 0..10, used for scaling and rounding. Max needed: 10^10 (division scale).
 private val POW10 = longArrayOf(
@@ -46,17 +47,6 @@ private fun roundHalfEvenSticky(trunc: Long, rem: Long, div: Long, sticky: Boole
     }
 }
 
-/** Packs biased exponent and integer significand into the lower 31 bits (sign bit excluded). */
-private fun bidPackLong(biasedExp: Int, sig: Long): Int {
-    val s = sig.toInt()
-    return if (s < 0x800000) {
-        ((biasedExp shl 3) or (s ushr 20)) shl 20 or (s and 0xFFFFF)
-    } else {
-        val combination = 0x600 or (biasedExp shl 1) or ((s ushr 20) and 1)
-        (combination shl 20) or (s and 0x1FFFFF)
-    }
-}
-
 /**
  * Rounds a wide integer significand at a given biased quantum exponent to a valid 7-digit [BidFloat].
  *
@@ -92,7 +82,7 @@ private fun roundToDecimal32(sign: Boolean, sig: Long, biasedExp: Int): BidFloat
         if (s == 0L) return BidFloat(signBit)
     }
 
-    return BidFloat(signBit or bidPackLong(e, s))
+    return BidFloat(signBit or bidFloat32Pack(e, s.toInt()))
 }
 
 private val bidFloatArithmeticInstance: FloatingPointArithmetic<BidFloat> = object : FloatingPointArithmetic<BidFloat> {
@@ -203,9 +193,9 @@ private val bidFloatArithmeticInstance: FloatingPointArithmetic<BidFloat> = obje
             val d = POW10[shift]
             val t = roundHalfEven(s / d, s % d, d)
             if (t == 0L) return BidFloat(signBit)
-            return BidFloat(signBit or bidPackLong(0, t))
+            return BidFloat(signBit or bidFloat32Pack(0, t.toInt()))
         }
-        return BidFloat(signBit or bidPackLong(e, s))
+        return BidFloat(signBit or bidFloat32Pack(e, s.toInt()))
     }
 
     override fun BidFloat.compareTo(other: BidFloat): Int =

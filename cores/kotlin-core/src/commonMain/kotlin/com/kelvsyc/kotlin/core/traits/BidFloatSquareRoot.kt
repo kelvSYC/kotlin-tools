@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.traits
 
 import com.kelvsyc.kotlin.core.BidFloat
+import com.kelvsyc.kotlin.core.bidFloat32Pack
 
 // Powers of 10, indices 0..12. Max needed is 10^12 (k=12, used when the significand has 1-2 digits).
 // All values fit in Long (10^12 < Long.MAX_VALUE ≈ 9.2×10^18).
@@ -19,16 +20,6 @@ private fun decimalDigits(n: Long): Int = when {
     n >= 100L        -> 3
     n >= 10L         -> 2
     else             -> 1
-}
-
-private fun sqrtBidPack(biasedExp: Int, sig: Long): Int {
-    val s = sig.toInt()
-    return if (s < 0x800000) {
-        ((biasedExp shl 3) or (s ushr 20)) shl 20 or (s and 0xFFFFF)
-    } else {
-        val combination = 0x600 or (biasedExp shl 1) or ((s ushr 20) and 1)
-        (combination shl 20) or (s and 0x1FFFFF)
-    }
 }
 
 /**
@@ -114,7 +105,7 @@ private fun bidFloatSqrt(x: BidFloat): BidFloat {
     // Step 6: reconstruct BidFloat.
     // result unbiased exp = eAdj/2 − k/2; re-bias by adding 101.
     val resultBiasedExp = eAdj / 2 - k / 2 + 101
-    return BidFloat(sqrtBidPack(resultBiasedExp, sig))
+    return BidFloat(bidFloat32Pack(resultBiasedExp, sig.toInt()))
 }
 
 private val bidFloatSqrtInstance: FloatingPointSquareRoot<BidFloat> =
