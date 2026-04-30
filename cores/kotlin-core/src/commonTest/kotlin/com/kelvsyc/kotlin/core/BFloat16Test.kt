@@ -424,6 +424,13 @@ class BFloat16Test : FunSpec({
         test("backward conversion of zero bits is +0") {
             BFloat16.converter.reverse(0.toShort()) shouldBe 0.0f
         }
+
+        // 2044.0f = 1.11111111 × 2^10 in Float32 (exp32=137, odd). Rounding drops 8 bits;
+        // the 8th bit is 1 and the 7-bit mantissa (0x7F) is odd, so we round up. The carry
+        // must propagate into the exponent (0x7F+1=0x80 overflows into exp), yielding 2048.
+        test("rounding carry propagates into exponent (odd exp32): 2044.0f rounds to 2048") {
+            BFloat16(2044.0f).toFloat() shouldBe 2048.0f
+        }
     }
 
     // ── toBits / toRawBits ────────────────────────────────────────────────────

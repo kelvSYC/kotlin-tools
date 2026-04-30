@@ -60,7 +60,7 @@ value class BFloat16(val bits: Short) {
                         val mantissa7 = mantissa32 ushr 16
                         val dropped = mantissa32 and 0xFFFF
                         val inc = if (dropped > 0x8000 || (dropped == 0x8000 && mantissa7 and 1 != 0)) 1 else 0
-                        (sign or (exp32 shl 7) or (mantissa7 + inc)).toShort()
+                        (sign or ((exp32 shl 7) + mantissa7 + inc)).toShort()
                     }
                 }
             },
