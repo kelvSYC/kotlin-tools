@@ -29,7 +29,8 @@ package com.kelvsyc.kotlin.core.traits
  *
  * ## Standard implementations
  *
- * Canonical wrapping instances for [Int] and [Long] are available as [Companion.int] and [Companion.long].
+ * Canonical wrapping instances for [Byte], [Short], [Int], and [Long] are available as [Companion.byte],
+ * [Companion.short], [Companion.int], and [Companion.long].
  */
 interface SignedIntegerArithmetic<T> : IntegerArithmetic<T>, CeilDiv<T> {
     /**
@@ -123,6 +124,35 @@ interface SignedIntegerArithmetic<T> : IntegerArithmetic<T>, CeilDiv<T> {
     companion object
 }
 
+// Byte and Short: stdlib floorDiv/mod return Int (not Byte/Short), so their signatures differ from the
+// interface's member extensions and no capture is needed — the defaults use divide/rem directly.
+
+private val byteInstance: SignedIntegerArithmetic<Byte> = object : SignedIntegerArithmetic<Byte> {
+    override val zero: Byte get() = 0
+    override val one: Byte get() = 1
+    override fun Byte.add(other: Byte): Byte = (this + other).toByte()
+    override fun Byte.subtract(other: Byte): Byte = (this - other).toByte()
+    override fun Byte.multiply(other: Byte): Byte = (this * other).toByte()
+    override fun Byte.divide(other: Byte): Byte = (this / other).toByte()
+    override fun Byte.rem(other: Byte): Byte = (this % other).toByte()
+    override fun Byte.compareTo(other: Byte): Int = this.compareTo(other)
+    override fun Byte.negate(): Byte = (-this).toByte()
+    override fun Byte.abs(): Byte = if (this < 0) (-this).toByte() else this
+}
+
+private val shortInstance: SignedIntegerArithmetic<Short> = object : SignedIntegerArithmetic<Short> {
+    override val zero: Short get() = 0
+    override val one: Short get() = 1
+    override fun Short.add(other: Short): Short = (this + other).toShort()
+    override fun Short.subtract(other: Short): Short = (this - other).toShort()
+    override fun Short.multiply(other: Short): Short = (this * other).toShort()
+    override fun Short.divide(other: Short): Short = (this / other).toShort()
+    override fun Short.rem(other: Short): Short = (this % other).toShort()
+    override fun Short.compareTo(other: Short): Int = this.compareTo(other)
+    override fun Short.negate(): Short = (-this).toShort()
+    override fun Short.abs(): Short = if (this < 0) (-this).toShort() else this
+}
+
 // Capture stdlib floorDiv/mod at file scope to avoid member-extension dispatch issues inside the anonymous
 // objects below. Inside an object implementing SignedIntegerArithmetic<Int>, the member extensions
 // `fun Int.floorDiv` and `fun Int.mod` from the interface take priority over the stdlib extension functions
@@ -168,6 +198,12 @@ private val longInstance: SignedIntegerArithmetic<Long> = object : SignedInteger
     override fun Long.floorDiv(other: Long): Long = _longFloorDiv(this, other)
     override fun Long.mod(other: Long): Long = _longMod(this, other)
 }
+
+val SignedIntegerArithmetic.Companion.byte: SignedIntegerArithmetic<Byte>
+    get() = byteInstance
+
+val SignedIntegerArithmetic.Companion.short: SignedIntegerArithmetic<Short>
+    get() = shortInstance
 
 val SignedIntegerArithmetic.Companion.int: SignedIntegerArithmetic<Int>
     get() = intInstance

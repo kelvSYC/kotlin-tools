@@ -16,7 +16,8 @@ package com.kelvsyc.kotlin.core.traits
  *
  * ## Standard implementations
  *
- * Canonical wrapping instances for [Int] and [Long] are available as [Companion.int] and [Companion.long].
+ * Canonical wrapping instances for [Byte], [Short], [Int], and [Long] are available as [Companion.byte],
+ * [Companion.short], [Companion.int], and [Companion.long].
  */
 interface IntegerArithmetic<T> {
     /**
@@ -72,6 +73,31 @@ interface IntegerArithmetic<T> {
     companion object
 }
 
+// Byte and Short arithmetic operations in Kotlin widen to Int; results are narrowed back with
+// toByte()/toShort(). This gives the correct wrapping behavior for each type's bit width.
+
+private val byteInstance: IntegerArithmetic<Byte> = object : IntegerArithmetic<Byte> {
+    override val zero: Byte get() = 0
+    override val one: Byte get() = 1
+    override fun Byte.add(other: Byte): Byte = (this + other).toByte()
+    override fun Byte.subtract(other: Byte): Byte = (this - other).toByte()
+    override fun Byte.multiply(other: Byte): Byte = (this * other).toByte()
+    override fun Byte.divide(other: Byte): Byte = (this / other).toByte()
+    override fun Byte.rem(other: Byte): Byte = (this % other).toByte()
+    override fun Byte.compareTo(other: Byte): Int = this.compareTo(other)
+}
+
+private val shortInstance: IntegerArithmetic<Short> = object : IntegerArithmetic<Short> {
+    override val zero: Short get() = 0
+    override val one: Short get() = 1
+    override fun Short.add(other: Short): Short = (this + other).toShort()
+    override fun Short.subtract(other: Short): Short = (this - other).toShort()
+    override fun Short.multiply(other: Short): Short = (this * other).toShort()
+    override fun Short.divide(other: Short): Short = (this / other).toShort()
+    override fun Short.rem(other: Short): Short = (this % other).toShort()
+    override fun Short.compareTo(other: Short): Int = this.compareTo(other)
+}
+
 private val intInstance: IntegerArithmetic<Int> = object : IntegerArithmetic<Int> {
     override val zero: Int get() = 0
     override val one: Int get() = 1
@@ -95,6 +121,12 @@ private val longInstance: IntegerArithmetic<Long> = object : IntegerArithmetic<L
     override fun Long.rem(other: Long): Long = this % other
     override fun Long.compareTo(other: Long): Int = this.compareTo(other)
 }
+
+val IntegerArithmetic.Companion.byte: IntegerArithmetic<Byte>
+    get() = byteInstance
+
+val IntegerArithmetic.Companion.short: IntegerArithmetic<Short>
+    get() = shortInstance
 
 val IntegerArithmetic.Companion.int: IntegerArithmetic<Int>
     get() = intInstance
