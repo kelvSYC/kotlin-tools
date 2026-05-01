@@ -21,6 +21,48 @@ interface UnsignedIntegral<T> : BitCollection<T>, BitShift<T>, ValueEquality<T> 
 }
 
 /**
+ * Trait type containing metadata on unsigned 8-bit integral numbers.
+ */
+interface UInt8<T> : UnsignedIntegral<T> {
+    override val sizeBits: Int get() = 8
+
+    companion object : UInt8<UByte> {
+        override val zero: UByte get() = 0u.toUByte()
+        override val allSet: UByte get() = UByte.MAX_VALUE
+        override val lsb: UByte get() = 1u.toUByte()
+        override val msb: UByte get() = 0x80u.toUByte()
+
+        // All operations route through Int rather than calling the stdlib UByte overloads directly.
+        // Inside a companion that implements UnsignedIntegral<T>, member extension resolution gives
+        // our own overrides priority over stdlib extensions with the same signature — so e.g.
+        // `this.countLeadingClearBits()` inside the override would call itself, not the stdlib version.
+        // Calling through Int uses a different receiver type, which is not subject to that dispatch.
+        //
+        // UByte.toInt() zero-extends, so no masking is needed for correct leading-zero / popcount.
+        override fun UByte.countLeadingClearBits(): Int = toInt().countLeadingZeroBits() - 24
+        override fun UByte.countTrailingClearBits(): Int = minOf(toInt().countTrailingZeroBits(), 8)
+        override fun UByte.countSetBits(): Int = toInt().countOneBits()
+        override fun UByte.leftRotate(bitCount: Int): UByte {
+            val n = bitCount and 7
+            return ((toInt() shl n) or (toInt() ushr (8 - n))).toUByte()
+        }
+        override fun UByte.rightRotate(bitCount: Int): UByte {
+            val n = bitCount and 7
+            return ((toInt() ushr n) or (toInt() shl (8 - n))).toUByte()
+        }
+        override fun UByte.leftShift(bits: Int): UByte = (toInt() shl bits).toUByte()
+        override fun UByte.logicalRightShift(bits: Int): UByte = (toInt() ushr bits).toUByte()
+        override fun UByte.bitwiseAnd(other: UByte): UByte = (toInt() and other.toInt()).toUByte()
+        override fun UByte.bitwiseOr(other: UByte): UByte = (toInt() or other.toInt()).toUByte()
+        override fun UByte.bitwiseXor(other: UByte): UByte = (toInt() xor other.toInt()).toUByte()
+        override fun UByte.takeLowestSetBit(): UByte = (toInt().takeLowestOneBit()).toUByte()
+        override fun UByte.takeHighestSetBit(): UByte = (toInt().takeHighestOneBit()).toUByte()
+        override fun UByte.toULong(): ULong = toLong().toULong()
+        override fun fromULong(value: ULong): UByte = value.toUByte()
+    }
+}
+
+/**
  * Trait type containing metadata on unsigned 16-bit integral numbers.
  */
 interface UInt16<T> : UnsignedIntegral<T> {

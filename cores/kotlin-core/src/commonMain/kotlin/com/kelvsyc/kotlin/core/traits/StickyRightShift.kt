@@ -36,14 +36,20 @@ fun <T> StickyRightShift.Companion.from(
     }
 }
 
+private val byteInstance: StickyRightShift<Byte> by lazy { StickyRightShift.from(Int8, Int8) }
+private val shortInstance: StickyRightShift<Short> by lazy { StickyRightShift.from(Int16, Int16) }
 private val intInstance: StickyRightShift<Int> by lazy { StickyRightShift.from(BitCollection.int, BitShift.int) }
 private val longInstance: StickyRightShift<Long> by lazy { StickyRightShift.from(BitCollection.long, BitShift.long) }
+private val ubyteInstance: StickyRightShift<UByte> by lazy { StickyRightShift.from(UInt8, UInt8) }
 private val ushortInstance: StickyRightShift<UShort> by lazy { StickyRightShift.from(UInt16, UInt16) }
 private val uintInstance: StickyRightShift<UInt> by lazy { StickyRightShift.from(UInt32, UInt32) }
 private val ulongInstance: StickyRightShift<ULong> by lazy { StickyRightShift.from(UInt64, UInt64) }
 
+val StickyRightShift.Companion.byte: StickyRightShift<Byte> get() = byteInstance
+val StickyRightShift.Companion.short: StickyRightShift<Short> get() = shortInstance
 val StickyRightShift.Companion.int: StickyRightShift<Int> get() = intInstance
 val StickyRightShift.Companion.long: StickyRightShift<Long> get() = longInstance
+val StickyRightShift.Companion.ubyte: StickyRightShift<UByte> get() = ubyteInstance
 val StickyRightShift.Companion.ushort: StickyRightShift<UShort> get() = ushortInstance
 val StickyRightShift.Companion.uint: StickyRightShift<UInt> get() = uintInstance
 val StickyRightShift.Companion.ulong: StickyRightShift<ULong> get() = ulongInstance

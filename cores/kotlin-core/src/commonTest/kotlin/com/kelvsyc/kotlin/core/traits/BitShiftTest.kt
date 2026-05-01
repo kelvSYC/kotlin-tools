@@ -157,6 +157,29 @@ class BitShiftTest : FunSpec({
         test("lost bits set sticky lsb") { with(ops) { 3uL.stickyRightShift(2) } shouldBe 1uL }
     }
 
+    context("StickyRightShift.Companion.byte") {
+        val ops = StickyRightShift.byte
+
+        test("shift by 0 is identity") { with(ops) { 7.toByte().stickyRightShift(0) } shouldBe 7.toByte() }
+        test("no bits lost: clean shift") { with(ops) { 8.toByte().stickyRightShift(3) } shouldBe 1.toByte() }
+        test("lost bits set sticky lsb") { with(ops) { 7.toByte().stickyRightShift(3) } shouldBe 1.toByte() }
+        test("all bits shifted out: result is 1") { with(ops) { 1.toByte().stickyRightShift(1) } shouldBe 1.toByte() }
+        test("negative value: lost bit sticks") {
+            with(ops) { Byte.MIN_VALUE.stickyRightShift(1) } shouldBe 0x40.toByte()
+        }
+    }
+
+    context("StickyRightShift.Companion.short") {
+        val ops = StickyRightShift.short
+
+        test("shift by 0 is identity") { with(ops) { 7.toShort().stickyRightShift(0) } shouldBe 7.toShort() }
+        test("no bits lost: clean shift") { with(ops) { 8.toShort().stickyRightShift(3) } shouldBe 1.toShort() }
+        test("lost bits set sticky lsb") { with(ops) { 7.toShort().stickyRightShift(3) } shouldBe 1.toShort() }
+        test("negative value: lost bit sticks") {
+            with(ops) { Short.MIN_VALUE.stickyRightShift(1) } shouldBe 0x4000.toShort()
+        }
+    }
+
     context("StickyRightShift.Companion.ushort") {
         val ops = StickyRightShift.ushort
 
@@ -165,9 +188,23 @@ class BitShiftTest : FunSpec({
         test("no bits lost: clean shift") { with(ops) { 8u.toUShort().stickyRightShift(3) } shouldBe 1u.toUShort() }
     }
 
+    context("StickyRightShift.Companion.ubyte") {
+        val ops = StickyRightShift.ubyte
+
+        test("shift by 0 is identity") { with(ops) { 7u.toUByte().stickyRightShift(0) } shouldBe 7u.toUByte() }
+        test("no bits lost: clean shift") { with(ops) { 8u.toUByte().stickyRightShift(3) } shouldBe 1u.toUByte() }
+        test("lost bits set sticky lsb") { with(ops) { 7u.toUByte().stickyRightShift(3) } shouldBe 1u.toUByte() }
+        test("all bits shifted out: result is 1") { with(ops) { 1u.toUByte().stickyRightShift(1) } shouldBe 1u.toUByte() }
+        test("msb shifted right by 1") { with(ops) { 0x80u.toUByte().stickyRightShift(1) } shouldBe 0x40u.toUByte() }
+    }
+
     context("StickyRightShift singleton identity") {
+        test("StickyRightShift.byte is stable") { StickyRightShift.byte shouldBeSameInstanceAs StickyRightShift.byte }
+        test("StickyRightShift.short is stable") { StickyRightShift.short shouldBeSameInstanceAs StickyRightShift.short }
         test("StickyRightShift.int is stable") { StickyRightShift.int shouldBeSameInstanceAs StickyRightShift.int }
         test("StickyRightShift.long is stable") { StickyRightShift.long shouldBeSameInstanceAs StickyRightShift.long }
+        test("StickyRightShift.ubyte is stable") { StickyRightShift.ubyte shouldBeSameInstanceAs StickyRightShift.ubyte }
         test("int and long are distinct") { StickyRightShift.int shouldNotBe StickyRightShift.long }
+        test("byte and ubyte are distinct") { StickyRightShift.byte shouldNotBe StickyRightShift.ubyte }
     }
 })

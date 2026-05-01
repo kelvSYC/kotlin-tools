@@ -73,6 +73,8 @@ private val longInstance: BitCollection<Long> = object : BitCollection<Long> {
 
 val BitCollection.Companion.int: BitCollection<Int> get() = intInstance
 val BitCollection.Companion.long: BitCollection<Long> get() = longInstance
+val BitCollection.Companion.byte: BitCollection<Byte> get() = Int8
+val BitCollection.Companion.ubyte: BitCollection<UByte> get() = UInt8
 val BitCollection.Companion.short: BitCollection<Short> get() = Int16
 val BitCollection.Companion.ushort: BitCollection<UShort> get() = UInt16
 val BitCollection.Companion.uint: BitCollection<UInt> get() = UInt32

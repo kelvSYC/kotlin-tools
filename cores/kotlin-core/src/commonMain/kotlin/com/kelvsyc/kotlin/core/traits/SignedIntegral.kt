@@ -22,6 +22,51 @@ interface SignedIntegral<T> : BitCollection<T>, BitShift<T>, ArithmeticRightShif
 }
 
 /**
+ * Trait type containing metadata on signed 8-bit integral numbers.
+ */
+interface Int8<T> : SignedIntegral<T> {
+    override val sizeBits: Int get() = 8
+
+    companion object : Int8<Byte> {
+        override val zero: Byte get() = 0.toByte()
+        override val allSet: Byte get() = (-1).toByte()
+        override val lsb: Byte get() = 1.toByte()
+        override val msb: Byte get() = Byte.MIN_VALUE
+
+        // Operations route through Int rather than calling stdlib Byte overloads directly.
+        // Inside a companion that implements SignedIntegral<T>, member extension resolution gives
+        // our own overrides priority over stdlib extensions with the same signature.
+        // Routing through Int uses a different receiver type, avoiding that dispatch.
+        //
+        // Byte.toInt() sign-extends; masking with 0xFF gives the zero-extended bit pattern
+        // needed for correct leading-zero and popcount calculations on 8-bit values.
+        override fun Byte.countLeadingClearBits(): Int = (toInt() and 0xFF).countLeadingZeroBits() - 24
+        override fun Byte.countTrailingClearBits(): Int = minOf(toInt().countTrailingZeroBits(), 8)
+        override fun Byte.countSetBits(): Int = (toInt() and 0xFF).countOneBits()
+        override fun Byte.leftRotate(bitCount: Int): Byte {
+            val n = bitCount and 7
+            val bits = toInt() and 0xFF
+            return ((bits shl n) or (bits ushr (8 - n))).toByte()
+        }
+        override fun Byte.rightRotate(bitCount: Int): Byte {
+            val n = bitCount and 7
+            val bits = toInt() and 0xFF
+            return ((bits ushr n) or (bits shl (8 - n))).toByte()
+        }
+        override fun Byte.leftShift(bits: Int): Byte = (toInt() shl bits).toByte()
+        override fun Byte.logicalRightShift(bits: Int): Byte = ((toInt() and 0xFF) ushr bits).toByte()
+        override fun Byte.arithmeticRightShift(bits: Int): Byte = (toInt() shr bits).toByte()
+        override fun Byte.bitwiseAnd(other: Byte): Byte = (toInt() and other.toInt()).toByte()
+        override fun Byte.bitwiseOr(other: Byte): Byte = (toInt() or other.toInt()).toByte()
+        override fun Byte.bitwiseXor(other: Byte): Byte = (toInt() xor other.toInt()).toByte()
+        override fun Byte.takeLowestSetBit(): Byte = toInt().takeLowestOneBit().toByte()
+        override fun Byte.takeHighestSetBit(): Byte = (toInt() and 0xFF).takeHighestOneBit().toByte()
+        override fun Byte.toLong(): Long = toInt().toLong()
+        override fun fromLong(value: Long): Byte = value.toByte()
+    }
+}
+
+/**
  * Trait type containing metadata on signed 16-bit integral numbers.
  */
 interface Int16<T> : SignedIntegral<T> {

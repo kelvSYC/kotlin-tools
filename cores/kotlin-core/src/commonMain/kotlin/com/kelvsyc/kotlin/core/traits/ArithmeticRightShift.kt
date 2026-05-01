@@ -47,4 +47,5 @@ fun <T> ArithmeticRightShift.Companion.from(
 
 val ArithmeticRightShift.Companion.int: ArithmeticRightShift<Int> get() = intInstance
 val ArithmeticRightShift.Companion.long: ArithmeticRightShift<Long> get() = longInstance
+val ArithmeticRightShift.Companion.byte: ArithmeticRightShift<Byte> get() = Int8
 val ArithmeticRightShift.Companion.short: ArithmeticRightShift<Short> get() = Int16
