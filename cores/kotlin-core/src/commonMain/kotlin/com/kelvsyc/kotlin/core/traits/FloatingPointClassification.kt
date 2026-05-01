@@ -36,6 +36,16 @@ interface FloatingPointClassification<T> {
      * zeros, use [FloatingPointSign.isNegative].
      */
     fun T.isZero(): Boolean
+
+    /**
+     * Returns `true` if this value represents a mathematical integer (including zero).
+     *
+     * NaN and infinities return `false`.  A finite value is an integer when its fractional part is
+     * exactly zero — that is, the value equals `m × base^e` where all digits below the decimal
+     * point are zero.  For binary formats this means the last `−e` mantissa bits are zero when
+     * `e < 0`; for decimal formats it means the last `−e` significand digits are zero when `e < 0`.
+     */
+    fun T.isInteger(): Boolean
 }
 
 /**

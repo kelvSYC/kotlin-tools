@@ -22,6 +22,16 @@ import com.kelvsyc.kotlin.core.traits.DoubleBinaryFloatingPoint as Trait
  * The same instance is available for generic algorithms that operate through the `BinaryFloatingPoint`
  * trait.
  */
+private fun doubleIsInteger(x: Double): Boolean {
+    val b = x.toBits() and Long.MAX_VALUE
+    if (b >= 0x7FF0000000000000L) return false
+    if (b == 0L) return true
+    val biasedExp = (b ushr 52).toInt()
+    if (biasedExp >= 1075) return true
+    if (biasedExp < 1023) return false
+    return (b and ((1L shl (1075 - biasedExp)) - 1L)) == 0L
+}
+
 class DoubleDouble internal constructor(override val high: Double, override val low: Double)
     : DoubleBinaryFloatingPoint<Double>, Comparable<DoubleDouble> {
 
@@ -101,6 +111,10 @@ class DoubleDouble internal constructor(override val high: Double, override val 
                 // +0 and -0 both satisfy high == 0.0 under IEEE 754 ==; by the representation
                 // invariant, if high is zero then low must also be zero.
                 override fun DoubleDouble.isZero(): Boolean = high == 0.0
+                // hi + lo is integer iff both components are integers: for |hi| < 2^52,
+                // |lo| < 0.5*ulp(hi) < 1 so lo cannot cancel frac(hi); for |hi| >= 2^52,
+                // hi is always an integer and lo must also be an integer.
+                override fun DoubleDouble.isInteger(): Boolean = doubleIsInteger(high) && doubleIsInteger(low)
             }
 
         // ── Sign ──────────────────────────────────────────────────────────────

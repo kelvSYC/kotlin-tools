@@ -48,6 +48,7 @@ class DelegatingDpdArithmetic<B, D>(
     override fun D.isInfinite(): Boolean = with(delegate) { converter.reverse(this@isInfinite).isInfinite() }
     override fun D.isNaN(): Boolean = with(delegate) { converter.reverse(this@isNaN).isNaN() }
     override fun D.isZero(): Boolean = with(delegate) { converter.reverse(this@isZero).isZero() }
+    override fun D.isInteger(): Boolean = with(delegate) { converter.reverse(this@isInteger).isInteger() }
     override fun D.isNegative(): Boolean = with(delegate) { converter.reverse(this@isNegative).isNegative() }
 
     override fun D.negate(): D = converter.wrap { a: B -> with(delegate) { a.negate() } }(this)

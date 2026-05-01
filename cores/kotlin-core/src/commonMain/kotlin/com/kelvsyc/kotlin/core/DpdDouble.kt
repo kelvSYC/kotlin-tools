@@ -220,7 +220,15 @@ value class DpdDouble(val bits: Long) {
                 override fun DpdDouble.isZero(): Boolean = this.isZero()
                 override fun DpdDouble.isNormal(): Boolean = this.isNormal()
                 override fun DpdDouble.isSubnormal(): Boolean = this.isSubnormal()
+                override fun DpdDouble.isInteger(): Boolean = this.isInteger()
             }
+
+        override fun DpdDouble.isPowerOfTen(): Boolean {
+            if (isNaN() || isInfinite() || isZero() || sign) return false
+            var sig = significand
+            while (sig % 10L == 0L) sig /= 10L
+            return sig == 1L
+        }
 
         override val sign: FloatingPointSign<DpdDouble> = object : FloatingPointSign<DpdDouble> {
             override fun DpdDouble.isNegative(): Boolean = bits < 0
@@ -429,5 +437,21 @@ value class DpdDouble(val bits: Long) {
         if (isNaN() || isInfinite() || isZero()) return false
         if (biasedExponent >= 15) return false
         return significand < DECIMAL64_POW10[15 - biasedExponent]
+    }
+
+    /**
+     * Returns `true` if this value represents a mathematical integer (including zero).
+     *
+     * The value is `significand × 10^(biasedExponent − 398)`. When the unbiased exponent is
+     * non-negative the value is trivially an integer. When negative, the value is an integer iff
+     * the last `−(biasedExponent − 398)` decimal digits of the significand are all zero. NaN and
+     * infinity return `false`.
+     */
+    fun isInteger(): Boolean {
+        if (isNaN() || isInfinite()) return false
+        if (isZero() || biasedExponent >= 398) return true
+        val fracExp = 398 - biasedExponent
+        if (fracExp > 15) return false
+        return significand % DECIMAL64_POW10[fracExp] == 0L
     }
 }

@@ -139,6 +139,7 @@ private val bidDoubleArithmeticInstance: FloatingPointArithmetic<BidDouble> =
         override fun BidDouble.isInfinite(): Boolean = this.isInfinite()
         override fun BidDouble.isFinite(): Boolean = !this.isNaN() && !this.isInfinite()
         override fun BidDouble.isZero(): Boolean = this.isZero()
+        override fun BidDouble.isInteger(): Boolean = this.isInteger()
         override fun BidDouble.isNegative(): Boolean = bits < 0L
         override fun BidDouble.negate(): BidDouble = BidDouble(bits xor Long.MIN_VALUE)
         override fun BidDouble.abs(): BidDouble = BidDouble(bits and Long.MAX_VALUE)

@@ -214,6 +214,19 @@ interface DecimalFloatingPoint<T> {
      * operations manipulate the quantum exponent of a value without changing its mathematical meaning.
      */
     val cohorts: DecimalFloatingPointCohorts<T>
+
+    /**
+     * Returns `true` if this value is a positive integer power of ten (including `10^0 = 1`).
+     *
+     * A finite positive value is a power of ten when, after stripping all trailing decimal zeros
+     * from the significand, the remaining significand digit is exactly 1.  Negative values, zero,
+     * NaN, and infinity all return `false`.
+     *
+     * This is the decimal analog of [IeeeBinaryFloatingPoint.isPowerOfTwo]: both predicates test
+     * whether the value is an integer power of the format's natural base.  Powers of ten include
+     * both large integers (`10, 100, 1000, …`) and small fractions (`0.1, 0.01, 0.001, …`).
+     */
+    fun T.isPowerOfTen(): Boolean
 }
 
 /**

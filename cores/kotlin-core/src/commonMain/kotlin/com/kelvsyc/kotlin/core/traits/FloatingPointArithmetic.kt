@@ -89,6 +89,7 @@ private val bfloat16Instance: FloatingPointArithmetic<BFloat16> = object : Float
     override fun BFloat16.isInfinite(): Boolean = this.isInfinite()
     override fun BFloat16.isFinite(): Boolean = this.isFinite()
     override fun BFloat16.isZero(): Boolean = this.isZero()
+    override fun BFloat16.isInteger(): Boolean = this.isInteger()
     override fun BFloat16.isNegative(): Boolean = this.sign
 
     override fun BFloat16.negate(): BFloat16 = -this
@@ -116,6 +117,7 @@ private val float16Instance: FloatingPointArithmetic<Float16> = object : Floatin
     override fun Float16.isInfinite(): Boolean = this.isInfinite()
     override fun Float16.isFinite(): Boolean = this.isFinite()
     override fun Float16.isZero(): Boolean = this.isZero()
+    override fun Float16.isInteger(): Boolean = this.isInteger()
     override fun Float16.isNegative(): Boolean = this.sign
 
     override fun Float16.negate(): Float16 = -this
@@ -153,6 +155,15 @@ private val floatInstance: FloatingPointArithmetic<Float> = object : FloatingPoi
     // Float.isZero() does not exist in the stdlib, so there is no dispatch conflict.
     // IEEE 754 == treats +0 and -0 as equal, which is the correct semantics for isZero.
     override fun Float.isZero(): Boolean = this == 0.0f
+    override fun Float.isInteger(): Boolean {
+        val b = toRawBits() and Int.MAX_VALUE
+        if (b >= 0x7F800000) return false
+        if (b == 0) return true
+        val biasedExp = b ushr 23
+        if (biasedExp >= 150) return true
+        if (biasedExp < 127) return false
+        return (b and ((1 shl (150 - biasedExp)) - 1)) == 0
+    }
     // toRawBits() returns Int; Int is negative iff its sign bit (bit 31) is set.
     override fun Float.isNegative(): Boolean = toRawBits() < 0
 
@@ -187,6 +198,15 @@ private val doubleInstance: FloatingPointArithmetic<Double> = object : FloatingP
     override fun Double.isFinite(): Boolean = _doubleIsFinite(this)
     // Double.isZero() does not exist in the stdlib; IEEE 754 == treats +0 and -0 as equal.
     override fun Double.isZero(): Boolean = this == 0.0
+    override fun Double.isInteger(): Boolean {
+        val b = toRawBits() and Long.MAX_VALUE
+        if (b >= 0x7FF0000000000000L) return false
+        if (b == 0L) return true
+        val biasedExp = (b ushr 52).toInt()
+        if (biasedExp >= 1075) return true
+        if (biasedExp < 1023) return false
+        return (b and ((1L shl (1075 - biasedExp)) - 1L)) == 0L
+    }
     // toRawBits() returns Long; Long is negative iff its sign bit (bit 63) is set.
     override fun Double.isNegative(): Boolean = toRawBits() < 0L
 

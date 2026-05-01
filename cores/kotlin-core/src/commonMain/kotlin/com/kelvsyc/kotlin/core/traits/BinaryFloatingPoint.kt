@@ -190,6 +190,19 @@ interface IeeeBinaryFloatingPoint<T> : BinaryFloatingPoint<T> {
      * nonzero; such values have reduced precision and no implicit leading bit.
      */
     override val classification: IeeeFloatingPointClassification<T>
+
+    /**
+     * Returns `true` if this value is a positive integer power of two (including `2^0 = 1`).
+     *
+     * A finite positive value is a power of two when its binary significand is exactly 1 — that
+     * is, the mantissa bits are all zero for a normal value, or exactly one bit is set for a
+     * subnormal (representing a negative power of two below the normal range).  Negative values,
+     * zero, NaN, and infinity all return `false`.
+     *
+     * Powers of two include both large integers (`2, 4, 8, …`) and small fractions
+     * (`0.5, 0.25, 0.125, …`).
+     */
+    fun T.isPowerOfTwo(): Boolean
 }
 
 // ── Binary16 (Float16) ────────────────────────────────────────────────────────
@@ -279,7 +292,29 @@ interface Binary32<T> : IeeeBinaryFloatingPoint<T> {
                     val b = toRawBits()
                     return (b ushr 23) and 0xFF == 0 && b and 0x7FFFFFFF != 0
                 }
+                override fun Float.isInteger(): Boolean {
+                    val b = toRawBits() and Int.MAX_VALUE  // clear sign bit
+                    if (b >= 0x7F800000) return false      // NaN or infinite
+                    if (b == 0) return true                 // ±0
+                    val biasedExp = b ushr 23
+                    if (biasedExp >= 150) return true       // unbiased ≥ 23: no fractional bits
+                    if (biasedExp < 127) return false       // |value| < 1: not an integer
+                    // 127..149: check that the (150 − biasedExp) fractional bits are all zero.
+                    return (b and ((1 shl (150 - biasedExp)) - 1)) == 0
+                }
             }
+
+        // b > 0 ensures positive and non-zero. biasedExp == 0 → subnormal: power-of-2 iff the
+        // mantissa field itself has exactly one bit set. biasedExp in 1..254 → normal: power-of-2
+        // iff all 23 mantissa bits are zero (significand = 1.000…).
+        override fun Float.isPowerOfTwo(): Boolean {
+            val b = toRawBits()
+            if (b <= 0) return false
+            val biasedExp = b ushr 23
+            if (biasedExp == 255) return false
+            if (biasedExp == 0) return (b and (b - 1)) == 0
+            return (b and 0x7FFFFF) == 0
+        }
 
         override val sign: FloatingPointSign<Float> = object : FloatingPointSign<Float> {
             // All operations use bit manipulation on the raw Int representation.
@@ -350,7 +385,29 @@ interface Binary64<T> : IeeeBinaryFloatingPoint<T> {
                     val b = toRawBits()
                     return (b ushr 52) and 0x7FFL == 0L && b and Long.MAX_VALUE != 0L
                 }
+                override fun Double.isInteger(): Boolean {
+                    val b = toRawBits() and Long.MAX_VALUE   // clear sign bit
+                    if (b >= 0x7FF0000000000000L) return false   // NaN or infinite
+                    if (b == 0L) return true                      // ±0
+                    val biasedExp = (b ushr 52).toInt()
+                    if (biasedExp >= 1075) return true    // unbiased ≥ 52: no fractional bits
+                    if (biasedExp < 1023) return false    // |value| < 1: not an integer
+                    // 1023..1074: check that the (1075 − biasedExp) fractional bits are all zero.
+                    return (b and ((1L shl (1075 - biasedExp)) - 1L)) == 0L
+                }
             }
+
+        // b > 0 ensures positive and non-zero. biasedExp == 0 → subnormal: power-of-2 iff the
+        // mantissa field itself has exactly one bit set. biasedExp in 1..2046 → normal: power-of-2
+        // iff all 52 mantissa bits are zero (significand = 1.000…).
+        override fun Double.isPowerOfTwo(): Boolean {
+            val b = toRawBits()
+            if (b <= 0L) return false
+            val biasedExp = (b ushr 52).toInt()
+            if (biasedExp == 2047) return false
+            if (biasedExp == 0) return (b and (b - 1L)) == 0L
+            return (b and 0x000FFFFFFFFFFFFFL) == 0L
+        }
 
         override val sign: FloatingPointSign<Double> = object : FloatingPointSign<Double> {
             // All operations use bit manipulation on the raw Long representation.

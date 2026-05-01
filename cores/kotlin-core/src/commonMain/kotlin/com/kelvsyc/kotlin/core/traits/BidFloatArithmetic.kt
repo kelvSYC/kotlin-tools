@@ -94,6 +94,7 @@ private val bidFloatArithmeticInstance: FloatingPointArithmetic<BidFloat> = obje
     override fun BidFloat.isInfinite(): Boolean = this.isInfinite()
     override fun BidFloat.isFinite(): Boolean = !this.isNaN() && !this.isInfinite()
     override fun BidFloat.isZero(): Boolean = this.isZero()
+    override fun BidFloat.isInteger(): Boolean = this.isInteger()
     override fun BidFloat.isNegative(): Boolean = bits < 0
     override fun BidFloat.negate(): BidFloat = BidFloat(bits xor Int.MIN_VALUE)
     override fun BidFloat.abs(): BidFloat = BidFloat(bits and Int.MAX_VALUE)

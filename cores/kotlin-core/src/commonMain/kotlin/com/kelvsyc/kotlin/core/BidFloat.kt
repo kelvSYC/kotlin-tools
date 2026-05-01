@@ -169,9 +169,9 @@ value class BidFloat(val bits: Int) {
         // 1 × 10^(-6): biasedExponent=95, significand=1.
         override val epsilon: BidFloat get() = BidFloat(0x2F800001)
 
-        // BidFloat exposes isNaN/isInfinite/isZero/isNormal/isSubnormal as member functions;
-        // calling this.foo() inside an override of the same name resolves to the member function
-        // (no recursion), since member functions take dispatch priority over member extensions.
+        // BidFloat exposes isNaN/isInfinite/isZero/isNormal/isSubnormal/isInteger as member
+        // functions; calling this.foo() inside an override of the same name resolves to the member
+        // function (no recursion), since member functions take dispatch priority over member extensions.
         override val classification: IeeeFloatingPointClassification<BidFloat> =
             object : IeeeFloatingPointClassification<BidFloat> {
                 override fun BidFloat.isNaN(): Boolean = this.isNaN()
@@ -180,7 +180,17 @@ value class BidFloat(val bits: Int) {
                 override fun BidFloat.isZero(): Boolean = this.isZero()
                 override fun BidFloat.isNormal(): Boolean = this.isNormal()
                 override fun BidFloat.isSubnormal(): Boolean = this.isSubnormal()
+                override fun BidFloat.isInteger(): Boolean = this.isInteger()
             }
+
+        // Strip trailing decimal zeros from the significand; the value is a power of ten iff the
+        // reduced significand is 1. The sign, NaN, infinite, and zero checks guard the fast paths.
+        override fun BidFloat.isPowerOfTen(): Boolean {
+            if (isNaN() || isInfinite() || isZero() || sign) return false
+            var sig = significand
+            while (sig % 10 == 0) sig /= 10
+            return sig == 1
+        }
 
         // All sign operations use bit manipulation on the raw Int representation.
         override val sign: FloatingPointSign<BidFloat> = object : FloatingPointSign<BidFloat> {
@@ -411,5 +421,21 @@ value class BidFloat(val bits: Int) {
         if (isNaN() || isInfinite() || isZero()) return false
         if (biasedExponent >= 6) return false
         return significand < DECIMAL32_POW10[6 - biasedExponent].toInt()
+    }
+
+    /**
+     * Returns `true` if this value represents a mathematical integer (including zero).
+     *
+     * The value is `significand × 10^(biasedExponent − 101)`.  When the unbiased exponent is
+     * non-negative the value is trivially an integer.  When negative, the value is an integer iff
+     * the last `−(biasedExponent − 101)` decimal digits of the significand are all zero.  NaN and
+     * infinity return `false`.
+     */
+    fun isInteger(): Boolean {
+        if (isNaN() || isInfinite()) return false
+        if (isZero() || biasedExponent >= 101) return true
+        val fracExp = 101 - biasedExponent           // number of required trailing zeros
+        if (fracExp > 6) return false                // significand < 10^7, can't have ≥ 7 trailing zeros
+        return significand % DECIMAL32_POW10[fracExp].toInt() == 0
     }
 }

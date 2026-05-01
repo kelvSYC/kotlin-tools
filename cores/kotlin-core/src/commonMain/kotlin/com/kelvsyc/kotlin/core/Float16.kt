@@ -235,7 +235,20 @@ value class Float16(val bits: Short) {
                 override fun Float16.isZero(): Boolean = this.isZero()
                 override fun Float16.isNormal(): Boolean = this.isNormal()
                 override fun Float16.isSubnormal(): Boolean = this.isSubnormal()
+                override fun Float16.isInteger(): Boolean = this.isInteger()
             }
+
+        // b > 0 ensures positive and non-zero. biasedExp == 0 → subnormal: power-of-2 iff the
+        // 10-bit mantissa field itself has exactly one bit set. biasedExp in 1..30 → normal:
+        // power-of-2 iff all 10 mantissa bits are zero (significand = 1.000…).
+        override fun Float16.isPowerOfTwo(): Boolean {
+            val b = bits.toInt() and 0xFFFF
+            if (b == 0 || b >= 0x8000) return false
+            val biasedExp = b ushr 10
+            if (biasedExp == 31) return false
+            if (biasedExp == 0) return (b and (b - 1)) == 0
+            return (b and 0x03FF) == 0
+        }
 
         override val sign: FloatingPointSign<Float16> = object : FloatingPointSign<Float16> {
             override fun Float16.isNegative(): Boolean = this.sign
@@ -300,6 +313,23 @@ value class Float16(val bits: Short) {
      * the normal range are zero, subnormal, infinite, or NaN.
      */
     fun isNormal(): Boolean = biasedExponent in 1..30
+
+    /**
+     * Returns `true` if this value represents a mathematical integer (including zero).
+     *
+     * Uses the same bit-manipulation approach as [Binary32][com.kelvsyc.kotlin.core.traits.Binary32]:
+     * biasedExp ≥ 25 (unbiased ≥ 10) → all bits are integer; biasedExp < 15 → |value| < 1;
+     * otherwise the low `25 − biasedExp` mantissa bits must all be zero.
+     */
+    fun isInteger(): Boolean {
+        val b = bits.toInt() and 0x7FFF   // clear sign bit
+        if (b >= 0x7C00) return false      // NaN or infinite
+        if (b == 0) return true            // ±0
+        val exp = b ushr 10
+        if (exp >= 25) return true         // unbiased ≥ 10: no fractional bits
+        if (exp < 15) return false         // |value| < 1: not an integer
+        return (b and ((1 shl (25 - exp)) - 1)) == 0
+    }
 
     /** Returns this value with its sign bit flipped. */
     operator fun unaryMinus() = Float16((bits.toInt() xor 0x8000).toShort())

@@ -188,7 +188,20 @@ value class BFloat16(val bits: Short) {
                 override fun BFloat16.isZero(): Boolean = this.isZero()
                 override fun BFloat16.isNormal(): Boolean = this.isNormal()
                 override fun BFloat16.isSubnormal(): Boolean = this.isSubnormal()
+                override fun BFloat16.isInteger(): Boolean = this.isInteger()
             }
+
+        // b > 0 ensures positive and non-zero. biasedExp == 0 → subnormal: power-of-2 iff the
+        // 7-bit mantissa field itself has exactly one bit set. biasedExp in 1..254 → normal:
+        // power-of-2 iff all 7 mantissa bits are zero (significand = 1.000…).
+        override fun BFloat16.isPowerOfTwo(): Boolean {
+            val b = bits.toInt() and 0xFFFF
+            if (b == 0 || b >= 0x8000) return false
+            val biasedExp = b ushr 7
+            if (biasedExp == 255) return false
+            if (biasedExp == 0) return (b and (b - 1)) == 0
+            return (b and 0x007F) == 0
+        }
 
         override val sign: FloatingPointSign<BFloat16> = object : FloatingPointSign<BFloat16> {
             override fun BFloat16.isNegative(): Boolean = this.sign
@@ -249,6 +262,23 @@ value class BFloat16(val bits: Short) {
      * Returns `true` if this value is a normal floating-point number: finite, non-zero, and not subnormal.
      */
     fun isNormal(): Boolean = biasedExponent in 1..254
+
+    /**
+     * Returns `true` if this value represents a mathematical integer (including zero).
+     *
+     * Uses the same bit-manipulation approach as [Binary32][com.kelvsyc.kotlin.core.traits.Binary32]:
+     * biasedExp ≥ 134 (unbiased ≥ 7) → all bits are integer; biasedExp < 127 → |value| < 1;
+     * otherwise the low `134 − biasedExp` mantissa bits must all be zero.
+     */
+    fun isInteger(): Boolean {
+        val b = bits.toInt() and 0x7FFF   // clear sign bit
+        if (b >= 0x7F80) return false      // NaN or infinite
+        if (b == 0) return true            // ±0
+        val exp = b ushr 7
+        if (exp >= 134) return true        // unbiased ≥ 7: no fractional bits
+        if (exp < 127) return false        // |value| < 1: not an integer
+        return (b and ((1 shl (134 - exp)) - 1)) == 0
+    }
 
     /** Returns this value with its sign bit flipped. */
     operator fun unaryMinus() = BFloat16((bits.toInt() xor 0x8000).toShort())

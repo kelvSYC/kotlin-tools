@@ -1,7 +1,10 @@
 package com.kelvsyc.kotlin.core.traits
 
 import com.kelvsyc.kotlin.core.BFloat16
+import com.kelvsyc.kotlin.core.BidDouble
 import com.kelvsyc.kotlin.core.BidFloat
+import com.kelvsyc.kotlin.core.DpdDouble
+import com.kelvsyc.kotlin.core.DpdFloat
 import com.kelvsyc.kotlin.core.Float16
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -104,6 +107,61 @@ class FloatingPointClassificationTest : FunSpec({
             test("NaN returns false") {
                 with(cls) { Float16.NaN.isSubnormal() } shouldBe false
             }
+        }
+
+        context("isInteger") {
+            test("positive zero returns true") {
+                with(cls) { Float16(0).isInteger() } shouldBe true
+            }
+            test("one returns true") {
+                with(cls) { Float16(0x3C00.toShort()).isInteger() } shouldBe true
+            }
+            test("integer at biasedExp=25 boundary returns true") {
+                // biasedExp=25 ≥ bias+mantissaBits (25) → always integer; value = 1024.0
+                with(cls) { Float16(0x6400.toShort()).isInteger() } shouldBe true
+            }
+            test("non-integer at biasedExp=24 returns false") {
+                // biasedExp=24, mantissa=1 → value = 512.5 (one fractional bit set)
+                with(cls) { Float16(0x6001.toShort()).isInteger() } shouldBe false
+            }
+            test("subnormal returns false") {
+                with(cls) { Float16.MIN_VALUE.isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { Float16.POSITIVE_INFINITY.isInteger() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(cls) { Float16.NaN.isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("Float16.Companion isPowerOfTwo") {
+        test("one is a power of two") {
+            with(Float16) { Float16(0x3C00.toShort()).isPowerOfTwo() } shouldBe true
+        }
+        test("two is a power of two") {
+            with(Float16) { Float16(0x4000.toShort()).isPowerOfTwo() } shouldBe true
+        }
+        test("three is not a power of two") {
+            // biasedExp=16, mantissa=0x200 → value = 3.0; mantissa non-zero → not a power of two
+            with(Float16) { Float16(0x4200.toShort()).isPowerOfTwo() } shouldBe false
+        }
+        test("smallest subnormal is a power of two") {
+            // MIN_VALUE = 0x0001: single mantissa bit set → 2^(−24)
+            with(Float16) { Float16.MIN_VALUE.isPowerOfTwo() } shouldBe true
+        }
+        test("two-bit subnormal is not a power of two") {
+            with(Float16) { Float16(0x0003.toShort()).isPowerOfTwo() } shouldBe false
+        }
+        test("positive zero is not a power of two") {
+            with(Float16) { Float16(0).isPowerOfTwo() } shouldBe false
+        }
+        test("negative value is not a power of two") {
+            with(Float16) { Float16(0xC000.toShort()).isPowerOfTwo() } shouldBe false
+        }
+        test("NaN is not a power of two") {
+            with(Float16) { Float16.NaN.isPowerOfTwo() } shouldBe false
         }
     }
 
@@ -295,6 +353,66 @@ class FloatingPointClassificationTest : FunSpec({
                 with(cls) { BFloat16.NaN.isSubnormal() } shouldBe false
             }
         }
+
+        context("isInteger") {
+            test("positive zero returns true") {
+                with(cls) { BFloat16(0).isInteger() } shouldBe true
+            }
+            test("one returns true") {
+                // BFloat16(0x3F80) = 1.0: biasedExp=127, mantissa=0
+                with(cls) { BFloat16(0x3F80.toShort()).isInteger() } shouldBe true
+            }
+            test("integer at biasedExp=134 boundary returns true") {
+                // biasedExp=134 ≥ bias+mantissaBits (134) → always integer; value = 128.0
+                with(cls) { BFloat16(0x4300.toShort()).isInteger() } shouldBe true
+            }
+            test("integer at biasedExp=133 with zero fractional bit returns true") {
+                // biasedExp=133, mantissa=0 → value = 64.0 (no fractional bits set)
+                with(cls) { BFloat16(0x4280.toShort()).isInteger() } shouldBe true
+            }
+            test("non-integer at biasedExp=133 returns false") {
+                // biasedExp=133, mantissa=1 → value = 64.5 (one fractional bit set)
+                with(cls) { BFloat16(0x4281.toShort()).isInteger() } shouldBe false
+            }
+            test("subnormal returns false") {
+                with(cls) { BFloat16.MIN_VALUE.isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { BFloat16.POSITIVE_INFINITY.isInteger() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(cls) { BFloat16.NaN.isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("BFloat16.Companion isPowerOfTwo") {
+        test("one is a power of two") {
+            with(BFloat16) { BFloat16(0x3F80.toShort()).isPowerOfTwo() } shouldBe true
+        }
+        test("two is a power of two") {
+            // BFloat16(0x4000) = 2.0: biasedExp=128, mantissa=0
+            with(BFloat16) { BFloat16(0x4000.toShort()).isPowerOfTwo() } shouldBe true
+        }
+        test("three is not a power of two") {
+            // BFloat16(0x4040) = 3.0: biasedExp=128, mantissa=0x40 → non-zero
+            with(BFloat16) { BFloat16(0x4040.toShort()).isPowerOfTwo() } shouldBe false
+        }
+        test("smallest subnormal is a power of two") {
+            with(BFloat16) { BFloat16.MIN_VALUE.isPowerOfTwo() } shouldBe true
+        }
+        test("two-bit subnormal is not a power of two") {
+            with(BFloat16) { BFloat16(0x0003.toShort()).isPowerOfTwo() } shouldBe false
+        }
+        test("positive zero is not a power of two") {
+            with(BFloat16) { BFloat16(0).isPowerOfTwo() } shouldBe false
+        }
+        test("negative value is not a power of two") {
+            with(BFloat16) { BFloat16(0xC000.toShort()).isPowerOfTwo() } shouldBe false
+        }
+        test("NaN is not a power of two") {
+            with(BFloat16) { BFloat16.NaN.isPowerOfTwo() } shouldBe false
+        }
     }
 
     context("BFloat16.Companion sign") {
@@ -485,6 +603,60 @@ class FloatingPointClassificationTest : FunSpec({
                 with(cls) { Float.NaN.isSubnormal() } shouldBe false
             }
         }
+
+        context("isInteger") {
+            test("positive zero returns true") {
+                with(cls) { 0.0f.isInteger() } shouldBe true
+            }
+            test("one returns true") {
+                with(cls) { 1.0f.isInteger() } shouldBe true
+            }
+            test("0.5 returns false") {
+                with(cls) { 0.5f.isInteger() } shouldBe false
+            }
+            test("integer at biasedExp=150 boundary returns true") {
+                // biasedExp=150 ≥ bias+mantissaBits (150) → always integer; value = 2^23 = 8388608.0
+                with(cls) { Float.fromBits(0x4B000000).isInteger() } shouldBe true
+            }
+            test("non-integer at biasedExp=149 returns false") {
+                // biasedExp=149, mantissa=1 → value = 4194304.5 (one fractional bit set)
+                with(cls) { Float.fromBits(0x4A800001).isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { Float.POSITIVE_INFINITY.isInteger() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(cls) { Float.NaN.isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("Binary32.Companion isPowerOfTwo") {
+        test("one is a power of two") {
+            with(Binary32) { 1.0f.isPowerOfTwo() } shouldBe true
+        }
+        test("two is a power of two") {
+            with(Binary32) { 2.0f.isPowerOfTwo() } shouldBe true
+        }
+        test("three is not a power of two") {
+            with(Binary32) { 3.0f.isPowerOfTwo() } shouldBe false
+        }
+        test("smallest subnormal is a power of two") {
+            // Float.MIN_VALUE = bits=0x00000001: single bit → 2^(−149)
+            with(Binary32) { Float.MIN_VALUE.isPowerOfTwo() } shouldBe true
+        }
+        test("two-bit subnormal is not a power of two") {
+            with(Binary32) { Float.fromBits(3).isPowerOfTwo() } shouldBe false
+        }
+        test("positive zero is not a power of two") {
+            with(Binary32) { 0.0f.isPowerOfTwo() } shouldBe false
+        }
+        test("negative value is not a power of two") {
+            with(Binary32) { (-2.0f).isPowerOfTwo() } shouldBe false
+        }
+        test("NaN is not a power of two") {
+            with(Binary32) { Float.NaN.isPowerOfTwo() } shouldBe false
+        }
     }
 
     context("Binary32.Companion sign") {
@@ -671,6 +843,60 @@ class FloatingPointClassificationTest : FunSpec({
             test("NaN returns false") {
                 with(cls) { Double.NaN.isSubnormal() } shouldBe false
             }
+        }
+
+        context("isInteger") {
+            test("positive zero returns true") {
+                with(cls) { 0.0.isInteger() } shouldBe true
+            }
+            test("one returns true") {
+                with(cls) { 1.0.isInteger() } shouldBe true
+            }
+            test("0.5 returns false") {
+                with(cls) { 0.5.isInteger() } shouldBe false
+            }
+            test("integer at biasedExp=1075 boundary returns true") {
+                // biasedExp=1075 ≥ bias+mantissaBits (1075) → always integer; value = 2^52
+                with(cls) { Double.fromBits(0x4330000000000000L).isInteger() } shouldBe true
+            }
+            test("non-integer at biasedExp=1074 returns false") {
+                // biasedExp=1074, mantissa=1 → value = 2^51 + 0.5 (one fractional bit set)
+                with(cls) { Double.fromBits(0x4320000000000001L).isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { Double.POSITIVE_INFINITY.isInteger() } shouldBe false
+            }
+            test("NaN returns false") {
+                with(cls) { Double.NaN.isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("Binary64.Companion isPowerOfTwo") {
+        test("one is a power of two") {
+            with(Binary64) { 1.0.isPowerOfTwo() } shouldBe true
+        }
+        test("two is a power of two") {
+            with(Binary64) { 2.0.isPowerOfTwo() } shouldBe true
+        }
+        test("three is not a power of two") {
+            with(Binary64) { 3.0.isPowerOfTwo() } shouldBe false
+        }
+        test("smallest subnormal is a power of two") {
+            // Double.MIN_VALUE = bits=1L: single bit → 2^(−1074)
+            with(Binary64) { Double.MIN_VALUE.isPowerOfTwo() } shouldBe true
+        }
+        test("two-bit subnormal is not a power of two") {
+            with(Binary64) { Double.fromBits(3L).isPowerOfTwo() } shouldBe false
+        }
+        test("positive zero is not a power of two") {
+            with(Binary64) { 0.0.isPowerOfTwo() } shouldBe false
+        }
+        test("negative value is not a power of two") {
+            with(Binary64) { (-2.0).isPowerOfTwo() } shouldBe false
+        }
+        test("NaN is not a power of two") {
+            with(Binary64) { Double.NaN.isPowerOfTwo() } shouldBe false
         }
     }
 
@@ -877,6 +1103,72 @@ class FloatingPointClassificationTest : FunSpec({
                 with(cls) { BidFloat.NaN.isSubnormal() } shouldBe false
             }
         }
+
+        context("isInteger") {
+            test("NaN returns false") {
+                with(cls) { BidFloat.NaN.isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { BidFloat.positiveInfinity.isInteger() } shouldBe false
+            }
+            test("positive zero returns true") {
+                with(cls) { BidFloat.positiveZero.isInteger() } shouldBe true
+            }
+            test("1.0 (biasedExp=101) returns true") {
+                // biasedExp=101 ≥ 101 → unbiased exp=0, trivially integer
+                with(cls) { BidFloat(0x32800001).isInteger() } shouldBe true
+            }
+            test("0.1 (sig=1, biasedExp=100) returns false") {
+                // sig=1, biasedExp=100: sig % 10^1 = 1 ≠ 0 → not integer
+                with(cls) { BidFloat(0x32000001).isInteger() } shouldBe false
+            }
+            test("10.0 (biasedExp=101, sig=10) returns true") {
+                with(cls) { BidFloat(0x3280000A).isInteger() } shouldBe true
+            }
+            test("cohort 1.0 (sig=10, biasedExp=100) returns true") {
+                // 10×10^−1 = 1.0; sig%10 = 0 → integer
+                with(cls) { BidFloat(0x3200000A).isInteger() } shouldBe true
+            }
+            test("cohort 1.0 (sig=1000000, biasedExp=95) returns true") {
+                // 1_000_000×10^−6 = 1.0; sig % 10^6 = 0 → integer
+                with(cls) { BidFloat(0x2F8F4240).isInteger() } shouldBe true
+            }
+            test("fracExp > 6 guard: 10^-7 (sig=1, biasedExp=94) returns false") {
+                with(cls) { BidFloat(0x2F000001).isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("BidFloat.Companion isPowerOfTen") {
+        test("NaN returns false") {
+            with(BidFloat) { BidFloat.NaN.isPowerOfTen() } shouldBe false
+        }
+        test("positive infinity returns false") {
+            with(BidFloat) { BidFloat.positiveInfinity.isPowerOfTen() } shouldBe false
+        }
+        test("positive zero returns false") {
+            with(BidFloat) { BidFloat.positiveZero.isPowerOfTen() } shouldBe false
+        }
+        test("1.0 is a power of ten") {
+            with(BidFloat) { BidFloat(0x32800001).isPowerOfTen() } shouldBe true
+        }
+        test("10.0 is a power of ten") {
+            with(BidFloat) { BidFloat(0x3280000A).isPowerOfTen() } shouldBe true
+        }
+        test("100.0 (sig=100) is a power of ten") {
+            // strip two trailing zeros → sig=1 → true
+            with(BidFloat) { BidFloat(0x32800064).isPowerOfTen() } shouldBe true
+        }
+        test("2.0 is not a power of ten") {
+            with(BidFloat) { BidFloat(0x32800002).isPowerOfTen() } shouldBe false
+        }
+        test("cohort 1.0 (sig=10, biasedExp=100) is a power of ten") {
+            // strip one trailing zero → sig=1 → true
+            with(BidFloat) { BidFloat(0x3200000A).isPowerOfTen() } shouldBe true
+        }
+        test("negative value returns false") {
+            with(BidFloat) { BidFloat(0x3280000A or Int.MIN_VALUE).isPowerOfTen() } shouldBe false
+        }
     }
 
     context("BidFloat.Companion sign") {
@@ -966,6 +1258,200 @@ class FloatingPointClassificationTest : FunSpec({
                 val negNaN = BidFloat(BidFloat.NaN.bits or Int.MIN_VALUE)
                 with(sgn) { BidFloat.NaN.copySign(neg) } shouldBe negNaN
             }
+        }
+    }
+
+    // ── BidDouble (decimal64 BID) ─────────────────────────────────────────────
+
+    context("BidDouble.Companion classification") {
+        val cls = BidDouble.classification
+
+        context("isInteger") {
+            test("NaN returns false") {
+                with(cls) { BidDouble.NaN.isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { BidDouble.positiveInfinity.isInteger() } shouldBe false
+            }
+            test("positive zero returns true") {
+                with(cls) { BidDouble.positiveZero.isInteger() } shouldBe true
+            }
+            test("1.0 (biasedExp=398) returns true") {
+                // biasedExp=398 ≥ 398 → unbiased exp=0, trivially integer
+                with(cls) { BidDouble(0x31C0000000000001L).isInteger() } shouldBe true
+            }
+            test("0.1 (sig=1, biasedExp=397) returns false") {
+                // sig=1, biasedExp=397: sig % 10^1 = 1 ≠ 0 → not integer
+                with(cls) { BidDouble(0x31A0000000000001L).isInteger() } shouldBe false
+            }
+            test("10.0 (biasedExp=398, sig=10) returns true") {
+                with(cls) { BidDouble(0x31C000000000000AL).isInteger() } shouldBe true
+            }
+            test("cohort 1.0 (sig=100, biasedExp=396) returns true") {
+                // 100×10^−2 = 1.0; sig%100 = 0 → integer
+                with(cls) { BidDouble(0x3180000000000064L).isInteger() } shouldBe true
+            }
+            test("fracExp > 15 guard: sig=1, biasedExp=382 returns false") {
+                with(cls) { BidDouble(0x2FC0000000000001L).isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("BidDouble.Companion isPowerOfTen") {
+        test("NaN returns false") {
+            with(BidDouble) { BidDouble.NaN.isPowerOfTen() } shouldBe false
+        }
+        test("positive infinity returns false") {
+            with(BidDouble) { BidDouble.positiveInfinity.isPowerOfTen() } shouldBe false
+        }
+        test("positive zero returns false") {
+            with(BidDouble) { BidDouble.positiveZero.isPowerOfTen() } shouldBe false
+        }
+        test("1.0 is a power of ten") {
+            with(BidDouble) { BidDouble(0x31C0000000000001L).isPowerOfTen() } shouldBe true
+        }
+        test("10.0 is a power of ten") {
+            with(BidDouble) { BidDouble(0x31C000000000000AL).isPowerOfTen() } shouldBe true
+        }
+        test("100.0 (sig=100) is a power of ten") {
+            with(BidDouble) { BidDouble(0x31C0000000000064L).isPowerOfTen() } shouldBe true
+        }
+        test("0.1 (10^-1) is a power of ten") {
+            // sig=1, biasedExp=397: strip no zeros → sig=1 → true
+            with(BidDouble) { BidDouble(0x31A0000000000001L).isPowerOfTen() } shouldBe true
+        }
+        test("2.0 is not a power of ten") {
+            with(BidDouble) { BidDouble(0x31C0000000000002L).isPowerOfTen() } shouldBe false
+        }
+        test("negative value returns false") {
+            with(BidDouble) { BidDouble(0x31C0000000000001L xor Long.MIN_VALUE).isPowerOfTen() } shouldBe false
+        }
+    }
+
+    // ── DpdFloat (decimal32 DPD) ──────────────────────────────────────────────
+
+    context("DpdFloat.Companion classification") {
+        val cls = DpdFloat.classification
+
+        context("isInteger") {
+            test("NaN returns false") {
+                with(cls) { DpdFloat.NaN.isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { DpdFloat.positiveInfinity.isInteger() } shouldBe false
+            }
+            test("positive zero returns true") {
+                with(cls) { DpdFloat.positiveZero.isInteger() } shouldBe true
+            }
+            test("1.0 (biasedExp=101) returns true") {
+                // DPD bit pattern same as BID for single-digit sig ≤ 7
+                with(cls) { DpdFloat(0x32800001).isInteger() } shouldBe true
+            }
+            test("0.1 (sig=1, biasedExp=100) returns false") {
+                with(cls) { DpdFloat(0x32000001).isInteger() } shouldBe false
+            }
+            test("10.0 (biasedExp=101, DPD declet=0x010) returns true") {
+                // DPD: lower declet encodes {0,1,0} → 010 → 0x010; value = 0*10^6 + 0 + 010 = 10
+                with(cls) { DpdFloat(0x32800010).isInteger() } shouldBe true
+            }
+            test("cohort 1.0 (leadingDigit=1, biasedExp=95) returns true") {
+                // combination=(95<<3)|1=761=0x2F9, continuation=0 → sig=1_000_000; sig%10^6=0
+                with(cls) { DpdFloat(0x2F900000).isInteger() } shouldBe true
+            }
+            test("fracExp > 6 guard: sig=1, biasedExp=94 returns false") {
+                with(cls) { DpdFloat(0x2F000001).isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("DpdFloat.Companion isPowerOfTen") {
+        test("NaN returns false") {
+            with(DpdFloat) { DpdFloat.NaN.isPowerOfTen() } shouldBe false
+        }
+        test("positive zero returns false") {
+            with(DpdFloat) { DpdFloat.positiveZero.isPowerOfTen() } shouldBe false
+        }
+        test("1.0 is a power of ten") {
+            with(DpdFloat) { DpdFloat(0x32800001).isPowerOfTen() } shouldBe true
+        }
+        test("10.0 is a power of ten") {
+            with(DpdFloat) { DpdFloat(0x32800010).isPowerOfTen() } shouldBe true
+        }
+        test("100.0 (DPD lower declet=0x080) is a power of ten") {
+            // DPD lower declet: (1<<7)|(0<<4)|(0) = 0x080 encodes {1,0,0} = 100
+            with(DpdFloat) { DpdFloat(0x32800080).isPowerOfTen() } shouldBe true
+        }
+        test("0.1 (sig=1, biasedExp=100) is a power of ten") {
+            with(DpdFloat) { DpdFloat(0x32000001).isPowerOfTen() } shouldBe true
+        }
+        test("2.0 is not a power of ten") {
+            with(DpdFloat) { DpdFloat(0x32800002).isPowerOfTen() } shouldBe false
+        }
+        test("negative value returns false") {
+            with(DpdFloat) { DpdFloat(0x32800001 or Int.MIN_VALUE).isPowerOfTen() } shouldBe false
+        }
+    }
+
+    // ── DpdDouble (decimal64 DPD) ─────────────────────────────────────────────
+
+    context("DpdDouble.Companion classification") {
+        val cls = DpdDouble.classification
+
+        context("isInteger") {
+            test("NaN returns false") {
+                with(cls) { DpdDouble.NaN.isInteger() } shouldBe false
+            }
+            test("positive infinity returns false") {
+                with(cls) { DpdDouble.positiveInfinity.isInteger() } shouldBe false
+            }
+            test("positive zero returns true") {
+                with(cls) { DpdDouble.positiveZero.isInteger() } shouldBe true
+            }
+            test("1.0 (biasedExp=398) returns true") {
+                // DPD bit pattern same as BID for single-digit sig ≤ 7
+                with(cls) { DpdDouble(0x31C0000000000001L).isInteger() } shouldBe true
+            }
+            test("0.1 (sig=1, biasedExp=397) returns false") {
+                with(cls) { DpdDouble(0x31A0000000000001L).isInteger() } shouldBe false
+            }
+            test("10.0 (biasedExp=398, last declet=0x010) returns true") {
+                with(cls) { DpdDouble(0x31C0000000000010L).isInteger() } shouldBe true
+            }
+            test("cohort 1.0 (leadingDigit=1, biasedExp=383) returns true") {
+                // combination=(383<<3)|1=3065=0xBF9; bits=(0xBF9L shl 50)=0x2FE4000000000000L
+                // sig = 10^15; biasedExp=383; sig % 10^15 = 0 → integer
+                with(cls) { DpdDouble(0x2FE4000000000000L).isInteger() } shouldBe true
+            }
+            test("fracExp > 15 guard: sig=1, biasedExp=382 returns false") {
+                with(cls) { DpdDouble(0x2FC0000000000001L).isInteger() } shouldBe false
+            }
+        }
+    }
+
+    context("DpdDouble.Companion isPowerOfTen") {
+        test("NaN returns false") {
+            with(DpdDouble) { DpdDouble.NaN.isPowerOfTen() } shouldBe false
+        }
+        test("positive zero returns false") {
+            with(DpdDouble) { DpdDouble.positiveZero.isPowerOfTen() } shouldBe false
+        }
+        test("1.0 is a power of ten") {
+            with(DpdDouble) { DpdDouble(0x31C0000000000001L).isPowerOfTen() } shouldBe true
+        }
+        test("10.0 is a power of ten") {
+            with(DpdDouble) { DpdDouble(0x31C0000000000010L).isPowerOfTen() } shouldBe true
+        }
+        test("100.0 (last declet=0x080) is a power of ten") {
+            with(DpdDouble) { DpdDouble(0x31C0000000000080L).isPowerOfTen() } shouldBe true
+        }
+        test("0.1 (sig=1, biasedExp=397) is a power of ten") {
+            with(DpdDouble) { DpdDouble(0x31A0000000000001L).isPowerOfTen() } shouldBe true
+        }
+        test("2.0 is not a power of ten") {
+            with(DpdDouble) { DpdDouble(0x31C0000000000002L).isPowerOfTen() } shouldBe false
+        }
+        test("negative value returns false") {
+            with(DpdDouble) { DpdDouble(0x31C0000000000001L xor Long.MIN_VALUE).isPowerOfTen() } shouldBe false
         }
     }
 })

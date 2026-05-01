@@ -40,6 +40,10 @@ fun <F : DoubleBinaryFloatingPoint<T>, T> DoubleBinaryFloatingPointArithmetic.Co
     override fun F.isFinite(): Boolean = with(arith) { high.isFinite() }
     // A properly normalised double binary value is zero iff both components are zero.
     override fun F.isZero(): Boolean = with(arith) { high.isZero() } && with(arith) { low.isZero() }
+    // hi + lo is integer iff both hi and lo are integers: for |hi| < 2^52, |lo| < 0.5*ulp(hi) < 1
+    // so lo cannot cancel frac(hi); for |hi| ≥ 2^52, hi is always an integer and lo must be too.
+    override fun F.isInteger(): Boolean =
+        with(arith) { high.isInteger() } && with(arith) { low.isInteger() }
 
     // ── Sign ─────────────────────────────────────────────────────────────────
     // The sign of a normalised (hi, lo) pair is the sign of hi.
