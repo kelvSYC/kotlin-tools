@@ -255,6 +255,65 @@ class IntegerArithmeticTest : FunSpec({
         }
     }
 
+    // ── SignedIntegerArithmetic sign predicates ───────────────────────────────
+
+    context("SignedIntegerArithmetic.Companion.int sign predicates") {
+        val ops = SignedIntegerArithmetic.int
+
+        context("isNegative") {
+            test("negative value") { with(ops) { (-5).isNegative() } shouldBe true }
+            test("zero is not negative") { with(ops) { 0.isNegative() } shouldBe false }
+            test("positive is not negative") { with(ops) { 5.isNegative() } shouldBe false }
+            test("MIN_VALUE is negative") { with(ops) { Int.MIN_VALUE.isNegative() } shouldBe true }
+        }
+
+        context("isPositive") {
+            test("positive value") { with(ops) { 5.isPositive() } shouldBe true }
+            test("zero is not positive") { with(ops) { 0.isPositive() } shouldBe false }
+            test("negative is not positive") { with(ops) { (-5).isPositive() } shouldBe false }
+        }
+
+        context("isZero") {
+            test("zero") { with(ops) { 0.isZero() } shouldBe true }
+            test("positive is not zero") { with(ops) { 1.isZero() } shouldBe false }
+            test("negative is not zero") { with(ops) { (-1).isZero() } shouldBe false }
+        }
+
+        context("signum") {
+            test("positive gives 1") { with(ops) { 42.signum() } shouldBe 1 }
+            test("negative gives -1") { with(ops) { (-42).signum() } shouldBe -1 }
+            test("zero gives 0") { with(ops) { 0.signum() } shouldBe 0 }
+            test("MIN_VALUE gives -1") { with(ops) { Int.MIN_VALUE.signum() } shouldBe -1 }
+            test("MAX_VALUE gives 1") { with(ops) { Int.MAX_VALUE.signum() } shouldBe 1 }
+        }
+    }
+
+    context("SignedIntegerArithmetic.Companion.long sign predicates") {
+        val ops = SignedIntegerArithmetic.long
+
+        context("isNegative") {
+            test("negative value") { with(ops) { (-5L).isNegative() } shouldBe true }
+            test("zero is not negative") { with(ops) { 0L.isNegative() } shouldBe false }
+        }
+
+        context("isPositive") {
+            test("positive value") { with(ops) { 5L.isPositive() } shouldBe true }
+            test("zero is not positive") { with(ops) { 0L.isPositive() } shouldBe false }
+        }
+
+        context("isZero") {
+            test("zero") { with(ops) { 0L.isZero() } shouldBe true }
+            test("non-zero") { with(ops) { 1L.isZero() } shouldBe false }
+        }
+
+        context("signum") {
+            test("positive gives 1L") { with(ops) { 42L.signum() } shouldBe 1L }
+            test("negative gives -1L") { with(ops) { (-42L).signum() } shouldBe -1L }
+            test("zero gives 0L") { with(ops) { 0L.signum() } shouldBe 0L }
+            test("Long.MIN_VALUE gives -1L") { with(ops) { Long.MIN_VALUE.signum() } shouldBe -1L }
+        }
+    }
+
     // ── Singleton identity ────────────────────────────────────────────────────
 
     context("singleton identity") {

@@ -22,6 +22,7 @@ private val longInstance: BitShift<Long> = object : BitShift<Long> {
 
 val BitShift.Companion.int: BitShift<Int> get() = intInstance
 val BitShift.Companion.long: BitShift<Long> get() = longInstance
+val BitShift.Companion.short: BitShift<Short> get() = Int16
 val BitShift.Companion.ushort: BitShift<UShort> get() = UInt16
 val BitShift.Companion.uint: BitShift<UInt> get() = UInt32
 val BitShift.Companion.ulong: BitShift<ULong> get() = UInt64

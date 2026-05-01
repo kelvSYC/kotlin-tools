@@ -33,6 +33,33 @@ interface SignedIntegerArithmetic<T> : IntegerArithmetic<T> {
      */
     fun T.abs(): T
 
+    /**
+     * Returns `true` if this value is strictly less than [zero].
+     */
+    fun T.isNegative(): Boolean = compareTo(zero) < 0
+
+    /**
+     * Returns `true` if this value is strictly greater than [zero].
+     */
+    fun T.isPositive(): Boolean = compareTo(zero) > 0
+
+    /**
+     * Returns `true` if this value is equal to [zero].
+     */
+    fun T.isZero(): Boolean = compareTo(zero) == 0
+
+    /**
+     * Returns `-1`, `0`, or `1` as this value is negative, zero, or positive respectively.
+     *
+     * Overflow behavior for [negate] is inherited from the implementation; the only value affected is the
+     * negation of [one] (i.e. `-1`), which is always representable for any signed integer type.
+     */
+    fun T.signum(): T = when {
+        isNegative() -> one.negate()
+        isPositive() -> one
+        else -> zero
+    }
+
     companion object
 }
 
