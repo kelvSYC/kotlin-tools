@@ -2,7 +2,7 @@ package com.kelvsyc.kotlin.core.traits
 
 /**
  * `SignedIntegerArithmetic` is a trait type extending [IntegerArithmetic] with operations that are only meaningful
- * for signed integer types: negation, absolute value, floor division, and floor remainder.
+ * for signed integer types: negation, absolute value, floor division, floor remainder, and ceiling division.
  *
  * Unsigned integer types do not have negative values, so these operations are not defined for them at the
  * arithmetic level. Signed types ([Int], [Long], etc.) implement this sub-interface in addition to the base
@@ -10,14 +10,15 @@ package com.kelvsyc.kotlin.core.traits
  *
  * ## Division and remainder semantics
  *
- * This trait exposes both truncated-division and floor-division semantics:
+ * This trait exposes three division rounding modes:
  *
  * - [IntegerArithmetic.divide] and [IntegerArithmetic.rem] truncate toward zero; the remainder has the sign of
  *   the dividend. These match Kotlin's `/` and `%` operators.
  * - [floorDiv] and [mod] round toward negative infinity; the remainder has the sign of the divisor. These
  *   match Kotlin's `floorDiv` and `mod` extensions.
+ * - [CeilDiv.ceilDiv] rounds toward positive infinity.
  *
- * The two pairs are related by the invariant `a == b.multiply(a.floorDiv(b)).add(a.mod(b))` for all non-zero `b`.
+ * The floor pair satisfies `a == b.multiply(a.floorDiv(b)).add(a.mod(b))` for all non-zero `b`.
  *
  * ## Overflow behavior
  *
@@ -30,7 +31,7 @@ package com.kelvsyc.kotlin.core.traits
  *
  * Canonical wrapping instances for [Int] and [Long] are available as [Companion.int] and [Companion.long].
  */
-interface SignedIntegerArithmetic<T> : IntegerArithmetic<T> {
+interface SignedIntegerArithmetic<T> : IntegerArithmetic<T>, CeilDiv<T> {
     /**
      * Returns the negation of this value. Overflow behavior is implementation-defined.
      *
@@ -102,6 +103,21 @@ interface SignedIntegerArithmetic<T> : IntegerArithmetic<T> {
     fun T.mod(other: T): T {
         val r = rem(other)
         return if (!r.isZero() && r.isNegative() != other.isNegative()) r.add(other) else r
+    }
+
+    /**
+     * Returns the quotient of this value divided by [other], rounded toward positive infinity.
+     *
+     * Throws [ArithmeticException] if [other] is zero. Overflow behavior is implementation-defined;
+     * the only overflow case is `MIN_VALUE.ceilDiv(-1)` — the same case as for [IntegerArithmetic.divide].
+     *
+     * Contrast with [IntegerArithmetic.divide] (truncates toward zero) and [floorDiv] (rounds toward
+     * negative infinity).
+     */
+    override fun T.ceilDiv(divisor: T): T {
+        val q = divide(divisor)
+        val r = rem(divisor)
+        return if (!r.isZero() && r.isNegative() == divisor.isNegative()) q.add(one) else q
     }
 
     companion object

@@ -217,6 +217,20 @@ class IntegerArithmeticTest : FunSpec({
                 with(ops) { (-7).floorDiv(3).multiply(3).add((-7).mod(3)) } shouldBe -7
             }
         }
+
+        context("ceilDiv") {
+            test("7 ceilDiv 2 = 4 (same signs, rounds up)") { with(ops) { 7.ceilDiv(2) } shouldBe 4 }
+            test("-7 ceilDiv 2 = -3 (different signs, truncation already rounds toward +inf)") { with(ops) { (-7).ceilDiv(2) } shouldBe -3 }
+            test("7 ceilDiv -2 = -3 (different signs, truncation already rounds toward +inf)") { with(ops) { 7.ceilDiv(-2) } shouldBe -3 }
+            test("-7 ceilDiv -2 = 4 (same signs, rounds up)") { with(ops) { (-7).ceilDiv(-2) } shouldBe 4 }
+            test("exact division: 6 ceilDiv 2 = 3") { with(ops) { 6.ceilDiv(2) } shouldBe 3 }
+            test("ceilDiv by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1.ceilDiv(0) } }
+            }
+            test("MIN_VALUE ceilDiv -1 wraps (wrapping instance)") {
+                with(ops) { Int.MIN_VALUE.ceilDiv(-1) } shouldBe Int.MIN_VALUE
+            }
+        }
     }
 
     // ── SignedIntegerArithmetic.Companion.long ────────────────────────────────
@@ -299,6 +313,17 @@ class IntegerArithmeticTest : FunSpec({
             }
             test("invariant: a == b * floorDiv(a, b) + mod(a, b)") {
                 with(ops) { (-7L).floorDiv(3L).multiply(3L).add((-7L).mod(3L)) } shouldBe -7L
+            }
+        }
+
+        context("ceilDiv") {
+            test("7L ceilDiv 2L = 4L") { with(ops) { 7L.ceilDiv(2L) } shouldBe 4L }
+            test("-7L ceilDiv 2L = -3L") { with(ops) { (-7L).ceilDiv(2L) } shouldBe -3L }
+            test("7L ceilDiv -2L = -3L") { with(ops) { 7L.ceilDiv(-2L) } shouldBe -3L }
+            test("-7L ceilDiv -2L = 4L") { with(ops) { (-7L).ceilDiv(-2L) } shouldBe 4L }
+            test("exact division: 6L ceilDiv 2L = 3L") { with(ops) { 6L.ceilDiv(2L) } shouldBe 3L }
+            test("ceilDiv by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1L.ceilDiv(0L) } }
             }
         }
     }
