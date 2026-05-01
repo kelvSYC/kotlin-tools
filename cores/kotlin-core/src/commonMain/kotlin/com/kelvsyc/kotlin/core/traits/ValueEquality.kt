@@ -19,4 +19,6 @@ package com.kelvsyc.kotlin.core.traits
  */
 interface ValueEquality<T> {
     fun T.isEqualTo(other: T): Boolean
+
+    companion object
 }
