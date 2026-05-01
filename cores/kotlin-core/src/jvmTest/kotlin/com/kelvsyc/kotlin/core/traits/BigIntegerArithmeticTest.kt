@@ -102,12 +102,56 @@ class BigIntegerArithmeticTest : FunSpec({
             test("positive is not zero") { with(ops) { BigInteger.ONE.isZero() } shouldBe false }
         }
 
-        context("signum") {
-            test("positive gives ONE") { with(ops) { 42.toBigInteger().signum() } shouldBe BigInteger.ONE }
-            test("negative gives -ONE") { with(ops) { (-42).toBigInteger().signum() } shouldBe BigInteger.ONE.negate() }
-            test("zero gives ZERO") { with(ops) { BigInteger.ZERO.signum() } shouldBe BigInteger.ZERO }
+        // sign() delegates to isNegative/isPositive/isZero, which are verified above.
+        context("sign") {
+            test("positive gives ONE") { with(ops) { 42.toBigInteger().sign() } shouldBe BigInteger.ONE }
+            test("negative gives -ONE") { with(ops) { (-42).toBigInteger().sign() } shouldBe BigInteger.ONE.negate() }
+            test("zero gives ZERO") { with(ops) { BigInteger.ZERO.sign() } shouldBe BigInteger.ZERO }
             test("very large positive gives ONE") {
-                with(ops) { BigInteger.TWO.pow(500).signum() } shouldBe BigInteger.ONE
+                with(ops) { BigInteger.TWO.pow(500).sign() } shouldBe BigInteger.ONE
+            }
+        }
+
+        context("floorDiv") {
+            test("7 floorDiv 2 = 3 (same signs, same as truncated)") {
+                with(ops) { 7.toBigInteger().floorDiv(2.toBigInteger()) } shouldBe 3.toBigInteger()
+            }
+            test("-7 floorDiv 2 = -4 (rounds toward -inf)") {
+                with(ops) { (-7).toBigInteger().floorDiv(2.toBigInteger()) } shouldBe (-4).toBigInteger()
+            }
+            test("7 floorDiv -2 = -4 (rounds toward -inf)") {
+                with(ops) { 7.toBigInteger().floorDiv((-2).toBigInteger()) } shouldBe (-4).toBigInteger()
+            }
+            test("-7 floorDiv -2 = 3 (same signs)") {
+                with(ops) { (-7).toBigInteger().floorDiv((-2).toBigInteger()) } shouldBe 3.toBigInteger()
+            }
+            test("floorDiv by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { BigInteger.ONE.floorDiv(BigInteger.ZERO) } }
+            }
+            test("works for arbitrary precision") {
+                val large = BigInteger.TWO.pow(200)
+                with(ops) { large.negate().floorDiv(3.toBigInteger()) } shouldBe
+                    large.negate().subtract(2.toBigInteger()).divide(3.toBigInteger())
+            }
+        }
+
+        context("mod") {
+            // Java's BigInteger.mod(BigInteger) is a class member that shadows the trait's default
+            // mod() at call sites. Java's version only accepts a positive modulus; negative-divisor
+            // cases (7 mod -3, -7 mod -3) therefore throw rather than produce a floor-mod result.
+            // Only positive-modulus cases are testable here via with(ops).
+            test("-7 mod 3 = 2 (positive divisor, sign of divisor)") {
+                with(ops) { (-7).toBigInteger().mod(3.toBigInteger()) } shouldBe 2.toBigInteger()
+            }
+            test("exact: 6 mod 3 = 0") {
+                with(ops) { 6.toBigInteger().mod(3.toBigInteger()) } shouldBe BigInteger.ZERO
+            }
+            test("mod by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { BigInteger.ONE.mod(BigInteger.ZERO) } }
+            }
+            test("invariant: a == b * floorDiv(a, b) + mod(a, b) (positive b)") {
+                val a = (-7).toBigInteger(); val b = 3.toBigInteger()
+                with(ops) { a.floorDiv(b).multiply(b).add(a.mod(b)) } shouldBe a
             }
         }
     }

@@ -53,10 +53,13 @@ interface IntegerArithmetic<T> {
     fun T.divide(other: T): T
 
     /**
-     * Returns the remainder of dividing this value by [other], with the same sign as the dividend.
+     * Returns the remainder of dividing this value by [other], using truncated-division semantics.
      *
-     * Throws [ArithmeticException] if [other] is zero. This follows truncated-division semantics — the same
-     * as Kotlin's `%` operator — not floor-division semantics.
+     * The result has the same sign as the dividend (this value), or is zero. Throws [ArithmeticException]
+     * if [other] is zero. Matches Kotlin's `%` operator.
+     *
+     * For signed types, [SignedIntegerArithmetic.mod] provides the floor-division counterpart, which
+     * produces a result with the sign of the divisor instead.
      */
     fun T.rem(other: T): T
 

@@ -4,15 +4,22 @@ import java.math.BigInteger
 
 // ── SignedIntegerArithmetic<BigInteger> ───────────────────────────────────────
 //
-// BigInteger is a Java class; all operations (add, subtract, multiply, divide, remainder,
-// compareTo, negate, abs) are member functions of BigInteger, so they always take dispatch
-// priority over the same-named member extensions from the trait interface — no recursion risk.
+// BigInteger is a Java class; all operations below are Java member functions on BigInteger, so
+// they always take dispatch priority over the same-named member extensions from the trait
+// interface when called via `with(ops)` — no recursion risk, and no override is needed.
 //
 // divide: BigInteger.divide performs truncated-integer division (toward zero), matching the
 // IntegerArithmetic contract. Both divide and remainder throw ArithmeticException on zero divisor.
 //
 // remainder: BigInteger.remainder returns a result with the sign of the dividend, matching the
 // truncated-division semantics required by IntegerArithmetic.rem.
+//
+// Dispatch limitation — mod:
+//   BigInteger.mod(BigInteger) is a Java member that only accepts a positive modulus; it shadows
+//   the trait's default mod() at call sites. Callers needing floor-mod with a negative divisor
+//   must compute it manually via floorDiv + remainder.
+//   Note: the trait uses sign() rather than signum() specifically to avoid a similar clash with
+//   BigInteger.signum(): Int.
 
 private val bigIntegerSignedInstance: SignedIntegerArithmetic<BigInteger> =
     object : SignedIntegerArithmetic<BigInteger> {

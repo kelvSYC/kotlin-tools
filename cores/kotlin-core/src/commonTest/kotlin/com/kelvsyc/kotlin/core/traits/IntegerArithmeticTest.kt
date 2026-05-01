@@ -189,6 +189,34 @@ class IntegerArithmeticTest : FunSpec({
                 with(ops) { Int.MIN_VALUE.abs() } shouldBe Int.MIN_VALUE
             }
         }
+
+        context("floorDiv") {
+            test("7 floorDiv 2 = 3 (same signs, same as truncated)") { with(ops) { 7.floorDiv(2) } shouldBe 3 }
+            test("-7 floorDiv 2 = -4 (rounds toward -inf, not 0)") { with(ops) { (-7).floorDiv(2) } shouldBe -4 }
+            test("7 floorDiv -2 = -4 (rounds toward -inf)") { with(ops) { 7.floorDiv(-2) } shouldBe -4 }
+            test("-7 floorDiv -2 = 3 (same signs, same as truncated)") { with(ops) { (-7).floorDiv(-2) } shouldBe 3 }
+            test("exact division: 6 floorDiv 2 = 3") { with(ops) { 6.floorDiv(2) } shouldBe 3 }
+            test("floorDiv by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1.floorDiv(0) } }
+            }
+            test("MIN_VALUE floorDiv -1 wraps (wrapping instance)") {
+                with(ops) { Int.MIN_VALUE.floorDiv(-1) } shouldBe Int.MIN_VALUE
+            }
+        }
+
+        context("mod") {
+            test("7 mod 3 = 1 (same signs, same as rem)") { with(ops) { 7.mod(3) } shouldBe 1 }
+            test("-7 mod 3 = 2 (result has sign of divisor)") { with(ops) { (-7).mod(3) } shouldBe 2 }
+            test("7 mod -3 = -2 (result has sign of divisor)") { with(ops) { 7.mod(-3) } shouldBe -2 }
+            test("-7 mod -3 = -1 (same signs, same as rem)") { with(ops) { (-7).mod(-3) } shouldBe -1 }
+            test("exact division: 6 mod 3 = 0") { with(ops) { 6.mod(3) } shouldBe 0 }
+            test("mod by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1.mod(0) } }
+            }
+            test("invariant: a == b * floorDiv(a, b) + mod(a, b)") {
+                with(ops) { (-7).floorDiv(3).multiply(3).add((-7).mod(3)) } shouldBe -7
+            }
+        }
     }
 
     // ── SignedIntegerArithmetic.Companion.long ────────────────────────────────
@@ -253,6 +281,26 @@ class IntegerArithmeticTest : FunSpec({
                 with(ops) { Long.MIN_VALUE.abs() } shouldBe Long.MIN_VALUE
             }
         }
+
+        context("floorDiv") {
+            test("-7L floorDiv 2L = -4L") { with(ops) { (-7L).floorDiv(2L) } shouldBe -4L }
+            test("7L floorDiv -2L = -4L") { with(ops) { 7L.floorDiv(-2L) } shouldBe -4L }
+            test("-7L floorDiv -2L = 3L") { with(ops) { (-7L).floorDiv(-2L) } shouldBe 3L }
+            test("floorDiv by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1L.floorDiv(0L) } }
+            }
+        }
+
+        context("mod") {
+            test("-7L mod 3L = 2L") { with(ops) { (-7L).mod(3L) } shouldBe 2L }
+            test("7L mod -3L = -2L") { with(ops) { 7L.mod(-3L) } shouldBe -2L }
+            test("mod by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1L.mod(0L) } }
+            }
+            test("invariant: a == b * floorDiv(a, b) + mod(a, b)") {
+                with(ops) { (-7L).floorDiv(3L).multiply(3L).add((-7L).mod(3L)) } shouldBe -7L
+            }
+        }
     }
 
     // ── SignedIntegerArithmetic sign predicates ───────────────────────────────
@@ -279,12 +327,12 @@ class IntegerArithmeticTest : FunSpec({
             test("negative is not zero") { with(ops) { (-1).isZero() } shouldBe false }
         }
 
-        context("signum") {
-            test("positive gives 1") { with(ops) { 42.signum() } shouldBe 1 }
-            test("negative gives -1") { with(ops) { (-42).signum() } shouldBe -1 }
-            test("zero gives 0") { with(ops) { 0.signum() } shouldBe 0 }
-            test("MIN_VALUE gives -1") { with(ops) { Int.MIN_VALUE.signum() } shouldBe -1 }
-            test("MAX_VALUE gives 1") { with(ops) { Int.MAX_VALUE.signum() } shouldBe 1 }
+        context("sign") {
+            test("positive gives 1") { with(ops) { 42.sign() } shouldBe 1 }
+            test("negative gives -1") { with(ops) { (-42).sign() } shouldBe -1 }
+            test("zero gives 0") { with(ops) { 0.sign() } shouldBe 0 }
+            test("MIN_VALUE gives -1") { with(ops) { Int.MIN_VALUE.sign() } shouldBe -1 }
+            test("MAX_VALUE gives 1") { with(ops) { Int.MAX_VALUE.sign() } shouldBe 1 }
         }
     }
 
@@ -306,11 +354,11 @@ class IntegerArithmeticTest : FunSpec({
             test("non-zero") { with(ops) { 1L.isZero() } shouldBe false }
         }
 
-        context("signum") {
-            test("positive gives 1L") { with(ops) { 42L.signum() } shouldBe 1L }
-            test("negative gives -1L") { with(ops) { (-42L).signum() } shouldBe -1L }
-            test("zero gives 0L") { with(ops) { 0L.signum() } shouldBe 0L }
-            test("Long.MIN_VALUE gives -1L") { with(ops) { Long.MIN_VALUE.signum() } shouldBe -1L }
+        context("sign") {
+            test("positive gives 1L") { with(ops) { 42L.sign() } shouldBe 1L }
+            test("negative gives -1L") { with(ops) { (-42L).sign() } shouldBe -1L }
+            test("zero gives 0L") { with(ops) { 0L.sign() } shouldBe 0L }
+            test("Long.MIN_VALUE gives -1L") { with(ops) { Long.MIN_VALUE.sign() } shouldBe -1L }
         }
     }
 

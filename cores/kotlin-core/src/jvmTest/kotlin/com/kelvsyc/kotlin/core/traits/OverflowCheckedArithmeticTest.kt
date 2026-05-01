@@ -212,6 +212,24 @@ class OverflowCheckedArithmeticTest : FunSpec({
                 shouldThrow<ArithmeticException> { with(ops) { Int.MIN_VALUE.abs() } }
             }
         }
+
+        context("floorDiv") {
+            test("-7 floorDiv 2 = -4") { with(ops) { (-7).floorDiv(2) } shouldBe -4 }
+            test("floorDiv by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1.floorDiv(0) } }
+            }
+            test("MIN_VALUE floorDiv -1 throws ArithmeticException (overflow via divide)") {
+                shouldThrow<ArithmeticException> { with(ops) { Int.MIN_VALUE.floorDiv(-1) } }
+            }
+        }
+
+        context("mod") {
+            test("-7 mod 3 = 2") { with(ops) { (-7).mod(3) } shouldBe 2 }
+            test("7 mod -3 = -2") { with(ops) { 7.mod(-3) } shouldBe -2 }
+            test("mod by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1.mod(0) } }
+            }
+        }
     }
 
     // ── OverflowCheckedSignedArithmetic.Companion.long ────────────────────────
@@ -275,6 +293,24 @@ class OverflowCheckedArithmeticTest : FunSpec({
             test("abs of negative removes sign") { with(ops) { (-5L).abs() } shouldBe 5L }
             test("MIN_VALUE throws ArithmeticException") {
                 shouldThrow<ArithmeticException> { with(ops) { Long.MIN_VALUE.abs() } }
+            }
+        }
+
+        context("floorDiv") {
+            test("-7L floorDiv 2L = -4L") { with(ops) { (-7L).floorDiv(2L) } shouldBe -4L }
+            test("floorDiv by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1L.floorDiv(0L) } }
+            }
+            test("MIN_VALUE floorDiv -1L throws ArithmeticException (overflow via divide)") {
+                shouldThrow<ArithmeticException> { with(ops) { Long.MIN_VALUE.floorDiv(-1L) } }
+            }
+        }
+
+        context("mod") {
+            test("-7L mod 3L = 2L") { with(ops) { (-7L).mod(3L) } shouldBe 2L }
+            test("7L mod -3L = -2L") { with(ops) { 7L.mod(-3L) } shouldBe -2L }
+            test("mod by zero throws ArithmeticException") {
+                shouldThrow<ArithmeticException> { with(ops) { 1L.mod(0L) } }
             }
         }
     }
