@@ -2,6 +2,7 @@ package com.kelvsyc.kotlin.guava
 
 import com.google.common.math.BigIntegerMath
 import java.math.BigInteger
+import java.math.RoundingMode
 
 /**
  * Returns `true` if this value is a positive power of two.
@@ -29,3 +30,12 @@ val BigInteger.floorPowerOfTwo: BigInteger
  */
 val BigInteger.ceilingPowerOfTwo: BigInteger
     get() = BigIntegerMath.ceilingPowerOfTwo(this)
+
+/**
+ * Returns the base-2 logarithm of this value, rounded with [mode] to an [Int].
+ *
+ * @throws IllegalArgumentException if this value is not positive
+ * @throws ArithmeticException if [mode] is [RoundingMode.UNNECESSARY] and this value is not a power of two
+ * @see BigIntegerMath.log2
+ */
+fun BigInteger.log2(mode: RoundingMode): Int = BigIntegerMath.log2(this, mode)

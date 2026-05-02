@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.math.BigInteger
+import java.math.RoundingMode
 
 class BigIntegersTest : FunSpec({
 
@@ -48,5 +49,24 @@ class BigIntegersTest : FunSpec({
         }
         test("ceiling(0) throws") { shouldThrow<IllegalArgumentException> { BigInteger.ZERO.ceilingPowerOfTwo } }
         test("ceiling(negative) throws") { shouldThrow<IllegalArgumentException> { BigInteger.valueOf(-1L).ceilingPowerOfTwo } }
+    }
+
+    context("BigInteger.log2") {
+        test("exact power of two: floor") { BigInteger.valueOf(4L).log2(RoundingMode.FLOOR) shouldBe 2 }
+        test("exact power of two: ceiling") { BigInteger.valueOf(4L).log2(RoundingMode.CEILING) shouldBe 2 }
+        test("exact power of two: unnecessary") { BigInteger.valueOf(4L).log2(RoundingMode.UNNECESSARY) shouldBe 2 }
+
+        test("non-power of two: floor rounds down") { BigInteger.valueOf(5L).log2(RoundingMode.FLOOR) shouldBe 2 }
+        test("non-power of two: ceiling rounds up") { BigInteger.valueOf(5L).log2(RoundingMode.CEILING) shouldBe 3 }
+        test("non-power of two: unnecessary throws") {
+            shouldThrow<ArithmeticException> { BigInteger.valueOf(5L).log2(RoundingMode.UNNECESSARY) }
+        }
+
+        test("large power of two") { BigInteger.ONE.shiftLeft(100).log2(RoundingMode.FLOOR) shouldBe 100 }
+        test("large non-power: floor") { BigInteger.ONE.shiftLeft(100).add(BigInteger.ONE).log2(RoundingMode.FLOOR) shouldBe 100 }
+        test("large non-power: ceiling") { BigInteger.ONE.shiftLeft(100).add(BigInteger.ONE).log2(RoundingMode.CEILING) shouldBe 101 }
+
+        test("non-positive throws") { shouldThrow<IllegalArgumentException> { BigInteger.ZERO.log2(RoundingMode.FLOOR) } }
+        test("negative throws") { shouldThrow<IllegalArgumentException> { BigInteger.valueOf(-1L).log2(RoundingMode.FLOOR) } }
     }
 })
