@@ -10,8 +10,9 @@ val gitCommitHash: Provider<String> = providers.exec {
     commandLine("git", "rev-parse", "HEAD")
 }.standardOutput.asText.map { it.trim() }
 
-val guavaVersion: Provider<String> = extensions.getByType<VersionCatalogsExtension>()
-    .named("libs")
+val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+val guavaVersion: Provider<String> = libs
     .findLibrary("guava")
     .get()
     .map { it.versionConstraint.requiredVersion }
@@ -27,6 +28,11 @@ configure<DokkaExtension> {
 
         sourceLink {
             remoteUrl.set(gitCommitHash.map { URI("https://github.com/kelvSYC/kotlin-tools/blob/$it/$relativePath") })
+        }
+
+        externalDocumentationLinks.register("commons-lang") {
+            url("https://commons.apache.org/proper/commons-lang/apidocs/")
+            packageListUrl("https://commons.apache.org/proper/commons-lang/apidocs/element-list")
         }
 
         externalDocumentationLinks.register("guava") {
