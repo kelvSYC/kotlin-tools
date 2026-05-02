@@ -160,3 +160,10 @@ fun <K, V> ListMultimap<K, V>?.orEmpty(): ListMultimap<K, V> = this ?: emptyList
  * Returns a [List] containing all the key-value pairs in this multimap.
  */
 fun <K, V> ListMultimap<out K, V>.toList(): List<Pair<K, V>> = entries.toList()
+
+/**
+ * Returns a [ListMultiset] of the keys in this multimap, in overall insertion order, with each key appearing once
+ * per associated value. This is the count-aware counterpart to [ListMultimap.keys], which returns only distinct keys.
+ */
+fun <K, V> ListMultimap<out K, V>.keyMultiset(): ListMultiset<K> =
+    entries.map { it.first }.toListMultiset()

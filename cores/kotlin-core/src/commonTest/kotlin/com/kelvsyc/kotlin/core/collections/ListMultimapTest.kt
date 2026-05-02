@@ -283,6 +283,18 @@ class ListMultimapTest : FunSpec({
         }
     }
 
+    context("keyMultiset") {
+        test("keyMultiset contains each key once per associated value") {
+            val m = listMultimapOf("a" to 1, "b" to 2, "a" to 3)
+            m.keyMultiset().asMap shouldBe mapOf("a" to 2, "b" to 1)
+        }
+
+        test("keyMultiset preserves overall insertion order") {
+            val m = listMultimapOf("a" to 1, "b" to 2, "a" to 3)
+            m.keyMultiset().toList() shouldBe listOf("a", "b", "a")
+        }
+    }
+
     context("toString") {
         test("toString expresses the multimap as an ordered list of pairs") {
             val m = listMultimapOf("a" to 1, "b" to 2, "a" to 3)
