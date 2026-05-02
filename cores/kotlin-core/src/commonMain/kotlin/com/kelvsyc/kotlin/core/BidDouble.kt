@@ -1,12 +1,12 @@
 package com.kelvsyc.kotlin.core
 
 import com.kelvsyc.kotlin.core.PartialComparator
-import com.kelvsyc.kotlin.core.traits.Bid64
-import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointCohorts
-import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointEncoding
-import com.kelvsyc.kotlin.core.traits.FloatingPointSign
-import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
 import com.kelvsyc.kotlin.core.traits.ValueEquality
+import com.kelvsyc.kotlin.core.traits.dfp.Bid64
+import com.kelvsyc.kotlin.core.traits.dfp.DecimalFloatingPointCohorts
+import com.kelvsyc.kotlin.core.traits.dfp.DecimalFloatingPointEncoding
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointSign
+import com.kelvsyc.kotlin.core.traits.fp.IeeeFloatingPointClassification
 
 // Powers of 10 used when scaling significands for comparison and cohort operations. Index 0..16.
 private val DECIMAL64_POW10 = longArrayOf(

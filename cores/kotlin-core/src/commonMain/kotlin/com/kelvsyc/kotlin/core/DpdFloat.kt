@@ -2,12 +2,12 @@ package com.kelvsyc.kotlin.core
 
 import com.kelvsyc.kotlin.core.fp.encodeDeclet
 import com.kelvsyc.kotlin.core.fp.packDpd
-import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointCohorts
-import com.kelvsyc.kotlin.core.traits.DecimalFloatingPointEncoding
-import com.kelvsyc.kotlin.core.traits.Dpd32
-import com.kelvsyc.kotlin.core.traits.FloatingPointSign
-import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
 import com.kelvsyc.kotlin.core.traits.ValueEquality
+import com.kelvsyc.kotlin.core.traits.dfp.DecimalFloatingPointCohorts
+import com.kelvsyc.kotlin.core.traits.dfp.DecimalFloatingPointEncoding
+import com.kelvsyc.kotlin.core.traits.dfp.Dpd32
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointSign
+import com.kelvsyc.kotlin.core.traits.fp.IeeeFloatingPointClassification
 
 // Powers of 10 indexed by exponent (0..7), used when comparing and scaling significands.
 private val DECIMAL32_POW10 = longArrayOf(1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L)

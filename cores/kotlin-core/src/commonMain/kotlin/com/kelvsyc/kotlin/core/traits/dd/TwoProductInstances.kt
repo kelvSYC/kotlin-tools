@@ -1,10 +1,10 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.Binary32
-import com.kelvsyc.kotlin.core.traits.Binary64
-import com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic
-import com.kelvsyc.kotlin.core.traits.double
-import com.kelvsyc.kotlin.core.traits.float
+import com.kelvsyc.kotlin.core.traits.fp.Binary32
+import com.kelvsyc.kotlin.core.traits.fp.Binary64
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic
+import com.kelvsyc.kotlin.core.traits.fp.double
+import com.kelvsyc.kotlin.core.traits.fp.float
 
 private val floatInstance: TwoProduct<Float> by lazy {
     TwoProduct.from(FloatingPointArithmetic.float, Binary32.Companion)

@@ -3,8 +3,8 @@ package com.kelvsyc.kotlin.core.fp
 import com.kelvsyc.kotlin.core.BidFloat
 import com.kelvsyc.kotlin.core.Converter
 import com.kelvsyc.kotlin.core.DpdFloat
-import com.kelvsyc.kotlin.core.traits.BinaryIntegerDecimal
-import com.kelvsyc.kotlin.core.traits.DenselyPackedDecimal
+import com.kelvsyc.kotlin.core.traits.dfp.BinaryIntegerDecimal
+import com.kelvsyc.kotlin.core.traits.dfp.DenselyPackedDecimal
 
 /**
  * Creates a [Converter] between a [BinaryIntegerDecimal]-encoded type [B] and a [DenselyPackedDecimal]-encoded

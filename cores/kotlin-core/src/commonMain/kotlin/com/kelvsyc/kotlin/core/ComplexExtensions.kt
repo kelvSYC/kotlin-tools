@@ -1,6 +1,6 @@
 package com.kelvsyc.kotlin.core
 
-import com.kelvsyc.kotlin.core.traits.ImaginaryArithmetic
+import com.kelvsyc.kotlin.core.traits.complex.ImaginaryArithmetic
 
 // ── Imaginary<T> view of Complex<T> ──────────────────────────────────────────
 
@@ -33,7 +33,7 @@ fun <T> ImaginaryArithmetic<T>.toComplex(im: Imaginary<T>): Complex<T> =
 fun <T> timesImaginary(
     a: Imaginary<T>,
     b: Imaginary<T>,
-    arithmetic: com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic<T>
+    arithmetic: com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic<T>
 ): T = with(arithmetic) { a.value.multiply(b.value).negate() }
 
 /**
@@ -42,5 +42,5 @@ fun <T> timesImaginary(
 fun <T> timesReal(
     im: Imaginary<T>,
     real: T,
-    arithmetic: com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic<T>
+    arithmetic: com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic<T>
 ): Imaginary<T> = Imaginary(with(arithmetic) { im.value.multiply(real) })

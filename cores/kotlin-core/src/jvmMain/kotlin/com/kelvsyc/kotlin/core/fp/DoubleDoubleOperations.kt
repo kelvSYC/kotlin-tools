@@ -1,7 +1,7 @@
 package com.kelvsyc.kotlin.core.fp
 
 import com.kelvsyc.kotlin.core.traits.dd.DoubleBinaryFloatingPointArithmetic
-import com.kelvsyc.kotlin.core.traits.doubleDouble
+import com.kelvsyc.kotlin.core.traits.dd.doubleDouble
 
 private val arith get() = DoubleBinaryFloatingPointArithmetic.doubleDouble
 

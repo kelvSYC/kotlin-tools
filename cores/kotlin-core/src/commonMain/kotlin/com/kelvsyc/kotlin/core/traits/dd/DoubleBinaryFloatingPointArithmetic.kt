@@ -1,7 +1,7 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
 import com.kelvsyc.kotlin.core.fp.DoubleBinaryFloatingPoint
-import com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic
 
 /**
  * Specialization of [FloatingPointArithmetic] for double binary floating-point types [F], with underlying

@@ -1,8 +1,8 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.IeeeBinaryFloatingPoint
-import com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic
-import com.kelvsyc.kotlin.core.traits.FusedMultiplyAdd
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic
+import com.kelvsyc.kotlin.core.traits.fp.FusedMultiplyAdd
+import com.kelvsyc.kotlin.core.traits.fp.IeeeBinaryFloatingPoint
 
 /**
  * `TwoProduct` is a trait providing an implementation of the two-product error-free transformation on a

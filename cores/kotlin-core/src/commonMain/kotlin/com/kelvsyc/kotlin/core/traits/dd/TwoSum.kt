@@ -1,6 +1,6 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic
 
 /**
  * `TwoSum` is a trait providing an implementation of the two-sum error-free transformations on a

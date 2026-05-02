@@ -1,10 +1,10 @@
 package com.kelvsyc.kotlin.core
 
-import com.kelvsyc.kotlin.core.traits.Binary16
-import com.kelvsyc.kotlin.core.traits.FloatingPointSign
-import com.kelvsyc.kotlin.core.traits.IeeeFloatingPointClassification
-import com.kelvsyc.kotlin.core.traits.UInt16
 import com.kelvsyc.kotlin.core.traits.ValueEquality
+import com.kelvsyc.kotlin.core.traits.fp.Binary16
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointSign
+import com.kelvsyc.kotlin.core.traits.fp.IeeeFloatingPointClassification
+import com.kelvsyc.kotlin.core.traits.integral.UInt16
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round

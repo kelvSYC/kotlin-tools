@@ -1,7 +1,7 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic
-import com.kelvsyc.kotlin.core.traits.FusedMultiplyAdd
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic
+import com.kelvsyc.kotlin.core.traits.fp.FusedMultiplyAdd
 
 /**
  * `TwoDiv` is a trait providing an implementation of the two-div error-free transformation on a

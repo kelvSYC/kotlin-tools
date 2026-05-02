@@ -1,10 +1,10 @@
 package com.kelvsyc.kotlin.core.fp
 
-import com.kelvsyc.kotlin.core.traits.UInt16
-import com.kelvsyc.kotlin.core.traits.UInt32
-import com.kelvsyc.kotlin.core.traits.UInt64
-import com.kelvsyc.kotlin.core.traits.UnsignedIntegral
 import com.kelvsyc.kotlin.core.traits.ValueEquality
+import com.kelvsyc.kotlin.core.traits.integral.UInt16
+import com.kelvsyc.kotlin.core.traits.integral.UInt32
+import com.kelvsyc.kotlin.core.traits.integral.UInt64
+import com.kelvsyc.kotlin.core.traits.integral.UnsignedIntegral
 
 /**
  * Constructs a [ValueEquality] for [FiniteBinaryFloatingPoint] based on cohort membership.

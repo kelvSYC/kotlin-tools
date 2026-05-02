@@ -1,10 +1,10 @@
 package com.kelvsyc.kotlin.core.fp
 
 import com.kelvsyc.kotlin.core.PartialComparator
-import com.kelvsyc.kotlin.core.traits.FloatingPointClassification
-import com.kelvsyc.kotlin.core.traits.FloatingPointSign
 import com.kelvsyc.kotlin.core.traits.ValueEquality
-import com.kelvsyc.kotlin.core.traits.DoubleBinaryFloatingPoint as Trait
+import com.kelvsyc.kotlin.core.traits.fp.DoubleBinaryFloatingPoint as Trait
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointClassification
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointSign
 
 /**
  * `DoubleDouble` is a non-standard floating-point type that represents a value as the unevaluated sum
