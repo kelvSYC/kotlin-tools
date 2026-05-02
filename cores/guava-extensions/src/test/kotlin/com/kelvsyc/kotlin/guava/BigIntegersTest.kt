@@ -69,4 +69,54 @@ class BigIntegersTest : FunSpec({
         test("non-positive throws") { shouldThrow<IllegalArgumentException> { BigInteger.ZERO.log2(RoundingMode.FLOOR) } }
         test("negative throws") { shouldThrow<IllegalArgumentException> { BigInteger.valueOf(-1L).log2(RoundingMode.FLOOR) } }
     }
+
+    context("BigInteger.log10") {
+        test("exact power of ten: floor") { BigInteger.valueOf(1000L).log10(RoundingMode.FLOOR) shouldBe 3 }
+        test("exact power of ten: ceiling") { BigInteger.valueOf(1000L).log10(RoundingMode.CEILING) shouldBe 3 }
+        test("exact power of ten: unnecessary") { BigInteger.valueOf(1000L).log10(RoundingMode.UNNECESSARY) shouldBe 3 }
+
+        test("non-power of ten: floor rounds down") { BigInteger.valueOf(1001L).log10(RoundingMode.FLOOR) shouldBe 3 }
+        test("non-power of ten: ceiling rounds up") { BigInteger.valueOf(1001L).log10(RoundingMode.CEILING) shouldBe 4 }
+        test("non-power of ten: unnecessary throws") {
+            shouldThrow<ArithmeticException> { BigInteger.valueOf(1001L).log10(RoundingMode.UNNECESSARY) }
+        }
+
+        test("large value: floor") { BigInteger.TEN.pow(50).log10(RoundingMode.FLOOR) shouldBe 50 }
+        test("non-positive throws") { shouldThrow<IllegalArgumentException> { BigInteger.ZERO.log10(RoundingMode.FLOOR) } }
+        test("negative throws") { shouldThrow<IllegalArgumentException> { BigInteger.valueOf(-1L).log10(RoundingMode.FLOOR) } }
+    }
+
+    context("BigInteger.roundToDouble") {
+        test("exact representable value") {
+            // 2^53 is exactly representable as Double
+            BigInteger.ONE.shiftLeft(53).roundToDouble(RoundingMode.UNNECESSARY) shouldBe 9007199254740992.0
+        }
+        test("large non-representable: floor rounds down") {
+            // 2^53 + 1 cannot be represented exactly as Double
+            val n = BigInteger.ONE.shiftLeft(53).add(BigInteger.ONE)
+            n.roundToDouble(RoundingMode.FLOOR) shouldBe 9007199254740992.0
+        }
+        test("large non-representable: ceiling rounds up") {
+            val n = BigInteger.ONE.shiftLeft(53).add(BigInteger.ONE)
+            n.roundToDouble(RoundingMode.CEILING) shouldBe 9007199254740994.0
+        }
+    }
+
+    context("BigInteger.sqrt") {
+        test("exact square: floor") { BigInteger.valueOf(9L).sqrt(RoundingMode.FLOOR) shouldBe BigInteger.valueOf(3L) }
+        test("exact square: ceiling") { BigInteger.valueOf(9L).sqrt(RoundingMode.CEILING) shouldBe BigInteger.valueOf(3L) }
+        test("exact square: unnecessary") { BigInteger.valueOf(9L).sqrt(RoundingMode.UNNECESSARY) shouldBe BigInteger.valueOf(3L) }
+
+        test("non-square: floor rounds down") { BigInteger.valueOf(8L).sqrt(RoundingMode.FLOOR) shouldBe BigInteger.valueOf(2L) }
+        test("non-square: ceiling rounds up") { BigInteger.valueOf(8L).sqrt(RoundingMode.CEILING) shouldBe BigInteger.valueOf(3L) }
+        test("non-square: unnecessary throws") {
+            shouldThrow<ArithmeticException> { BigInteger.valueOf(8L).sqrt(RoundingMode.UNNECESSARY) }
+        }
+
+        test("large perfect square") {
+            BigInteger.ONE.shiftLeft(100).sqrt(RoundingMode.FLOOR) shouldBe BigInteger.ONE.shiftLeft(50)
+        }
+        test("zero: floor") { BigInteger.ZERO.sqrt(RoundingMode.FLOOR) shouldBe BigInteger.ZERO }
+        test("negative throws") { shouldThrow<IllegalArgumentException> { BigInteger.valueOf(-1L).sqrt(RoundingMode.FLOOR) } }
+    }
 })

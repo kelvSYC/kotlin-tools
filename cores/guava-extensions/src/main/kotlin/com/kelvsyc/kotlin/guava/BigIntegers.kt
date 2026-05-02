@@ -39,3 +39,28 @@ val BigInteger.ceilingPowerOfTwo: BigInteger
  * @see BigIntegerMath.log2
  */
 fun BigInteger.log2(mode: RoundingMode): Int = BigIntegerMath.log2(this, mode)
+
+/**
+ * Returns the base-10 logarithm of this value, rounded with [mode] to an [Int].
+ *
+ * @throws IllegalArgumentException if this value is not positive
+ * @throws ArithmeticException if [mode] is [RoundingMode.UNNECESSARY] and this value is not a power of ten
+ * @see BigIntegerMath.log10
+ */
+fun BigInteger.log10(mode: RoundingMode): Int = BigIntegerMath.log10(this, mode)
+
+/**
+ * Returns this value rounded to a [Double] with the specified [mode].
+ *
+ * @see BigIntegerMath.roundToDouble
+ */
+fun BigInteger.roundToDouble(mode: RoundingMode): Double = BigIntegerMath.roundToDouble(this, mode)
+
+/**
+ * Returns the square root of this value, rounded with [mode].
+ *
+ * @throws IllegalArgumentException if this value is negative
+ * @throws ArithmeticException if [mode] is [RoundingMode.UNNECESSARY] and this value is not a perfect square
+ * @see BigIntegerMath.sqrt
+ */
+fun BigInteger.sqrt(mode: RoundingMode): BigInteger = BigIntegerMath.sqrt(this, mode)
