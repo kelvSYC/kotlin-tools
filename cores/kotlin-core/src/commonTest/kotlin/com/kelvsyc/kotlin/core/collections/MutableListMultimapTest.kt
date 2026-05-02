@@ -89,7 +89,7 @@ class MutableListMultimapTest : FunSpec({
         test("putAll adds all pairs in iteration order") {
             val m = mutableListMultimapOf<String, Int>()
             m.putAll(listOf("a" to 1, "b" to 2, "a" to 3))
-            m.entries.toList() shouldBe listOf("a" to 1, "a" to 3, "b" to 2)
+            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
         }
     }
 

@@ -67,9 +67,9 @@ class ListMultimapTest : FunSpec({
             m["a"] shouldBe listOf(3, 1, 2)
         }
 
-        test("entries appear in key-first-occurrence order, then value-insertion order within each key") {
+        test("entries reflect overall insertion order") {
             val m = listMultimapOf("a" to 1, "b" to 2, "a" to 3)
-            m.entries.toList() shouldBe listOf("a" to 1, "a" to 3, "b" to 2)
+            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
         }
 
         test("keys appear in first-occurrence order") {
@@ -77,9 +77,9 @@ class ListMultimapTest : FunSpec({
             m.keys.toList() shouldBe listOf("b", "a", "c")
         }
 
-        test("values appear in key-first-occurrence order, then value-insertion order within each key") {
+        test("values reflect overall insertion order") {
             val m = listMultimapOf("a" to 1, "b" to 2, "a" to 3)
-            m.values.toList() shouldBe listOf(1, 3, 2)
+            m.values.toList() shouldBe listOf(1, 2, 3)
         }
     }
 
@@ -94,12 +94,12 @@ class ListMultimapTest : FunSpec({
             m.keys shouldBe setOf("a", "b", "c")
         }
 
-        test("values returns all values in key-then-insertion order") {
-            m.values.toList() shouldBe listOf(1, 3, 2, 4)
+        test("values returns all values in overall insertion order") {
+            m.values.toList() shouldBe listOf(1, 2, 3, 4)
         }
 
-        test("entries returns all pairs in key-then-insertion order") {
-            m.entries.toList() shouldBe listOf("a" to 1, "a" to 3, "b" to 2, "c" to 4)
+        test("entries returns all pairs in overall insertion order") {
+            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3, "c" to 4)
         }
 
         test("asMap maps each key to its value list") {
@@ -228,15 +228,15 @@ class ListMultimapTest : FunSpec({
     context("plus operator") {
         val m = listMultimapOf("a" to 1, "b" to 2)
 
-        test("plus a pair appends it under the existing key") {
+        test("plus a pair appends it at the end in overall insertion order") {
             val result = m + ("a" to 3)
-            result.entries.toList() shouldBe listOf("a" to 1, "a" to 3, "b" to 2)
+            result.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
         }
 
-        test("plus another multimap concatenates value lists for colliding keys") {
+        test("plus another multimap appends all entries of other in overall insertion order") {
             val other = listMultimapOf("a" to 3, "c" to 4)
             val result = m + other
-            result.entries.toList() shouldBe listOf("a" to 1, "a" to 3, "b" to 2, "c" to 4)
+            result.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3, "c" to 4)
         }
 
         test("plus an iterable of pairs appends all of them") {
@@ -286,7 +286,7 @@ class ListMultimapTest : FunSpec({
     context("toString") {
         test("toString expresses the multimap as an ordered list of pairs") {
             val m = listMultimapOf("a" to 1, "b" to 2, "a" to 3)
-            m.toString() shouldBe "[(a, 1), (a, 3), (b, 2)]"
+            m.toString() shouldBe "[(a, 1), (b, 2), (a, 3)]"
         }
 
         test("empty multimap toString is an empty list") {

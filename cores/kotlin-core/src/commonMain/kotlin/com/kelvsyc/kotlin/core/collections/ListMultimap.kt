@@ -1,8 +1,12 @@
 package com.kelvsyc.kotlin.core.collections
 
 /**
- * A `ListMultimap` is a multimap that holds duplicate key-value pairs, maintaining the insertion order of values for
- * a given key.
+ * A `ListMultimap` is primarily an ordered list of key-value pairs that also provides a map-like view. It preserves
+ * the overall insertion order of all pairs across all keys: [entries] and [values] reflect the order in which pairs
+ * were added, regardless of key. Per-key value order follows from overall insertion order; [asMap] groups values by
+ * key while retaining that order.
+ *
+ * Duplicate key-value pairs are preserved as distinct entries.
  */
 interface ListMultimap<K, out V> {
     /**
@@ -11,7 +15,7 @@ interface ListMultimap<K, out V> {
     val size: Int
 
     /**
-     * Returns a read-only [Collection] of all key-value pairs in this multimap.
+     * Returns a read-only [Collection] of all key-value pairs in this multimap, in overall insertion order.
      */
     val entries: Collection<Pair<K, V>>
 
@@ -21,7 +25,8 @@ interface ListMultimap<K, out V> {
     val keys: Set<K>
 
     /**
-     * Returns a read-only [Collection] of values in this multimap. This collection may contain duplicate values.
+     * Returns a read-only [Collection] of values in this multimap in overall insertion order. This collection may
+     * contain duplicate values.
      */
     val values: Collection<V>
 
@@ -51,10 +56,8 @@ interface ListMultimap<K, out V> {
     fun containsEntry(key: K, value: @UnsafeVariance V): Boolean
 
     /**
-     * Returns a view collection of the values of the supplied [key] in this multimap. If the key is not present in
-     * this multimap, this function returns an empty list.
-     *
-     * The resulting values are ordered following the order of insertion.
+     * Returns a view collection of the values of the supplied [key] in this multimap, in overall insertion order. If
+     * the key is not present in this multimap, this function returns an empty list.
      */
     operator fun get(key: K): List<V>
 

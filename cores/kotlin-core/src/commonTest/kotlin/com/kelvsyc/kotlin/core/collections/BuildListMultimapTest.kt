@@ -18,7 +18,7 @@ class BuildListMultimapTest : FunSpec({
                 put("b", 2)
                 put("a", 3)
             }
-            m.entries.toList() shouldBe listOf("a" to 1, "a" to 3, "b" to 2)
+            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
         }
 
         test("putAll inside builder adds entries from another multimap") {
@@ -49,7 +49,7 @@ class BuildListMultimapTest : FunSpec({
                 put("b", 2)
                 put("a", 3)
             }
-            m.entries.toList() shouldBe listOf("a" to 1, "a" to 3, "b" to 2)
+            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
         }
     }
 })
