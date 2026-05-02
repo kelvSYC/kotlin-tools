@@ -1,7 +1,9 @@
-package com.kelvsyc.kotlin.core.traits
+package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.dd.TwoDiv
-import com.kelvsyc.kotlin.core.traits.dd.from
+import com.kelvsyc.kotlin.core.traits.FloatingPointArithmetic
+import com.kelvsyc.kotlin.core.traits.FusedMultiplyAdd
+import com.kelvsyc.kotlin.core.traits.double
+import com.kelvsyc.kotlin.core.traits.float
 
 private val floatInstance: TwoDiv<Float> by lazy {
     TwoDiv.from(FloatingPointArithmetic.float, FusedMultiplyAdd.float)

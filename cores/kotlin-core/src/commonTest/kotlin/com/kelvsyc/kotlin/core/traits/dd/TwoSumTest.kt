@@ -1,6 +1,5 @@
-package com.kelvsyc.kotlin.core.traits
+package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.dd.TwoSum
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe

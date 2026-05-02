@@ -5,6 +5,7 @@ import com.kelvsyc.kotlin.core.traits.dd.DoubleBinaryFloatingPointArithmetic
 import com.kelvsyc.kotlin.core.traits.dd.TwoDiv
 import com.kelvsyc.kotlin.core.traits.dd.TwoProduct
 import com.kelvsyc.kotlin.core.traits.dd.TwoSum
+import com.kelvsyc.kotlin.core.traits.dd.double
 import com.kelvsyc.kotlin.core.traits.dd.from
 
 private val doubleDoubleInstance: DoubleBinaryFloatingPointArithmetic<DoubleDouble, Double> by lazy {

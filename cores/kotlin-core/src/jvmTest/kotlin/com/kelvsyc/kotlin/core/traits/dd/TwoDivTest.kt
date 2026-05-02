@@ -1,6 +1,5 @@
-package com.kelvsyc.kotlin.core.traits
+package com.kelvsyc.kotlin.core.traits.dd
 
-import com.kelvsyc.kotlin.core.traits.dd.TwoDiv
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -43,7 +42,7 @@ class TwoDivTest : FunSpec({
                 (e == 0.0) shouldBe false
             }
             test("e equals fma(q, -3.0, 1.0) / 3.0 — the defining identity of twoDiv") {
-                val expected = java.lang.Math.fma(q, -3.0, 1.0) / 3.0
+                val expected = Math.fma(q, -3.0, 1.0) / 3.0
                 e shouldBe expected
             }
         }
@@ -76,7 +75,7 @@ class TwoDivTest : FunSpec({
                 (e == 0.0f) shouldBe false
             }
             test("e equals fma(q, -3.0f, 1.0f) / 3.0f — the defining identity of twoDiv") {
-                val expected = java.lang.Math.fma(q, -3.0f, 1.0f) / 3.0f
+                val expected = Math.fma(q, -3.0f, 1.0f) / 3.0f
                 e shouldBe expected
             }
         }
