@@ -35,6 +35,11 @@ configure<DokkaExtension> {
             packageListUrl("https://commons.apache.org/proper/commons-lang/apidocs/element-list")
         }
 
+        externalDocumentationLinks.register("commons-numbers") {
+            url("https://commons.apache.org/proper/commons-numbers/apidocs/")
+            packageListUrl("https://commons.apache.org/proper/commons-numbers/apidocs/element-list")
+        }
+
         externalDocumentationLinks.register("guava") {
             url(guavaVersion.map { "https://guava.dev/releases/$it/api/docs/" })
             packageListUrl(guavaVersion.map { "https://guava.dev/releases/$it/api/docs/element-list" })
