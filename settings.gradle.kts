@@ -4,3 +4,6 @@ rootProject.name = "kotlin-tools"
 file("cores").list { dir, _ -> dir.isDirectory }?.forEach {
     includeBuild("cores/$it")
 }
+
+includeBuild("aggregation")
+includeBuild("metadata")

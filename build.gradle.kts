@@ -5,40 +5,45 @@ plugins {
 
 group = "com.kelvsyc"
 
-val cores = file("cores").list { dir, _ -> dir.isDirectory }?.toList().orEmpty()
+val components = file("cores").list { dir, _ -> dir.isDirectory }?.toList().orEmpty()
 
 tasks.clean {
-    cores.forEach {
+    components.forEach {
         dependsOn(gradle.includedBuild(it).task(":$name"))
     }
+    dependsOn(gradle.includedBuild("metadata").task(":bom:$name"))
 }
 
 tasks.assemble {
-    cores.forEach {
+    components.forEach {
         dependsOn(gradle.includedBuild(it).task(":$name"))
     }
+    dependsOn(gradle.includedBuild("aggregation").task(":dokka:$name"))
 }
 
 tasks.check {
-    cores.forEach {
+    components.forEach {
         dependsOn(gradle.includedBuild(it).task(":$name"))
     }
 }
 
 tasks.build {
-    cores.forEach {
+    components.forEach {
         dependsOn(gradle.includedBuild(it).task(":$name"))
     }
+    dependsOn(gradle.includedBuild("metadata").task(":catalog:generateCatalogAsToml"))
+    dependsOn(gradle.includedBuild("aggregation").task(":dokka:$name"))
+    dependsOn(gradle.includedBuild("metadata").task(":bom:$name"))
 }
 
 tasks.register("dokkaGenerate") {
-    cores.forEach {
-        dependsOn(gradle.includedBuild(it).task(":dokkaGeneratePublicationHtml"))
-    }
+    dependsOn(gradle.includedBuild("aggregation").task(":dokka:dokkaGeneratePublicationHtml"))
 }
 
 tasks.publish {
-    cores.forEach {
+    components.forEach {
         dependsOn(gradle.includedBuild(it).task(":$name"))
     }
+    dependsOn(gradle.includedBuild("metadata").task(":catalog:$name"))
+    dependsOn(gradle.includedBuild("metadata").task(":bom:$name"))
 }
