@@ -1,65 +1,66 @@
 package com.kelvsyc.kotlin.core.collections
 
 /**
- * A `ListMultimap` is primarily an ordered list of key-value pairs that also provides a map-like view. It preserves
- * the overall insertion order of all pairs across all keys: [entries] and [values] reflect the order in which pairs
- * were added, regardless of key. Per-key value order follows from overall insertion order; [asMap] groups values by
- * key while retaining that order.
+ * A `ListMultimap` is a one-to-many association where each key maps to an ordered [List] of values. It is map-primary:
+ * [asMap] is the authoritative view, and [entries], [keys], and [values] are derived from it. Keys are in
+ * first-occurrence insertion order; values per key are in the order they were inserted under that key.
  *
- * Duplicate key-value pairs are preserved as distinct entries.
+ * Duplicate key-value pairs are permitted.
+ *
+ * @see FlatMultimap for the pair-list-primary counterpart that preserves overall insertion order across all keys.
  */
 interface ListMultimap<K, out V> {
     /**
-     * Returns the number of key-value pairs in this multimap.
+     * Returns the total number of key-value pairs in this multimap.
      */
     val size: Int
 
     /**
-     * Returns a read-only [Collection] of all key-value pairs in this multimap, in overall insertion order.
+     * Returns a read-only view of this multimap as a [Map] mapping each key to its non-empty ordered [List] of values.
      */
-    val entries: Collection<Pair<K, V>>
+    val asMap: Map<K, List<@UnsafeVariance V>>
 
     /**
-     * Returns a read-only [Set] of all distinct keys in this multimap.
+     * Returns a read-only [Set] of all distinct keys in this multimap, in first-occurrence insertion order.
      */
-    val keys: Set<K>
+    val keys: Set<K> get() = asMap.keys
 
     /**
-     * Returns a read-only [Collection] of values in this multimap in overall insertion order. This collection may
-     * contain duplicate values.
+     * Returns a read-only [Collection] of all values in this multimap in key-grouped order. A value may appear more
+     * than once if it is associated with a key multiple times.
      */
-    val values: Collection<V>
+    val values: Collection<@UnsafeVariance V> get() = asMap.values.flatten()
 
     /**
-     * Returns a read-only view of this multimap as a [Map] mapping distinct keys to a non-empty list of values.
+     * Returns a read-only [Collection] of all key-value pairs in this multimap in key-grouped order.
      */
-    val asMap: Map<K, List<V>>
+    val entries: Collection<Pair<K, @UnsafeVariance V>>
+        get() = asMap.flatMap { (k, vs) -> vs.map { k to it } }
 
     /**
-     * Returns `true` if the map contains no key-value pairs, `false` otherwise.
+     * Returns `true` if this multimap contains no key-value pairs.
      */
     fun isEmpty(): Boolean = size == 0
 
     /**
-     * Returns `true` if this multimap contains the specified key.
+     * Returns `true` if this multimap contains the specified [key].
      */
-    fun containsKey(key: K): Boolean
+    fun containsKey(key: K): Boolean = asMap.containsKey(key)
 
     /**
-     * Returns `true` if this multimap maps one or more keys to the specified value.
+     * Returns `true` if this multimap maps one or more keys to the specified [value].
      */
-    fun containsValue(value: @UnsafeVariance V): Boolean
+    fun containsValue(value: @UnsafeVariance V): Boolean = asMap.values.any { value in it }
 
     /**
-     * Returns `true` if this multimap contains at least one key-value pair mapping [key] to [value].
+     * Returns `true` if this multimap contains at least one occurrence of the key-value pair ([key], [value]).
      */
-    fun containsEntry(key: K, value: @UnsafeVariance V): Boolean
+    fun containsEntry(key: K, value: @UnsafeVariance V): Boolean = asMap[key]?.contains(value) == true
 
     /**
-     * Returns a view collection of the values of the supplied [key] in this multimap, in overall insertion order. If
-     * the key is not present in this multimap, this function returns an empty list.
+     * Returns the ordered [List] of values associated with [key], or an empty list if [key] is not present.
      */
-    operator fun get(key: K): List<V>
+    operator fun get(key: K): List<@UnsafeVariance V> = asMap[key] ?: emptyList()
 
     /**
      * Compares the specified object with this multimap for equality. Two multimaps are equal if and only if [asMap]
@@ -68,7 +69,7 @@ interface ListMultimap<K, out V> {
     override fun equals(other: Any?): Boolean
 
     /**
-     * Returns the hash code for this multimap. The hashcode of this map is guaranteed to be the same as
+     * Returns the hash code for this multimap. The hash code is guaranteed to be the same as
      * [asMap][asMap]`.`[hashCode]`()`.
      */
     override fun hashCode(): Int

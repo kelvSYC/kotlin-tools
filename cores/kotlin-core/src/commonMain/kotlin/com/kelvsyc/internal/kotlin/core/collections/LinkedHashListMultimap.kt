@@ -6,55 +6,48 @@ import com.kelvsyc.kotlin.core.collections.MutableListMultimap
 internal class LinkedHashListMultimap<K, V>(initialCapacity: Int = -1) : MutableListMultimap<K, V> {
     private val map: LinkedHashMap<K, MutableList<V>> =
         if (initialCapacity >= 0) LinkedHashMap(initialCapacity) else LinkedHashMap()
-    private val insertionOrder = mutableListOf<Pair<K, V>>()
+    private var _size: Int = 0
 
     override val asMap: Map<K, List<V>> get() = map
 
-    override val size: Int get() = insertionOrder.size
-
-    override val keys: Set<K> get() = map.keys
-
-    override val values: Collection<V> get() = insertionOrder.map { it.second }
-
-    override val entries: Collection<Pair<K, V>> get() = insertionOrder
-
-    override fun isEmpty(): Boolean = insertionOrder.isEmpty()
-
-    override fun containsKey(key: K): Boolean = map.containsKey(key)
-
-    override fun containsValue(value: V): Boolean = insertionOrder.any { it.second == value }
-
-    override fun containsEntry(key: K, value: V): Boolean = map[key]?.contains(value) == true
-
-    override fun get(key: K): List<V> = map[key] ?: emptyList()
+    override val size: Int get() = _size
 
     override fun put(key: K, value: V) {
         map.getOrPut(key, ::mutableListOf).add(value)
-        insertionOrder.add(key to value)
+        _size++
+    }
+
+    override fun putAll(key: K, values: Iterable<V>) {
+        val list = values.toList()
+        if (list.isEmpty()) return
+        map.getOrPut(key, ::mutableListOf).addAll(list)
+        _size += list.size
     }
 
     override fun replaceValues(key: K, values: Iterable<V>): List<V> {
         val newValues = values.toMutableList()
-        insertionOrder.removeAll { it.first == key }
         return if (newValues.isEmpty()) {
-            map.remove(key) ?: emptyList()
+            val old = map.remove(key) ?: return emptyList()
+            _size -= old.size
+            old
         } else {
-            insertionOrder.addAll(newValues.map { key to it })
-            map.put(key, newValues) ?: emptyList()
+            val old = map.put(key, newValues) ?: emptyList()
+            _size += newValues.size - old.size
+            old
         }
     }
 
     override fun remove(key: K): List<V> {
-        insertionOrder.removeAll { it.first == key }
-        return map.remove(key) ?: emptyList()
+        val removed = map.remove(key) ?: return emptyList()
+        _size -= removed.size
+        return removed
     }
 
     override fun remove(key: K, value: V): Boolean {
         val list = map[key] ?: return false
         val removed = list.remove(value)
         if (removed) {
-            val idx = insertionOrder.indexOfFirst { it.first == key && it.second == value }
-            if (idx >= 0) insertionOrder.removeAt(idx)
+            _size--
             if (list.isEmpty()) map.remove(key)
         }
         return removed
@@ -62,7 +55,7 @@ internal class LinkedHashListMultimap<K, V>(initialCapacity: Int = -1) : Mutable
 
     override fun clear() {
         map.clear()
-        insertionOrder.clear()
+        _size = 0
     }
 
     override fun equals(other: Any?): Boolean {
@@ -73,5 +66,5 @@ internal class LinkedHashListMultimap<K, V>(initialCapacity: Int = -1) : Mutable
 
     override fun hashCode(): Int = map.hashCode()
 
-    override fun toString(): String = insertionOrder.toString()
+    override fun toString(): String = map.toString()
 }

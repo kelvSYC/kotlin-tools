@@ -3,32 +3,32 @@ package com.kelvsyc.kotlin.core.collections
 /**
  * A mutable [ListMultimap] that supports adding and removing key-value pairs.
  *
- * Unlike [MutableMap.put], [put] does not replace existing values — it appends a new key-value pair, preserving
- * duplicates. Similarly, [remove] removes all values for a key rather than a single value.
+ * [put] appends a value to the end of the list for [key], preserving per-key insertion order. It does not replace
+ * existing values. [remove] with a key removes all values for that key; [remove] with a key and value removes the
+ * first matching occurrence (FIFO).
  */
 interface MutableListMultimap<K, V> : ListMultimap<K, V> {
     /**
-     * Adds the key-value pair to this multimap. Unlike [MutableMap.put], this does not replace any existing mapping —
-     * the new value is appended to the values for [key].
+     * Appends [value] to the list of values for [key], preserving per-key insertion order.
      */
     fun put(key: K, value: V)
 
     /**
-     * Adds all [values] under [key] to this multimap, in iteration order. Has no effect if [values] is empty.
+     * Appends all [values] to the list for [key] in iteration order. Has no effect if [values] is empty.
      */
     fun putAll(key: K, values: Iterable<V>) {
         values.forEach { put(key, it) }
     }
 
     /**
-     * Adds all key-value pairs from [from] to this multimap, in [ListMultimap.entries] order.
+     * Adds all key-value pairs from [from] to this multimap, grouped by key in [from]'s key order.
      */
     fun putAll(from: ListMultimap<out K, V>) {
-        from.entries.forEach { (k, v) -> put(k, v) }
+        from.asMap.forEach { (k, vs) -> vs.forEach { put(k, it) } }
     }
 
     /**
-     * Adds all key-value pairs in [pairs] to this multimap, in iteration order.
+     * Adds all key-value pairs in [pairs] to this multimap in iteration order.
      */
     fun putAll(pairs: Iterable<Pair<K, V>>) {
         pairs.forEach { (k, v) -> put(k, v) }
@@ -47,8 +47,8 @@ interface MutableListMultimap<K, V> : ListMultimap<K, V> {
     fun remove(key: K): List<V>
 
     /**
-     * Removes one occurrence of the key-value pair ([key], [value]) from this multimap. Returns `true` if the pair
-     * was present and was removed, or `false` if it was not found.
+     * Removes the first occurrence of the key-value pair ([key], [value]) from this multimap (FIFO). Returns `true`
+     * if the pair was present and removed, or `false` if it was not found.
      */
     fun remove(key: K, value: V): Boolean
 

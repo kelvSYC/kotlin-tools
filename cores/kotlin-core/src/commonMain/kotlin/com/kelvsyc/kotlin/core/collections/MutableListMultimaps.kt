@@ -8,7 +8,7 @@ import com.kelvsyc.internal.kotlin.core.collections.LinkedHashListMultimap
 fun <K, V> mutableListMultimapOf(): MutableListMultimap<K, V> = LinkedHashListMultimap()
 
 /**
- * Returns a new [MutableListMultimap] with the specified contents, given as a list of key-value pairs.
+ * Returns a new [MutableListMultimap] with the specified contents, given as key-value pairs.
  */
 fun <K, V> mutableListMultimapOf(vararg pairs: Pair<K, V>): MutableListMultimap<K, V> =
     LinkedHashListMultimap<K, V>().also { it.putAll(pairs.asIterable()) }

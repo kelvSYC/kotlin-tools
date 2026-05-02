@@ -4,27 +4,28 @@ import com.kelvsyc.internal.kotlin.core.collections.ImmutableListMultimap
 import com.kelvsyc.internal.kotlin.core.collections.LinkedHashListMultimap
 
 /**
- * Returns an empty read-only multimap of the specified type.
+ * Returns an empty read-only [ListMultimap] of the specified type.
  */
-fun <K, V> emptyListMultimap(): ListMultimap<K, V> = ImmutableListMultimap(emptyList())
+fun <K, V> emptyListMultimap(): ListMultimap<K, V> = ImmutableListMultimap(emptyMap())
 
 /**
- * Returns a new read-only multimap with the specified contents, given as a list of key-value pairs where the first
- * value is the key and the second is the value. Overall insertion order is preserved.
+ * Returns a new read-only [ListMultimap] with the specified contents, given as key-value pairs. Keys appear in
+ * first-occurrence order; values per key appear in the order given.
  */
-fun <K, V> listMultimapOf(vararg pairs: Pair<K, V>): ListMultimap<K, V> = ImmutableListMultimap(pairs.toList())
+fun <K, V> listMultimapOf(vararg pairs: Pair<K, V>): ListMultimap<K, V> =
+    ImmutableListMultimap(pairs.groupBy({ it.first }, { it.second }))
 
 /**
- * Returns a new multimap containing all the key-value pairs from the given collection of [Pair]s, preserving overall
- * iteration order.
+ * Returns a new [ListMultimap] containing all the key-value pairs from the given collection of [Pair]s. Keys appear
+ * in first-occurrence order; values per key appear in iteration order.
  */
-fun <K, V> Iterable<Pair<K, V>>.toListMultimap(): ListMultimap<K, V> = ImmutableListMultimap(toList())
+fun <K, V> Iterable<Pair<K, V>>.toListMultimap(): ListMultimap<K, V> =
+    ImmutableListMultimap(groupBy({ it.first }, { it.second }))
 
 /**
- * Returns a new multimap containing all the key-value pairs from the given [Sequence] of [Pair]s, preserving overall
- * iteration order.
+ * Returns a new [ListMultimap] containing all the key-value pairs from the given [Sequence] of [Pair]s.
  */
-fun <K, V> Sequence<Pair<K, V>>.toListMultimap(): ListMultimap<K, V> = ImmutableListMultimap(toList())
+fun <K, V> Sequence<Pair<K, V>>.toListMultimap(): ListMultimap<K, V> = asIterable().toListMultimap()
 
 /**
  * Builds a read-only [ListMultimap] by populating a [MutableListMultimap] using the given [builderAction] and

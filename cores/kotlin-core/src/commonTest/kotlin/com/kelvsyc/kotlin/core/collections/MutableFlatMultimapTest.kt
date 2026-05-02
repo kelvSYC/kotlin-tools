@@ -5,55 +5,55 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 
-class MutableListMultimapTest : FunSpec({
+class MutableFlatMultimapTest : FunSpec({
 
     context("construction") {
-        test("mutableListMultimapOf with no arguments produces an empty multimap") {
-            mutableListMultimapOf<String, Int>().isEmpty().shouldBeTrue()
+        test("mutableFlatMultimapOf with no arguments produces an empty multimap") {
+            mutableFlatMultimapOf<String, Int>().isEmpty().shouldBeTrue()
         }
 
-        test("mutableListMultimapOf with pairs") {
-            val m = mutableListMultimapOf("a" to 1, "b" to 2, "a" to 3)
+        test("mutableFlatMultimapOf with pairs") {
+            val m = mutableFlatMultimapOf("a" to 1, "b" to 2, "a" to 3)
             m.size shouldBe 3
             m["a"] shouldBe listOf(1, 3)
         }
 
-        test("toMutableListMultimap from Iterable") {
-            val m = listOf("a" to 1, "b" to 2, "a" to 3).toMutableListMultimap()
+        test("toMutableFlatMultimap from Iterable") {
+            val m = listOf("a" to 1, "b" to 2, "a" to 3).toMutableFlatMultimap()
             m.size shouldBe 3
             m["a"] shouldBe listOf(1, 3)
         }
 
-        test("toMutableListMultimap from Sequence") {
-            val m = sequenceOf("a" to 1, "b" to 2, "a" to 3).toMutableListMultimap()
+        test("toMutableFlatMultimap from Sequence") {
+            val m = sequenceOf("a" to 1, "b" to 2, "a" to 3).toMutableFlatMultimap()
             m.size shouldBe 3
             m["a"] shouldBe listOf(1, 3)
         }
     }
 
     context("put") {
-        test("put adds a value to the key's list") {
-            val m = mutableListMultimapOf<String, Int>()
+        test("put adds a new key-value pair") {
+            val m = mutableFlatMultimapOf<String, Int>()
             m.put("a", 1)
             m["a"] shouldBe listOf(1)
         }
 
         test("put appends duplicates rather than replacing") {
-            val m = mutableListMultimapOf("a" to 1)
+            val m = mutableFlatMultimapOf("a" to 1)
             m.put("a", 1)
             m["a"] shouldBe listOf(1, 1)
         }
 
-        test("put preserves per-key insertion order") {
-            val m = mutableListMultimapOf<String, Int>()
+        test("put preserves overall insertion order") {
+            val m = mutableFlatMultimapOf<String, Int>()
             m.put("a", 3)
-            m.put("a", 1)
+            m.put("b", 1)
             m.put("a", 2)
-            m["a"] shouldBe listOf(3, 1, 2)
+            m.entries.toList() shouldBe listOf("a" to 3, "b" to 1, "a" to 2)
         }
 
         test("put preserves key first-occurrence order") {
-            val m = mutableListMultimapOf<String, Int>()
+            val m = mutableFlatMultimapOf<String, Int>()
             m.put("b", 1)
             m.put("a", 2)
             m.put("b", 3)
@@ -63,22 +63,22 @@ class MutableListMultimapTest : FunSpec({
 
     context("putAll key+values") {
         test("putAll adds multiple values under a key") {
-            val m = mutableListMultimapOf("a" to 1)
+            val m = mutableFlatMultimapOf("a" to 1)
             m.putAll("a", listOf(2, 3))
             m["a"] shouldBe listOf(1, 2, 3)
         }
 
         test("putAll with empty iterable is a no-op") {
-            val m = mutableListMultimapOf("a" to 1)
+            val m = mutableFlatMultimapOf("a" to 1)
             m.putAll("b", emptyList())
             m.containsKey("b").shouldBeFalse()
         }
     }
 
-    context("putAll from ListMultimap") {
+    context("putAll from FlatMultimap") {
         test("putAll merges all entries from another multimap") {
-            val m = mutableListMultimapOf("a" to 1)
-            val other = listMultimapOf("a" to 2, "b" to 3)
+            val m = mutableFlatMultimapOf("a" to 1)
+            val other = flatMultimapOf("a" to 2, "b" to 3)
             m.putAll(other)
             m["a"] shouldBe listOf(1, 2)
             m["b"] shouldBe listOf(3)
@@ -86,16 +86,16 @@ class MutableListMultimapTest : FunSpec({
     }
 
     context("putAll from pairs") {
-        test("putAll adds all pairs grouped by key") {
-            val m = mutableListMultimapOf<String, Int>()
+        test("putAll adds all pairs in iteration order") {
+            val m = mutableFlatMultimapOf<String, Int>()
             m.putAll(listOf("a" to 1, "b" to 2, "a" to 3))
-            m.asMap shouldBe mapOf("a" to listOf(1, 3), "b" to listOf(2))
+            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
         }
     }
 
     context("replaceValues") {
         test("replaceValues replaces all values for a key and returns the old values") {
-            val m = mutableListMultimapOf("a" to 1, "a" to 2, "b" to 3)
+            val m = mutableFlatMultimapOf("a" to 1, "a" to 2, "b" to 3)
             val old = m.replaceValues("a", listOf(10, 20))
             old shouldBe listOf(1, 2)
             m["a"] shouldBe listOf(10, 20)
@@ -103,14 +103,14 @@ class MutableListMultimapTest : FunSpec({
         }
 
         test("replaceValues with empty values removes the key and returns old values") {
-            val m = mutableListMultimapOf("a" to 1, "a" to 2)
+            val m = mutableFlatMultimapOf("a" to 1, "a" to 2)
             val old = m.replaceValues("a", emptyList())
             old shouldBe listOf(1, 2)
             m.containsKey("a").shouldBeFalse()
         }
 
         test("replaceValues for an absent key returns empty list") {
-            val m = mutableListMultimapOf<String, Int>()
+            val m = mutableFlatMultimapOf<String, Int>()
             m.replaceValues("z", listOf(1, 2)) shouldBe emptyList()
             m["z"] shouldBe listOf(1, 2)
         }
@@ -118,7 +118,7 @@ class MutableListMultimapTest : FunSpec({
 
     context("remove(key)") {
         test("remove removes all values for the key and returns them") {
-            val m = mutableListMultimapOf("a" to 1, "a" to 2, "b" to 3)
+            val m = mutableFlatMultimapOf("a" to 1, "a" to 2, "b" to 3)
             val removed = m.remove("a")
             removed shouldBe listOf(1, 2)
             m.containsKey("a").shouldBeFalse()
@@ -126,38 +126,38 @@ class MutableListMultimapTest : FunSpec({
         }
 
         test("remove on an absent key returns empty list and leaves multimap unchanged") {
-            val m = mutableListMultimapOf("a" to 1)
+            val m = mutableFlatMultimapOf("a" to 1)
             m.remove("z") shouldBe emptyList()
             m.size shouldBe 1
         }
     }
 
     context("remove(key, value)") {
-        test("remove removes the first occurrence of the pair and returns true") {
-            val m = mutableListMultimapOf("a" to 1, "a" to 2)
+        test("remove removes one occurrence of the pair and returns true") {
+            val m = mutableFlatMultimapOf("a" to 1, "a" to 2)
             m.remove("a", 1).shouldBeTrue()
             m["a"] shouldBe listOf(2)
         }
 
         test("remove on an absent value returns false") {
-            val m = mutableListMultimapOf("a" to 1)
+            val m = mutableFlatMultimapOf("a" to 1)
             m.remove("a", 99).shouldBeFalse()
             m["a"] shouldBe listOf(1)
         }
 
         test("remove on an absent key returns false") {
-            val m = mutableListMultimapOf("a" to 1)
+            val m = mutableFlatMultimapOf("a" to 1)
             m.remove("z", 1).shouldBeFalse()
         }
 
-        test("remove removes only the first occurrence when duplicates exist (FIFO)") {
-            val m = mutableListMultimapOf("a" to 1, "a" to 1, "a" to 2)
+        test("remove removes only one occurrence when duplicates exist") {
+            val m = mutableFlatMultimapOf("a" to 1, "a" to 1, "a" to 2)
             m.remove("a", 1).shouldBeTrue()
             m["a"] shouldBe listOf(1, 2)
         }
 
         test("remove of the last value for a key removes the key entirely") {
-            val m = mutableListMultimapOf("a" to 1)
+            val m = mutableFlatMultimapOf("a" to 1)
             m.remove("a", 1).shouldBeTrue()
             m.containsKey("a").shouldBeFalse()
             m.isEmpty().shouldBeTrue()
@@ -166,56 +166,25 @@ class MutableListMultimapTest : FunSpec({
 
     context("clear") {
         test("clear removes all entries") {
-            val m = mutableListMultimapOf("a" to 1, "b" to 2, "a" to 3)
+            val m = mutableFlatMultimapOf("a" to 1, "b" to 2, "a" to 3)
             m.clear()
             m.isEmpty().shouldBeTrue()
             m.size shouldBe 0
         }
     }
 
-    context("interop with ListMultimap read operations") {
-        val m = mutableListMultimapOf("a" to 1, "a" to 2, "b" to 3)
-
-        test("size reports total pair count") {
-            m.size shouldBe 3
-        }
-
-        test("keys returns distinct keys in first-occurrence order") {
-            m.keys.toList() shouldBe listOf("a", "b")
-        }
-
-        test("asMap reflects current state") {
-            m.asMap shouldBe mapOf("a" to listOf(1, 2), "b" to listOf(3))
-        }
-
-        test("containsKey") {
-            m.containsKey("a").shouldBeTrue()
-            m.containsKey("z").shouldBeFalse()
-        }
-
-        test("containsValue") {
-            m.containsValue(2).shouldBeTrue()
-            m.containsValue(99).shouldBeFalse()
-        }
-
-        test("containsEntry") {
-            m.containsEntry("a", 1).shouldBeTrue()
-            m.containsEntry("a", 99).shouldBeFalse()
-        }
-    }
-
     context("equality and hashCode") {
         test("two mutable multimaps with the same content are equal") {
-            mutableListMultimapOf("a" to 1, "b" to 2) shouldBe mutableListMultimapOf("a" to 1, "b" to 2)
+            mutableFlatMultimapOf("a" to 1, "b" to 2) shouldBe mutableFlatMultimapOf("a" to 1, "b" to 2)
         }
 
         test("a mutable multimap equals an immutable multimap with the same content") {
-            mutableListMultimapOf("a" to 1, "b" to 2) shouldBe listMultimapOf("a" to 1, "b" to 2)
+            mutableFlatMultimapOf("a" to 1, "b" to 2) shouldBe flatMultimapOf("a" to 1, "b" to 2)
         }
 
         test("equal multimaps have the same hashCode") {
-            val a = mutableListMultimapOf("a" to 1, "b" to 2)
-            val b = listMultimapOf("a" to 1, "b" to 2)
+            val a = mutableFlatMultimapOf("a" to 1, "b" to 2)
+            val b = flatMultimapOf("a" to 1, "b" to 2)
             a.hashCode() shouldBe b.hashCode()
         }
     }

@@ -90,8 +90,7 @@ fun <K, V, R> ListMultimap<out K, V>.map(transform: (Pair<K, V>) -> R): List<R> 
 
 /**
  * Returns a new [ListMultimap] with keys transformed by [transform]. If two original keys produce the same new key,
- * their value lists are concatenated in [entries] order. This differs from [Map.mapKeys], which is last-wins;
- * concatenation is used here since no values need to be discarded.
+ * their value lists are concatenated in key-grouped order.
  */
 fun <K, V, R> ListMultimap<out K, V>.mapKeys(transform: (K) -> R): ListMultimap<R, V> =
     entries.map { (k, v) -> transform(k) to v }.toListMultimap()
@@ -114,14 +113,19 @@ fun <K, V, R> ListMultimap<out K, V>.mapValues(transform: (V) -> R): ListMultima
 fun <K, V> ListMultimap<out K, V>.none(): Boolean = entries.none()
 
 /**
+ * Returns `true` if no key-value pairs in this multimap match the given [predicate].
+ */
+fun <K, V> ListMultimap<out K, V>.none(predicate: (Pair<K, V>) -> Boolean): Boolean = entries.none(predicate)
+
+/**
  * Returns a new [ListMultimap] containing all entries of the original multimap plus the given [pair].
  */
 operator fun <K, V> ListMultimap<out K, V>.plus(pair: Pair<K, V>): ListMultimap<K, V> =
     (entries.toList() + pair).toListMultimap()
 
 /**
- * Returns a new [ListMultimap] containing all entries of the original multimap plus all entries of [other]. Where keys
- * collide, value lists are concatenated in the order the original multimaps are given.
+ * Returns a new [ListMultimap] containing all entries of the original multimap plus all entries of [other]. Where
+ * keys collide, value lists are concatenated.
  */
 operator fun <K, V> ListMultimap<out K, V>.plus(other: ListMultimap<out K, V>): ListMultimap<K, V> =
     (entries.toList() + other.entries).toListMultimap()
@@ -147,23 +151,26 @@ operator fun <K, V> ListMultimap<out K, V>.minus(keys: Iterable<K>): ListMultima
 }
 
 /**
- * Returns `true` if no key-value pairs in this multimap matches the given [predicate].
- */
-fun <K, V> ListMultimap<out K, V>.none(predicate: (Pair<K, V>) -> Boolean): Boolean = entries.none(predicate)
-
-/**
  * Returns this multimap if not `null`, or an empty [ListMultimap] otherwise.
  */
 fun <K, V> ListMultimap<K, V>?.orEmpty(): ListMultimap<K, V> = this ?: emptyListMultimap()
 
 /**
- * Returns a [List] containing all the key-value pairs in this multimap.
+ * Returns a [List] containing all the key-value pairs in this multimap in key-grouped order.
  */
 fun <K, V> ListMultimap<out K, V>.toList(): List<Pair<K, V>> = entries.toList()
 
 /**
- * Returns a [ListMultiset] of the keys in this multimap, in overall insertion order, with each key appearing once
- * per associated value. This is the count-aware counterpart to [ListMultimap.keys], which returns only distinct keys.
+ * Returns a [ListMultiset] of the keys in this multimap in key-grouped order, with each key appearing once per
+ * associated value. This is the count-aware counterpart to [ListMultimap.keys], which returns only distinct keys.
  */
 fun <K, V> ListMultimap<out K, V>.keyMultiset(): ListMultiset<K> =
     entries.map { it.first }.toListMultiset()
+
+/**
+ * Returns a [FlatMultimap] whose entries are the key-value pairs of this [ListMultimap] in key-grouped order.
+ *
+ * The round-trip `toFlatMultimap().toListMultimap()` is lossless and produces an equal [ListMultimap].
+ */
+fun <K, V> ListMultimap<out K, V>.toFlatMultimap(): FlatMultimap<K, V> =
+    entries.toList().toFlatMultimap()

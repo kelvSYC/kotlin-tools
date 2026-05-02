@@ -8,27 +8,16 @@ class BuildListMultimapTest : FunSpec({
 
     context("buildListMultimap") {
         test("empty builder produces an empty multimap") {
-            val m = buildListMultimap<String, Int> {}
-            m.isEmpty().shouldBeTrue()
+            buildListMultimap<String, Int> {}.isEmpty().shouldBeTrue()
         }
 
-        test("put inside builder adds entries") {
+        test("put inside builder groups values by key") {
             val m = buildListMultimap<String, Int> {
                 put("a", 1)
                 put("b", 2)
                 put("a", 3)
             }
-            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
-        }
-
-        test("putAll inside builder adds entries from another multimap") {
-            val source = listMultimapOf("a" to 1, "b" to 2)
-            val m = buildListMultimap<String, Int> {
-                putAll(source)
-                put("a", 3)
-            }
-            m["a"] shouldBe listOf(1, 3)
-            m["b"] shouldBe listOf(2)
+            m.asMap shouldBe mapOf("a" to listOf(1, 3), "b" to listOf(2))
         }
 
         test("result is a read-only ListMultimap") {
@@ -39,17 +28,16 @@ class BuildListMultimapTest : FunSpec({
 
     context("buildListMultimap with capacity") {
         test("empty builder with capacity produces an empty multimap") {
-            val m = buildListMultimap<String, Int>(4) {}
-            m.isEmpty().shouldBeTrue()
+            buildListMultimap<String, Int>(4) {}.isEmpty().shouldBeTrue()
         }
 
-        test("entries are correct when capacity is provided") {
+        test("elements are correct when capacity is provided") {
             val m = buildListMultimap<String, Int>(4) {
                 put("a", 1)
                 put("b", 2)
                 put("a", 3)
             }
-            m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
+            m.asMap shouldBe mapOf("a" to listOf(1, 3), "b" to listOf(2))
         }
     }
 })
