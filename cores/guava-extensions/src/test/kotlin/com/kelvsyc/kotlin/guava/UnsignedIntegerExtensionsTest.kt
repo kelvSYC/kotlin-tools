@@ -1,6 +1,8 @@
 package com.kelvsyc.kotlin.guava
 
 import com.google.common.primitives.UnsignedInteger
+import com.kelvsyc.kotlin.core.traits.integral.PowerOfTwo
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -101,6 +103,33 @@ class UnsignedIntegerExtensionsTest : FunSpec({
 
         test("singleton identity") {
             uIntToUnsignedInteger shouldBe uIntToUnsignedInteger
+        }
+    }
+
+    context("PowerOfTwo.unsignedInteger") {
+        val ops = PowerOfTwo.unsignedInteger
+
+        context("isPowerOfTwo") {
+            test("1 is a power of two") { with(ops) { UnsignedInteger.fromIntBits(1).isPowerOfTwo() } shouldBe true }
+            test("1024 is a power of two") { with(ops) { UnsignedInteger.fromIntBits(1024).isPowerOfTwo() } shouldBe true }
+            test("2^31 is a power of two") { with(ops) { UnsignedInteger.fromIntBits(Int.MIN_VALUE).isPowerOfTwo() } shouldBe true }
+            test("3 is not a power of two") { with(ops) { UnsignedInteger.fromIntBits(3).isPowerOfTwo() } shouldBe false }
+            test("ZERO is not a power of two") { with(ops) { UnsignedInteger.ZERO.isPowerOfTwo() } shouldBe false }
+        }
+
+        context("floorPowerOfTwo") {
+            test("floor(1) = 1") { with(ops) { UnsignedInteger.ONE.floorPowerOfTwo() } shouldBe UnsignedInteger.ONE }
+            test("floor(3) = 2") { with(ops) { UnsignedInteger.fromIntBits(3).floorPowerOfTwo() } shouldBe UnsignedInteger.fromIntBits(2) }
+            test("floor(MAX_VALUE) = 2^31") { with(ops) { UnsignedInteger.MAX_VALUE.floorPowerOfTwo() } shouldBe UnsignedInteger.fromIntBits(Int.MIN_VALUE) }
+            test("floor(ZERO) throws") { shouldThrow<IllegalArgumentException> { with(ops) { UnsignedInteger.ZERO.floorPowerOfTwo() } } }
+        }
+
+        context("ceilingPowerOfTwo") {
+            test("ceiling(1) = 1") { with(ops) { UnsignedInteger.ONE.ceilingPowerOfTwo() } shouldBe UnsignedInteger.ONE }
+            test("ceiling(3) = 4") { with(ops) { UnsignedInteger.fromIntBits(3).ceilingPowerOfTwo() } shouldBe UnsignedInteger.fromIntBits(4) }
+            test("ceiling(2^31) = 2^31") { with(ops) { UnsignedInteger.fromIntBits(Int.MIN_VALUE).ceilingPowerOfTwo() } shouldBe UnsignedInteger.fromIntBits(Int.MIN_VALUE) }
+            test("ceiling(2^31 + 1) overflows") { shouldThrow<ArithmeticException> { with(ops) { UnsignedInteger.fromIntBits(Int.MIN_VALUE + 1).ceilingPowerOfTwo() } } }
+            test("ceiling(ZERO) throws") { shouldThrow<IllegalArgumentException> { with(ops) { UnsignedInteger.ZERO.ceilingPowerOfTwo() } } }
         }
     }
 })

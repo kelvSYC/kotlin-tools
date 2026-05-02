@@ -1,6 +1,8 @@
 package com.kelvsyc.kotlin.guava
 
 import com.google.common.primitives.UnsignedLong
+import com.kelvsyc.kotlin.core.traits.integral.PowerOfTwo
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -101,6 +103,33 @@ class UnsignedLongExtensionsTest : FunSpec({
 
         test("singleton identity") {
             uLongToUnsignedLong shouldBe uLongToUnsignedLong
+        }
+    }
+
+    context("PowerOfTwo.unsignedLong") {
+        val ops = PowerOfTwo.unsignedLong
+
+        context("isPowerOfTwo") {
+            test("1 is a power of two") { with(ops) { UnsignedLong.fromLongBits(1L).isPowerOfTwo() } shouldBe true }
+            test("1024 is a power of two") { with(ops) { UnsignedLong.fromLongBits(1024L).isPowerOfTwo() } shouldBe true }
+            test("2^63 is a power of two") { with(ops) { UnsignedLong.fromLongBits(Long.MIN_VALUE).isPowerOfTwo() } shouldBe true }
+            test("3 is not a power of two") { with(ops) { UnsignedLong.fromLongBits(3L).isPowerOfTwo() } shouldBe false }
+            test("ZERO is not a power of two") { with(ops) { UnsignedLong.ZERO.isPowerOfTwo() } shouldBe false }
+        }
+
+        context("floorPowerOfTwo") {
+            test("floor(1) = 1") { with(ops) { UnsignedLong.ONE.floorPowerOfTwo() } shouldBe UnsignedLong.ONE }
+            test("floor(3) = 2") { with(ops) { UnsignedLong.fromLongBits(3L).floorPowerOfTwo() } shouldBe UnsignedLong.fromLongBits(2L) }
+            test("floor(MAX_VALUE) = 2^63") { with(ops) { UnsignedLong.MAX_VALUE.floorPowerOfTwo() } shouldBe UnsignedLong.fromLongBits(Long.MIN_VALUE) }
+            test("floor(ZERO) throws") { shouldThrow<IllegalArgumentException> { with(ops) { UnsignedLong.ZERO.floorPowerOfTwo() } } }
+        }
+
+        context("ceilingPowerOfTwo") {
+            test("ceiling(1) = 1") { with(ops) { UnsignedLong.ONE.ceilingPowerOfTwo() } shouldBe UnsignedLong.ONE }
+            test("ceiling(3) = 4") { with(ops) { UnsignedLong.fromLongBits(3L).ceilingPowerOfTwo() } shouldBe UnsignedLong.fromLongBits(4L) }
+            test("ceiling(2^63) = 2^63") { with(ops) { UnsignedLong.fromLongBits(Long.MIN_VALUE).ceilingPowerOfTwo() } shouldBe UnsignedLong.fromLongBits(Long.MIN_VALUE) }
+            test("ceiling(2^63 + 1) overflows") { shouldThrow<ArithmeticException> { with(ops) { UnsignedLong.fromLongBits(Long.MIN_VALUE + 1L).ceilingPowerOfTwo() } } }
+            test("ceiling(ZERO) throws") { shouldThrow<IllegalArgumentException> { with(ops) { UnsignedLong.ZERO.ceilingPowerOfTwo() } } }
         }
     }
 })

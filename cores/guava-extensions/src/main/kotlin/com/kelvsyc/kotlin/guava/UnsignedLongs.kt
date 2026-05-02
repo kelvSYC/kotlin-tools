@@ -5,6 +5,7 @@ import com.kelvsyc.kotlin.core.Converter
 import com.kelvsyc.kotlin.core.traits.integral.CeilDiv
 import com.kelvsyc.kotlin.core.traits.integral.Gcd
 import com.kelvsyc.kotlin.core.traits.integral.IntegerArithmetic
+import com.kelvsyc.kotlin.core.traits.integral.PowerOfTwo
 import com.kelvsyc.kotlin.core.traits.integral.RoundingRightShift
 import com.kelvsyc.kotlin.core.traits.integral.StickyRightShift
 import com.kelvsyc.kotlin.core.traits.integral.UInt64
@@ -63,7 +64,10 @@ private val unsignedLongGcdInstance: Gcd<UnsignedLong> by lazy { Gcd.from(Intege
 private val unsignedLongRoundingRightShiftInstance: RoundingRightShift<UnsignedLong> by lazy { RoundingRightShift.from(UInt64.unsignedLong, UInt64.unsignedLong, IntegerArithmetic.unsignedLong) }
 private val unsignedLongStickyRightShiftInstance: StickyRightShift<UnsignedLong> by lazy { StickyRightShift.from(UInt64.unsignedLong, UInt64.unsignedLong) }
 
+private val unsignedLongPowerOfTwoInstance: PowerOfTwo<UnsignedLong> by lazy { PowerOfTwo.from(UInt64.unsignedLong) }
+
 val CeilDiv.Companion.unsignedLong: CeilDiv<UnsignedLong> get() = unsignedLongCeilDivInstance
 val Gcd.Companion.unsignedLong: Gcd<UnsignedLong> get() = unsignedLongGcdInstance
+val PowerOfTwo.Companion.unsignedLong: PowerOfTwo<UnsignedLong> get() = unsignedLongPowerOfTwoInstance
 val RoundingRightShift.Companion.unsignedLong: RoundingRightShift<UnsignedLong> get() = unsignedLongRoundingRightShiftInstance
 val StickyRightShift.Companion.unsignedLong: StickyRightShift<UnsignedLong> get() = unsignedLongStickyRightShiftInstance
