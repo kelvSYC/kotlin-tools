@@ -9,4 +9,5 @@ group = "com.kelvsyc.kotlin"
 dependencies {
     api("com.kelvsyc.kotlin:kotlin-core")
     api(libs.guava)
+    implementation(kotlin("reflect"))
 }
