@@ -54,6 +54,15 @@ general `Addition`/`Multiplication` overloads when both are in scope:
   value. Structural (hi, lo) identity is guaranteed only when `|low| < ulp(high) / 2` strictly.
 - `DoubleDouble.Companion.ddConverter: Converter<DD, DoubleDouble>` — bidirectional converter.
 
+**kotlin-core trait instances** (`DdFloatingPointArithmetic.kt`):
+- `FloatingPointArithmetic.Companion.dd: FloatingPointArithmetic<DD>` — delegates `add`,
+  `subtract`, `multiply`, `divide`, `negate`, `abs`, `isFinite`, and `isZero` to `DD`'s Java
+  methods. `isNaN` and `isInfinite` are derived from `hi()`. `isNegative` uses `hi()`'s sign bit.
+  `isInteger` performs a bit-pattern check on both components (same logic as `DoubleDouble`).
+  `compareTo` uses a NaN-last, hi-then-lo total ordering. Only defined for finite inputs; DD's
+  two-sum algorithm produces NaN when given non-finite intermediate values.
+- `FloatingPointSquareRoot.Companion.dd: FloatingPointSquareRoot<DD>` — delegates to `DD.sqrt()`.
+
 ### `org.apache.commons.numbers.complex.Complex`
 
 **`Complex` operators** (`ComplexExtensions.kt`):
