@@ -38,6 +38,7 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `IeeeBinaryFloatingPoint<T>` — IEEE 754-specific metadata (sign bits, exponent/significand widths)
 - `FloatingPointArithmetic<T>` — standard math operations (+, −, ×, ÷, sqrt, remainder, etc.)
 - `FloatingPointClassification<T>` — NaN / infinity detection
+- `FloatingPointRounding<T>` — floor and ceiling (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FusedMultiplyAdd<T>` — fused multiply-add with accurate rounding
 - Sub-interfaces: `Binary16<T>`, `Binary32<T>`, `Binary64<T>` — format-specific specializations (e.g. `Float16` implements `Binary16<Float16>` via its companion object)
 

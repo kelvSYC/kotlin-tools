@@ -62,6 +62,8 @@ general `Addition`/`Multiplication` overloads when both are in scope:
   `compareTo` uses a NaN-last, hi-then-lo total ordering. Only defined for finite inputs; DD's
   two-sum algorithm produces NaN when given non-finite intermediate values.
 - `FloatingPointSquareRoot.Companion.dd: FloatingPointSquareRoot<DD>` — delegates to `DD.sqrt()`.
+- `FloatingPointRounding.Companion.dd: FloatingPointRounding<DD>` — delegates `floor` and `ceil`
+  to `DD.floor()` and `DD.ceil()`.
 
 ### `org.apache.commons.numbers.complex.Complex`
 
