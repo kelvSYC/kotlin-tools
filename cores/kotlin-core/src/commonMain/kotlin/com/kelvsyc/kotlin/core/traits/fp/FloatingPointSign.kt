@@ -1,11 +1,14 @@
 package com.kelvsyc.kotlin.core.traits.fp
 
+import com.kelvsyc.kotlin.core.traits.Signed
+
 /**
  * Trait for IEEE 754-2008 §5.5.1 *copy operations* on a floating-point type [T].
  *
- * Copy operations manipulate only the sign bit and are defined for every bit pattern — finite
- * values, infinities, both zeros, and NaN — without performing arithmetic.  They contrast with
- * their arithmetic lookalikes:
+ * Extends [Signed] with [copySign] and narrows the semantics of [isNegative] and [negate] to
+ * their IEEE 754 sign-bit interpretations. Copy operations manipulate only the sign bit and are
+ * defined for every bit pattern — finite values, infinities, both zeros, and NaN — without
+ * performing arithmetic. They contrast with their arithmetic lookalikes:
  *
  * - [negate] is a **sign-bit flip**, not `0 - x`.  Arithmetic subtraction raises floating-point
  *   exceptions and applies NaN propagation rules; a sign-bit flip simply inverts the sign bit
@@ -15,7 +18,7 @@ package com.kelvsyc.kotlin.core.traits.fp
  * "the sign" is the sign of the high component, and [negate] must flip every component to
  * preserve the canonical pair invariant.
  */
-interface FloatingPointSign<T> {
+interface FloatingPointSign<T> : Signed<T> {
     /**
      * Returns `true` if this value has its sign bit set.
      *
@@ -26,7 +29,7 @@ interface FloatingPointSign<T> {
      * Note that [isNegative] and [isPositive] are complementary: every bit pattern is either
      * negative or positive, including zeros and NaNs, with no third case.
      */
-    fun T.isNegative(): Boolean
+    override fun T.isNegative(): Boolean
 
     /**
      * Returns `true` if this value has its sign bit clear.
@@ -34,7 +37,7 @@ interface FloatingPointSign<T> {
      * Equivalent to `!isNegative()`.  Returns `true` for positive finite values, positive
      * infinity, positive zero, and positive NaN — any bit pattern whose sign bit is 0.
      */
-    fun T.isPositive(): Boolean = !isNegative()
+    override fun T.isPositive(): Boolean = !isNegative()
 
     /**
      * Returns this value with its sign bit flipped.
@@ -52,7 +55,7 @@ interface FloatingPointSign<T> {
      *
      * The operation is always involutory: `negate(negate(x)) == x` for every bit pattern.
      */
-    fun T.negate(): T
+    override fun T.negate(): T
 
     /**
      * Returns this value with its sign bit cleared, equivalent to IEEE 754-2008 §5.5.1 `abs`.
@@ -62,7 +65,7 @@ interface FloatingPointSign<T> {
      *
      * The default implementation delegates to [isNegative] and [negate].
      */
-    fun T.abs(): T = if (isNegative()) negate() else this
+    override fun T.abs(): T = if (isNegative()) negate() else this
 
     /**
      * Returns a value with the magnitude of this value and the sign of [other], equivalent to

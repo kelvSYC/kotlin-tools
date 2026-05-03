@@ -1,5 +1,7 @@
 package com.kelvsyc.kotlin.core.traits.integral
 
+import com.kelvsyc.kotlin.core.traits.Signed
+
 /**
  * `SignedIntegerArithmetic` is a trait type extending [IntegerArithmetic] with operations that are only meaningful
  * for signed integer types: negation, absolute value, floor division, floor remainder, and ceiling division.
@@ -32,7 +34,7 @@ package com.kelvsyc.kotlin.core.traits.integral
  * Canonical wrapping instances for [Byte], [Short], [Int], and [Long] are available as [Companion.byte],
  * [Companion.short], [Companion.int], and [Companion.long].
  */
-interface SignedIntegerArithmetic<T> : IntegerArithmetic<T>, CeilDiv<T> {
+interface SignedIntegerArithmetic<T> : IntegerArithmetic<T>, CeilDiv<T>, Signed<T> {
     /**
      * Returns the negation of this value. Overflow behavior is implementation-defined.
      *
@@ -40,22 +42,23 @@ interface SignedIntegerArithmetic<T> : IntegerArithmetic<T>, CeilDiv<T> {
      * `Int.unaryMinus()` (and equivalent members on other primitive types), which would take dispatch priority
      * over this member extension inside a `with(ops)` block and make this override unreachable.
      */
-    fun T.negate(): T
-
-    /**
-     * Returns the absolute value of this value. Overflow behavior is implementation-defined.
-     */
-    fun T.abs(): T
+    override fun T.negate(): T
 
     /**
      * Returns `true` if this value is strictly less than [zero].
+     *
+     * Unlike [Signed.isNegative], which is sign-bit based for floating-point types, this default
+     * is arithmetic: it returns `true` only when `this < zero`.
      */
-    fun T.isNegative(): Boolean = compareTo(zero) < 0
+    override fun T.isNegative(): Boolean = compareTo(zero) < 0
 
     /**
      * Returns `true` if this value is strictly greater than [zero].
+     *
+     * Overrides [Signed.isPositive] (which returns `!isNegative()`) so that zero is not
+     * considered positive, matching arithmetic semantics.
      */
-    fun T.isPositive(): Boolean = compareTo(zero) > 0
+    override fun T.isPositive(): Boolean = compareTo(zero) > 0
 
     /**
      * Returns `true` if this value is equal to [zero].
