@@ -56,8 +56,9 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - Sub-interfaces: `Int8<T>`–`Int64<T>` / `UInt8<T>`–`UInt64<T>` — width-specific signed and unsigned specializations
 
 #### Complex Numbers (`traits/complex`)
-- `ComplexArithmetic<T>` — operations on `Complex<T>`; supports naive (textbook) and strict (Smith's method) division
-- `ComplexModulus<T>`, `ImaginaryArithmetic<T>` — modulus and imaginary-component operations
+- `ComplexArithmetic<C, T>` — arithmetic operations on complex type `C` with component type `T`; defaults for `add`/`subtract`/`negate`/`conjugate`; `multiply`/`divide` remain abstract (naive vs strict are fundamentally different algorithms). Supports naive (textbook) and strict (FMA + Annex G) variants for `Complex<Float>` and `Complex<Double>`.
+- `ComplexModulus<C, T>` — modulus operations (`squaredModulus`, `modulus`) on complex type `C`
+- `ImaginaryArithmetic<T>` — arithmetic on `Imaginary<T>` values
 
 #### Rational Numbers (`traits/rational`)
 - `RationalArithmetic<R, T>` — arithmetic and normalization for rational type `R` with component type `T`; `R` may be `Rational<T>` or any compatible rational representation (e.g. `Fraction`, `BigFraction` from commons-numbers-extensions)

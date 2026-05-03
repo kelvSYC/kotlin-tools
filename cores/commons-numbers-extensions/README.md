@@ -107,8 +107,15 @@ fires in generic dispatch contexts where the extension cannot be shadowed.
 - `times(Double)`, `times(Complex)`.
 - `div(Double)`, `div(Complex)`.
 
-Trait instances (`FloatingPointArithmetic`, `ComplexArithmetic`, etc.) are not provided directly
-for Commons `Complex`; convert via `toKotlinComplex()` to access kotlin-core's instances instead.
+**kotlin-core trait instances** (`CommonsComplexArithmetic.kt`, `CommonsComplexModulus.kt`):
+- `ComplexArithmetic.Companion.commonsComplex: ComplexArithmetic<Complex, Double>` — full complex
+  arithmetic. `multiply` and `divide` delegate to Commons Complex's own implementations (Smith's
+  method, Annex G semantics). `add`, `subtract`, `negate`, and `conjugate` use the default
+  component-wise implementations.
+- `ComplexModulus.Companion.commonsComplex: ComplexModulus<Complex, Double>` — `modulus()` delegates
+  to `Complex.abs()` (uses `Math.hypot` internally, overflow-safe); `squaredModulus()` uses the
+  naive formula `re² + im²`.
+
 The kotlin-core cross-cutting traits `Addition<Complex>`, `Multiplication<Complex>`, and
 `Division<Complex>` are natural candidates for direct bridge instances here, since Commons `Complex`
 supports all four arithmetic operations without requiring a total order.
