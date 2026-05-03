@@ -186,6 +186,30 @@ Unsigned: `UByte`, `UShort`, `UInt`, `ULong`
 
 ⁷ All four signed primitive types (`Byte`, `Short`, `Int`, `Long`) unless noted otherwise.
 
+#### BigDecimal (JVM only)
+
+`BigDecimal` is not an integer type and does not fit IEEE 754 floating-point semantics (no NaN, no
+infinity), so it implements a subset of traits drawn from both domains. All instances below are
+JVM-only.
+
+| Trait | `BigDecimal` | Notes |
+|---|:---:|---|
+| `Addition<T>` | ✓ | `Addition.bigDecimal` |
+| `Multiplication<T>` | ✓ | `Multiplication.bigDecimal` |
+| `Division<T>` | ✓ ⁸ | `Division.bigDecimal` (exact); `Division.bigDecimal(MathContext)` (factory) |
+| `Signed<T>` | ✓ | `Signed.bigDecimal` |
+| `FloatingPointRounding<T>` | ✓ | `FloatingPointRounding.bigDecimal` — result has scale 0 |
+| `FloatingPointScald<T>` | ✓ | `FloatingPointScald.bigDecimal` — delegates to `scaleByPowerOfTen` |
+| `IntegerPower<T>` | ✓ | `IntegerPower.bigDecimal` — delegates to `BigDecimal.pow(int)` |
+| `ValueEquality<T>` | ✓ | `ValueEquality.bigDecimalNumerical` (ignores scale); `ValueEquality.bigDecimalEquivalence` (scale-sensitive) |
+| `FloatingPointArithmetic<T>` | — | No NaN or infinity; does not satisfy the FP contract |
+| `IntegerArithmetic<T>` | — | Not an integer type |
+| `FloatingPointScalb<T>` | — | Binary scaling (×2ⁿ) is not natural for a decimal type; use `FloatingPointScald` instead |
+
+⁸ The exact `Division.bigDecimal` instance delegates to `BigDecimal.divide(BigDecimal)`, which
+throws `ArithmeticException` for non-terminating decimal expansions (e.g. `1 / 3`). Use
+`Division.bigDecimal(MathContext)` to supply an explicit precision and rounding mode.
+
 #### Cross-cutting granular traits
 
 `Addition<T>`, `Multiplication<T>`, and `Division<T>` are satisfied by every type that has an
