@@ -47,6 +47,13 @@ general `Addition`/`Multiplication` overloads when both are in scope:
 **Primitive conversions to `DD`** (`DoubleExtensions.kt`, `IntExtensions.kt`, `LongExtensions.kt`):
 - `Double.toDD()`, `Int.toDD()`, `Long.toDD()`.
 
+**kotlin-core bridge** (`DdBridge.kt`):
+- `DD.toDoubleDouble(): DoubleDouble` — transfers the (hi, lo) pair directly; NaN maps to
+  `DoubleDouble.NaN` (avoiding the `|hi| ≥ |lo|` precondition check in `DoubleDouble.create`).
+- `DoubleDouble.toDD(): DD` — uses `DD.ofSum(high, low)` (TwoSum); preserves the mathematical
+  value. Structural (hi, lo) identity is guaranteed only when `|low| < ulp(high) / 2` strictly.
+- `DoubleDouble.Companion.ddConverter: Converter<DD, DoubleDouble>` — bidirectional converter.
+
 ### `org.apache.commons.numbers.complex.Complex`
 
 **`Complex` operators** (`ComplexExtensions.kt`):
@@ -56,6 +63,16 @@ general `Addition`/`Multiplication` overloads when both are in scope:
 - `minus(Double)`, `minus(Complex)`.
 - `times(Double)`, `times(Complex)`.
 - `div(Double)`, `div(Complex)`.
+
+**kotlin-core bridge** (`ComplexBridge.kt`, `ComplexValueEquality.kt`):
+- `Complex.toKotlinComplex(): kotlin-core Complex<Double>` — lossless conversion.
+- `Complex<Double>.toCommonsComplex(): Complex` — lossless conversion.
+- `commonsComplexConverter: Converter<Complex, Complex<Double>>` — top-level bidirectional
+  converter (no companion object on `Complex<T>`).
+- `commonsComplexNumericalEquality: ValueEquality<Complex>` — IEEE 754 component equality:
+  NaN ≠ NaN, +0 = −0.
+- `commonsComplexEquivalenceEquality: ValueEquality<Complex>` — delegates to `Complex.equals()`,
+  which uses `Double.doubleToLongBits`: NaN = NaN, +0 ≠ −0; consistent with `hashCode`.
 
 **Primitive extensions relating to `Complex`** (`DoubleExtensions.kt`):
 - `Double.i` — creates `Complex.ofCartesian(0.0, this)`, enabling the `3.0 + 5.0.i` idiom.
@@ -80,6 +97,16 @@ general `Addition`/`Multiplication` overloads when both are in scope:
 - `minus(Int)`, `minus(Long)`, `minus(BigInteger)`, `minus(BigFraction)`.
 - `times(Int)`, `times(Long)`, `times(BigInteger)`, `times(BigFraction)`.
 - `div(Int)`, `div(Long)`, `div(BigInteger)`, `div(BigFraction)`.
+
+**kotlin-core bridges** (`FractionBridge.kt`, `BigFractionBridge.kt`):
+- `Fraction.toRational(): Rational<Int>` — converts to a normalised `Rational<Int>` (positive
+  denominator, fully reduced). Note that `Fraction.of` does not guarantee a positive denominator,
+  so the `Rational` may have a negated numerator relative to the original `Fraction`.
+- `Rational<Int>.toFraction(): Fraction` — creates a `Fraction` from a canonical `Rational<Int>`.
+- `Rational.fractionConverter: Converter<Fraction, Rational<Int>>` — bidirectional converter.
+- `BigFraction.toRational(): Rational<BigInteger>` — same semantics as the `Fraction` variant.
+- `Rational<BigInteger>.toBigFraction(): BigFraction`.
+- `Rational.bigFractionConverter: Converter<BigFraction, Rational<BigInteger>>`.
 
 **Primitive conversions to `Fraction`/`BigFraction`**:
 - `Double.toFraction()`, `Double.toBigFraction()` — via `Fraction.from` / `BigFraction.from`.
