@@ -39,12 +39,14 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointArithmetic<T>` — standard math operations (+, −, ×, ÷, sqrt, remainder, etc.)
 - `FloatingPointClassification<T>` — NaN / infinity detection
 - `FloatingPointRounding<T>` — floor and ceiling (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
+- `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FusedMultiplyAdd<T>` — fused multiply-add with accurate rounding
 - Sub-interfaces: `Binary16<T>`, `Binary32<T>`, `Binary64<T>` — format-specific specializations (e.g. `Float16` implements `Binary16<Float16>` via its companion object)
 
 #### Decimal Floating-Point (`traits/dfp`)
 - `BidFloatArithmetic` / `BidDoubleArithmetic` — arithmetic for BID-encoded decimal types
 - `DecimalFloatingPointEncoding`, `DecimalFloatingPointCohorts` — decimal structure and cohort classification
+- `FloatingPointScald<T>` — decimal scaling × 10^n (instances for `BidFloat`, `BidDouble`, `DpdFloat`, `DpdDouble`; in `traits/fp`)
 
 #### Integral / Bitwise (`traits/integral`)
 - `Bitwise<T>` — AND, OR, XOR, NOT

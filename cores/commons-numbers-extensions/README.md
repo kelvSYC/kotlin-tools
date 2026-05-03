@@ -64,6 +64,8 @@ general `Addition`/`Multiplication` overloads when both are in scope:
 - `FloatingPointSquareRoot.Companion.dd: FloatingPointSquareRoot<DD>` — delegates to `DD.sqrt()`.
 - `FloatingPointRounding.Companion.dd: FloatingPointRounding<DD>` — delegates `floor` and `ceil`
   to `DD.floor()` and `DD.ceil()`.
+- `FloatingPointScalb.Companion.dd: FloatingPointScalb<DD>` — delegates to `DD.scalb(Int)`;
+  computes `x × 2^n` by scaling both the high and low components independently.
 
 ### `org.apache.commons.numbers.complex.Complex`
 
