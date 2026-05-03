@@ -163,10 +163,37 @@ Source/sink adapters for `java.io.File` and `java.nio.file.Path`.
 - `operator fun UnsignedLong.div(other)`, `operator fun UnsignedLong.rem(other)`.
 - `ULong.toUnsignedLong()`, `UnsignedLong.toULong()`, `uLongToUnsignedLong` converter.
 
-**kotlin-core trait instances** for `UnsignedInteger` and `UnsignedLong`: `UInt32`, `UInt64`,
-`IntegerArithmetic`, `CeilDiv`, `Gcd`, `PowerOfTwo`, `RoundingRightShift`, `StickyRightShift` —
-accessed via companion-object extension properties (e.g. `UInt32.unsignedInteger`,
-`IntegerArithmetic.unsignedLong`).
+**kotlin-core trait instances** for `UnsignedInteger` and `UnsignedLong`:
+
+Not all kotlin-core integer traits have instances for Guava's unsigned types. The table below
+shows what is available and what each instance depends on.
+
+| Trait | `UnsignedInteger` | `UnsignedLong` | Dependencies |
+|---|:---:|:---:|---|
+| `UInt32<T>` ¹ | ✓ | — | direct implementation |
+| `UInt64<T>` ¹ | — | ✓ | direct implementation |
+| `IntegerArithmetic<T>` | ✓ | ✓ | direct implementation |
+| `CeilDiv<T>` | ✓ | ✓ | `IntegerArithmetic<T>` |
+| `Gcd<T>` | ✓ | ✓ | `IntegerArithmetic<T>` |
+| `PowerOfTwo<T>` | ✓ | ✓ | `UInt32<T>` / `UInt64<T>` |
+| `RoundingRightShift<T>` | ✓ | ✓ | `UInt32<T>` / `UInt64<T>` + `IntegerArithmetic<T>` |
+| `StickyRightShift<T>` | ✓ | ✓ | `UInt32<T>` / `UInt64<T>` |
+| `UnsignedIntegerArithmetic<T>` | — | — | Guava types are not Kotlin `UInt`/`ULong` ² |
+| `Log2<T>`, `Log10<T>`, `Sqrt<T>` | — | — | no instances provided |
+| `Primality<T>` | — | — | no instances provided |
+
+Companion property names follow the pattern `Trait.Companion.unsignedInteger` /
+`Trait.Companion.unsignedLong` — e.g. `IntegerArithmetic.unsignedInteger`,
+`UInt64.unsignedLong`.
+
+¹ `UInt32<T>` and `UInt64<T>` are width-specific sub-interfaces of `UnsignedIntegral<T>`, which
+bundles `BitCollection`, `BitShift`, and `Bitwise`. Providing either instance therefore covers all
+three of those traits for the corresponding type.
+
+² `UnsignedIntegerArithmetic<T>` in kotlin-core is designed for Kotlin's own unsigned primitives
+(`UByte`, `UShort`, `UInt`, `ULong`). Guava's `UnsignedInteger` and `UnsignedLong` are distinct
+boxed types and do not share that sub-interface. `IntegerArithmetic<T>` is the appropriate
+arithmetic trait for them.
 
 **Unsigned comparators** (`Comparators.kt`):
 - `Comparators.unsignedByteComparator`, `Comparators.unsignedIntComparator`,

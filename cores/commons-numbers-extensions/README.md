@@ -67,6 +67,27 @@ general `Addition`/`Multiplication` overloads when both are in scope:
 - `FloatingPointScalb.Companion.dd: FloatingPointScalb<DD>` — delegates to `DD.scalb(Int)`;
   computes `x × 2^n` by scaling both the high and low components independently.
 
+**kotlin-core trait coverage for `DD`:**
+
+Not all kotlin-core composable traits have `DD` instances. The table below maps each trait to its
+implementation status.
+
+| kotlin-core trait | `DD` instance | Notes |
+|---|:---:|---|
+| `FloatingPointArithmetic<T>` | ✓ | `FloatingPointArithmetic.dd` |
+| `FloatingPointSquare<T>` | ✓ | `FloatingPointSquare.dd` — delegates to `DD.multiply(this)` |
+| `FloatingPointSquareRoot<T>` | ✓ | `FloatingPointSquareRoot.dd` — delegates to `DD.sqrt()` |
+| `FloatingPointRounding<T>` | ✓ | `FloatingPointRounding.dd` — delegates to `DD.floor()` / `DD.ceil()` |
+| `FloatingPointScalb<T>` | ✓ | `FloatingPointScalb.dd` — delegates to `DD.scalb(Int)` |
+| `IntegerPower<T>` | ✓ * | `IntegerPower.dd` — binary exponentiation via `DD.multiply()` |
+| `FloatingPointRemainder<T>` | — | No `DD` remainder operation is exposed by Commons Numbers |
+| `FusedMultiplyAdd<T>` | — | `DD` has no hardware FMA path; software emulation would be circular |
+
+\* `DD` has a Java member `pow(int n)` that handles negative exponents by returning the reciprocal,
+rather than throwing. At concrete call sites `DD.pow(-1)` calls the Java member and returns
+`this.reciprocal()`, not `IllegalArgumentException`. The trait's `require(n >= 0)` guard only
+fires in generic dispatch contexts where the extension cannot be shadowed.
+
 ### `org.apache.commons.numbers.complex.Complex`
 
 **`Complex` operators** (`ComplexExtensions.kt`):
@@ -76,6 +97,9 @@ general `Addition`/`Multiplication` overloads when both are in scope:
 - `minus(Double)`, `minus(Complex)`.
 - `times(Double)`, `times(Complex)`.
 - `div(Double)`, `div(Complex)`.
+
+Trait instances (`FloatingPointArithmetic`, `ComplexArithmetic`, etc.) are not provided directly
+for Commons `Complex`; convert via `toKotlinComplex()` to access kotlin-core's instances instead.
 
 **kotlin-core bridge** (`ComplexBridge.kt`, `ComplexValueEquality.kt`):
 - `Complex.toKotlinComplex(): kotlin-core Complex<Double>` — lossless conversion.
@@ -110,6 +134,9 @@ general `Addition`/`Multiplication` overloads when both are in scope:
 - `minus(Int)`, `minus(Long)`, `minus(BigInteger)`, `minus(BigFraction)`.
 - `times(Int)`, `times(Long)`, `times(BigInteger)`, `times(BigFraction)`.
 - `div(Int)`, `div(Long)`, `div(BigInteger)`, `div(BigFraction)`.
+
+`RationalArithmetic` instances are not provided directly for `Fraction` or `BigFraction`; convert
+via `toRational()` to access kotlin-core's instances instead.
 
 **kotlin-core bridges** (`FractionBridge.kt`, `BigFractionBridge.kt`):
 - `Fraction.toRational(): Rational<Int>` — converts to a normalised `Rational<Int>` (positive
