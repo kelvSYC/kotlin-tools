@@ -1,6 +1,7 @@
-package com.kelvsyc.kotlin.core.traits.fp
+package com.kelvsyc.kotlin.core.traits.dd
 
 import com.kelvsyc.kotlin.core.fp.DoubleDouble
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointRounding
 
 // Port of DD.floorOrCeil — see Apache Commons Numbers DD source for the rationale.
 //

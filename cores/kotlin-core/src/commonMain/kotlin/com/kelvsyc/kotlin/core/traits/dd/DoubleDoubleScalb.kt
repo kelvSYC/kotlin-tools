@@ -1,6 +1,8 @@
-package com.kelvsyc.kotlin.core.traits.fp
+package com.kelvsyc.kotlin.core.traits.dd
 
 import com.kelvsyc.kotlin.core.fp.DoubleDouble
+import com.kelvsyc.kotlin.core.traits.fp.FloatingPointScalb
+import com.kelvsyc.kotlin.core.traits.fp.scalbDouble
 
 private val doubleDoubleInstance: FloatingPointScalb<DoubleDouble> =
     object : FloatingPointScalb<DoubleDouble> {
