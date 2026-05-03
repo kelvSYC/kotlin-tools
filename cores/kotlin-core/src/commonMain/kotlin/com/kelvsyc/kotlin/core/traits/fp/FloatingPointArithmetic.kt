@@ -2,6 +2,9 @@ package com.kelvsyc.kotlin.core.traits.fp
 
 import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
+import com.kelvsyc.kotlin.core.traits.Addition
+import com.kelvsyc.kotlin.core.traits.Division
+import com.kelvsyc.kotlin.core.traits.Multiplication
 
 /**
  * `FloatingPointArithmetic` is a trait type providing a uniform interface for basic floating-point arithmetic
@@ -11,6 +14,9 @@ import com.kelvsyc.kotlin.core.Float16
  * [FloatingPointSign] (for `negate`), and adds the four arithmetic operations, absolute value, and a
  * total-order comparison.  It does not cover remainder or square root; those capabilities are expressed as
  * separate, optional traits.
+ *
+ * `FloatingPointArithmetic` also extends the granular traits [Addition], [Multiplication], and [Division],
+ * so any instance also satisfies those interfaces.
  *
  * ## Precision and error bounds
  *
@@ -32,38 +38,38 @@ import com.kelvsyc.kotlin.core.Float16
  * Canonical instances for [Float16], [BFloat16], [Float], and [Double] are available as [Companion.float16],
  * [Companion.bfloat16], [Companion.float], and [Companion.double] respectively.
  */
-interface FloatingPointArithmetic<T> : FloatingPointClassification<T>, FloatingPointSign<T> {
+interface FloatingPointArithmetic<T> : FloatingPointClassification<T>, FloatingPointSign<T>, Addition<T>, Multiplication<T>, Division<T> {
     /**
      * The additive identity: the value such that `x.add(zero) == x` for all finite `x`.
      *
      * For IEEE 754 types this is positive zero.
      */
-    val zero: T
+    override val zero: T
 
     /**
      * The multiplicative identity: the value such that `x.multiply(one) == x` for all finite `x`.
      */
-    val one: T
+    override val one: T
 
     /**
      * Returns the sum `this + other`, rounded to the nearest representable value.
      */
-    fun T.add(other: T): T
+    override fun T.add(other: T): T
 
     /**
      * Returns the difference `this - other`, rounded to the nearest representable value.
      */
-    fun T.subtract(other: T): T
+    override fun T.subtract(other: T): T
 
     /**
      * Returns the product `this * other`, rounded to the nearest representable value.
      */
-    fun T.multiply(other: T): T
+    override fun T.multiply(other: T): T
 
     /**
      * Returns the quotient `this / other`, rounded to the nearest representable value.
      */
-    fun T.divide(other: T): T
+    override fun T.divide(other: T): T
 
     /**
      * Compares this value to [other] using a total ordering.

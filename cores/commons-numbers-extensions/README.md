@@ -18,6 +18,12 @@ as-is. This document maps each area of the library to one of three categories.
 Generic operator overloads for the three algebraic interfaces in `commons-numbers-core`, so that
 any type implementing them gets Kotlin operator syntax for free.
 
+> **Naming note**: `Addition<T>` and `Multiplication<T>` below refer to
+> `org.apache.commons.numbers.core.Addition<T>` and `Multiplication<T>` — type-constraint
+> interfaces where `T` itself implements the interface. These are distinct from kotlin-core's
+> `com.kelvsyc.kotlin.core.traits.Addition<T>` and `Multiplication<T>`, which are strategy-object
+> traits. The two coexist without conflict but serve different call-site styles.
+
 **`Addition<T>`** (`AdditionExtensions.kt`):
 - `unaryPlus()` — identity (`+x`).
 - `plus(rhs: T)` — delegates to `add`.
@@ -88,6 +94,9 @@ rather than throwing. At concrete call sites `DD.pow(-1)` calls the Java member 
 `this.reciprocal()`, not `IllegalArgumentException`. The trait's `require(n >= 0)` guard only
 fires in generic dispatch contexts where the extension cannot be shadowed.
 
+`FloatingPointArithmetic.dd` also satisfies the kotlin-core cross-cutting traits `Addition<DD>`,
+`Multiplication<DD>`, and `Division<DD>` transitively — no separate instances are needed.
+
 ### `org.apache.commons.numbers.complex.Complex`
 
 **`Complex` operators** (`ComplexExtensions.kt`):
@@ -100,6 +109,9 @@ fires in generic dispatch contexts where the extension cannot be shadowed.
 
 Trait instances (`FloatingPointArithmetic`, `ComplexArithmetic`, etc.) are not provided directly
 for Commons `Complex`; convert via `toKotlinComplex()` to access kotlin-core's instances instead.
+The kotlin-core cross-cutting traits `Addition<Complex>`, `Multiplication<Complex>`, and
+`Division<Complex>` are natural candidates for direct bridge instances here, since Commons `Complex`
+supports all four arithmetic operations without requiring a total order.
 
 **kotlin-core bridge** (`ComplexBridge.kt`, `ComplexValueEquality.kt`):
 - `Complex.toKotlinComplex(): kotlin-core Complex<Double>` — lossless conversion.
@@ -136,7 +148,10 @@ for Commons `Complex`; convert via `toKotlinComplex()` to access kotlin-core's i
 - `div(Int)`, `div(Long)`, `div(BigInteger)`, `div(BigFraction)`.
 
 `RationalArithmetic` instances are not provided directly for `Fraction` or `BigFraction`; convert
-via `toRational()` to access kotlin-core's instances instead.
+via `toRational()` to access kotlin-core's instances instead. The kotlin-core cross-cutting traits
+`Addition<T>`, `Multiplication<T>`, `Division<T>`, and `Signed<T>` are all natural candidates for
+direct bridge instances here — `Fraction` and `BigFraction` support all four arithmetic operations
+and have `negate`, `abs`, and `signum`.
 
 **kotlin-core bridges** (`FractionBridge.kt`, `BigFractionBridge.kt`):
 - `Fraction.toRational(): Rational<Int>` — converts to a normalised `Rational<Int>` (positive

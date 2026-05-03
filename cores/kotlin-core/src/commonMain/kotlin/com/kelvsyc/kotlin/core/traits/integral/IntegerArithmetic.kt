@@ -1,11 +1,18 @@
 package com.kelvsyc.kotlin.core.traits.integral
 
+import com.kelvsyc.kotlin.core.traits.Addition
+import com.kelvsyc.kotlin.core.traits.Division
+import com.kelvsyc.kotlin.core.traits.Multiplication
+
 /**
  * `IntegerArithmetic` is a trait type providing a uniform interface for basic integer arithmetic over a type [T].
  *
  * This trait covers operations applicable to both signed and unsigned integer types: the four arithmetic operations,
  * remainder, a total-order comparison, and the additive and multiplicative identities. It does not include
  * signed-only operations such as negation and absolute value; those are in [SignedIntegerArithmetic].
+ *
+ * `IntegerArithmetic` extends the granular traits [Addition], [Multiplication], and [Division], so any instance
+ * also satisfies those interfaces.
  *
  * ## Overflow behavior
  *
@@ -19,31 +26,31 @@ package com.kelvsyc.kotlin.core.traits.integral
  * Canonical wrapping instances for [Byte], [Short], [Int], and [Long] are available as [Companion.byte],
  * [Companion.short], [Companion.int], and [Companion.long].
  */
-interface IntegerArithmetic<T> {
+interface IntegerArithmetic<T> : Addition<T>, Multiplication<T>, Division<T> {
     /**
      * The additive identity: the value such that `x.add(zero) == x` for all `x`.
      */
-    val zero: T
+    override val zero: T
 
     /**
      * The multiplicative identity: the value such that `x.multiply(one) == x` for all `x`.
      */
-    val one: T
+    override val one: T
 
     /**
      * Returns the sum `this + other`. Overflow behavior is implementation-defined.
      */
-    fun T.add(other: T): T
+    override fun T.add(other: T): T
 
     /**
      * Returns the difference `this - other`. Overflow behavior is implementation-defined.
      */
-    fun T.subtract(other: T): T
+    override fun T.subtract(other: T): T
 
     /**
      * Returns the product `this * other`. Overflow behavior is implementation-defined.
      */
-    fun T.multiply(other: T): T
+    override fun T.multiply(other: T): T
 
     /**
      * Returns the quotient of this value divided by [other], truncated toward zero.
@@ -51,7 +58,7 @@ interface IntegerArithmetic<T> {
      * Throws [ArithmeticException] if [other] is zero. Overflow behavior is implementation-defined; see
      * [OverflowCheckedArithmetic] for an implementation that also throws on overflow.
      */
-    fun T.divide(other: T): T
+    override fun T.divide(other: T): T
 
     /**
      * Returns the remainder of dividing this value by [other], using truncated-division semantics.

@@ -67,6 +67,19 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `DoubleDoubleArithmetic` — operations on high/low pairs
 - `TwoSum`, `TwoProduct`, `TwoDivision` — building blocks for extended-precision arithmetic
 
+#### Cross-cutting (`traits/`)
+
+These traits are not specific to any numeric domain and can be implemented independently or composed
+into larger traits:
+
+- `Addition<T>` — additive identity (`zero`) and `add`/`subtract`; extended by `IntegerArithmetic`
+  and `FloatingPointArithmetic`, so all their instances automatically satisfy `Addition<T>`
+- `Multiplication<T>` — multiplicative identity (`one`) and `multiply`; same
+- `Division<T>` — `divide` with implementation-defined semantics (truncating for integers, IEEE 754
+  for floating-point, exact for rationals and complex)
+- `Signed<T>` — sign queries (`isNegative`, `isPositive`), `negate`, and `abs`; extended by
+  `SignedIntegerArithmetic` and `FloatingPointSign`; JVM instances for `BigInteger` and `BigDecimal`
+
 #### Common (`traits/common`)
 - `ValueEquality<T>` — distinguishes structural equality from IEEE numerical equality
 
@@ -172,3 +185,12 @@ Unsigned: `UByte`, `UShort`, `UInt`, `ULong`
 | `IntegerPower<T>` | `Int`, `Long` | — | JVM |
 
 ⁷ All four signed primitive types (`Byte`, `Short`, `Int`, `Long`) unless noted otherwise.
+
+#### Cross-cutting granular traits
+
+`Addition<T>`, `Multiplication<T>`, and `Division<T>` are satisfied by every type that has an
+`IntegerArithmetic`, `SignedIntegerArithmetic`, `UnsignedIntegerArithmetic`, or
+`FloatingPointArithmetic` instance — no separate companion property is needed. `Signed<T>` is
+satisfied by every type that has a `SignedIntegerArithmetic` instance, and additionally by
+`BigInteger` and `BigDecimal` via dedicated JVM-only instances (`Signed.bigInteger`,
+`Signed.bigDecimal`).
