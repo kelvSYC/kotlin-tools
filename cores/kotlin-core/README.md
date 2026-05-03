@@ -60,8 +60,8 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `ComplexModulus<T>`, `ImaginaryArithmetic<T>` — modulus and imaginary-component operations
 
 #### Rational Numbers (`traits/rational`)
-- `RationalArithmetic<T>` — arithmetic and normalization for `Rational<T>`
-- `RationalNumber<T>` — conversion and classification
+- `RationalArithmetic<R, T>` — arithmetic and normalization for rational type `R` with component type `T`; `R` may be `Rational<T>` or any compatible rational representation (e.g. `Fraction`, `BigFraction` from commons-numbers-extensions)
+- `RationalNumber<R, T>` — structural queries (zero/sign/reciprocal) over a rational type `R`
 
 #### Double-Double (`traits/dd`)
 - `DoubleDoubleArithmetic` — operations on high/low pairs
@@ -209,6 +209,23 @@ JVM-only.
 ⁸ The exact `Division.bigDecimal` instance delegates to `BigDecimal.divide(BigDecimal)`, which
 throws `ArithmeticException` for non-terminating decimal expansions (e.g. `1 / 3`). Use
 `Division.bigDecimal(MathContext)` to supply an explicit precision and rounding mode.
+
+#### Rational (kotlin-core types)
+
+`Rational<T>` instances are available for four component types. Overflow behaviour depends on the
+arithmetic instance: wrapping for primitives, overflow-checked or overflow-free for JVM types.
+
+| Instance | Type | Notes |
+|---|---|---|
+| `RationalArithmetic.int` | `RationalArithmetic<Rational<Int>, Int>` | Wrapping arithmetic; cross-multiplications may silently overflow |
+| `RationalArithmetic.long` | `RationalArithmetic<Rational<Long>, Long>` | Same; use `checkedLong` on JVM to detect overflow |
+| `RationalArithmetic.checkedInt` | `RationalArithmetic<Rational<Int>, Int>` | JVM only; throws `ArithmeticException` on overflow |
+| `RationalArithmetic.checkedLong` | `RationalArithmetic<Rational<Long>, Long>` | JVM only |
+| `RationalArithmetic.bigInteger` | `RationalArithmetic<Rational<BigInteger>, BigInteger>` | JVM only; overflow-free |
+
+The `from(arithmetic, gcd)` factory constructs a `RationalArithmetic<Rational<T>, T>` for any
+`SignedIntegerArithmetic<T>` and matching `Gcd<T>`. For other rational types (e.g. `Fraction`,
+`BigFraction`), see the commons-numbers-extensions module.
 
 #### Cross-cutting granular traits
 

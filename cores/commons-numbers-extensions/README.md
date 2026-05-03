@@ -147,11 +147,14 @@ supports all four arithmetic operations without requiring a total order.
 - `times(Int)`, `times(Long)`, `times(BigInteger)`, `times(BigFraction)`.
 - `div(Int)`, `div(Long)`, `div(BigInteger)`, `div(BigFraction)`.
 
-`RationalArithmetic` instances are not provided directly for `Fraction` or `BigFraction`; convert
-via `toRational()` to access kotlin-core's instances instead. The kotlin-core cross-cutting traits
-`Addition<T>`, `Multiplication<T>`, `Division<T>`, and `Signed<T>` are all natural candidates for
-direct bridge instances here — `Fraction` and `BigFraction` support all four arithmetic operations
-and have `negate`, `abs`, and `signum`.
+**kotlin-core trait instances** (`FractionRationalArithmetic.kt`, `BigFractionRationalArithmetic.kt`):
+- `RationalArithmetic.Companion.fraction: RationalArithmetic<Fraction, Int>` — full arithmetic for
+  `Fraction`. All defaults (`add`, `subtract`, `multiply`, `divide`, `compareTo`, `floor`, `ceil`,
+  `integerPart`, `fractionalPart`) are inherited from `RationalArithmetic<Fraction, Int>`. The `of`
+  implementation handles sign normalization that `Fraction.of()` does not perform, then delegates to
+  `Fraction.of()` for GCD reduction. Intermediate cross-multiplications may silently overflow.
+- `RationalArithmetic.Companion.bigFraction: RationalArithmetic<BigFraction, BigInteger>` — same for
+  `BigFraction` with component type `BigInteger`; all operations are overflow-free.
 
 **kotlin-core bridges** (`FractionBridge.kt`, `BigFractionBridge.kt`):
 - `Fraction.toRational(): Rational<Int>` — converts to a normalised `Rational<Int>` (positive
