@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.commons.lang.math
 
+import com.kelvsyc.kotlin.core.Rational
 import com.kelvsyc.kotlin.core.traits.rational.RationalArithmetic
 import com.kelvsyc.kotlin.core.traits.rational.int
 import io.kotest.core.spec.style.FunSpec
@@ -9,52 +10,52 @@ import org.apache.commons.lang3.math.Fraction
 class FractionBridgeTest : FunSpec({
     val arithmetic = RationalArithmetic.int
 
-    context("FractionRationalConverter (forward)") {
+    context("Fraction.toRational()") {
         test("numerator and denominator are preserved") {
-            val r = FractionRationalConverter(Fraction.getFraction(3, 4))
+            val r = Fraction.getFraction(3, 4).toRational()
             r.numerator shouldBe 3
             r.denominator shouldBe 4
         }
         test("negative fraction preserves sign on numerator") {
-            val r = FractionRationalConverter(Fraction.getFraction(-1, 3))
+            val r = Fraction.getFraction(-1, 3).toRational()
             r.numerator shouldBe -1
             r.denominator shouldBe 3
         }
         test("zero converts correctly") {
-            val r = FractionRationalConverter(Fraction.ZERO)
+            val r = Fraction.ZERO.toRational()
             with(arithmetic) { r.isZero() shouldBe true }
         }
         test("Fraction normalises 2/4 to 1/2 before conversion") {
-            val r = FractionRationalConverter(Fraction.getFraction(2, 4))
+            val r = Fraction.getFraction(2, 4).toRational()
             r.numerator shouldBe 1
             r.denominator shouldBe 2
         }
     }
 
-    context("FractionRationalConverter.reverse") {
+    context("Rational<Int>.toFraction()") {
         test("numerator and denominator are preserved") {
-            val f = FractionRationalConverter.reverse(arithmetic.run { of(3, 4) })
+            val f = arithmetic.run { of(3, 4) }.toFraction()
             f.numerator shouldBe 3
             f.denominator shouldBe 4
         }
         test("negative rational preserves sign on numerator") {
-            val f = FractionRationalConverter.reverse(arithmetic.run { of(-1, 3) })
+            val f = arithmetic.run { of(-1, 3) }.toFraction()
             f.numerator shouldBe -1
             f.denominator shouldBe 3
         }
         test("zero converts correctly") {
-            FractionRationalConverter.reverse(arithmetic.zero) shouldBe Fraction.ZERO
+            arithmetic.zero.toFraction() shouldBe Fraction.ZERO
         }
     }
 
-    context("extension functions delegate to converter") {
-        test("Fraction.toRational() matches forward conversion") {
+    context("Rational.fractionConverter") {
+        test("forward matches toRational()") {
             val fraction = Fraction.getFraction(5, 7)
-            fraction.toRational() shouldBe FractionRationalConverter(fraction)
+            Rational.fractionConverter(fraction) shouldBe fraction.toRational()
         }
-        test("Rational<Int>.toFraction() matches reverse conversion") {
+        test("reverse matches toFraction()") {
             val rational = arithmetic.run { of(5, 7) }
-            rational.toFraction() shouldBe FractionRationalConverter.reverse(rational)
+            Rational.fractionConverter.reverse(rational) shouldBe rational.toFraction()
         }
     }
 

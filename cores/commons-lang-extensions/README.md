@@ -15,9 +15,29 @@ as-is. This document maps each area of the library to one of three categories.
 
 ### `org.apache.commons.lang3.math.Fraction`
 
-Operator overloads (`+`, `-`, `*`, `/`, unary `+`/`-`) so that `Fraction` values compose
-naturally with Kotlin's arithmetic syntax. Comparison operators (`<`, `>`, `<=`, `>=`) are
-available natively because `Fraction` already implements `Comparable<Fraction>`.
+**`Fraction` operators** (`FractionExtensions.kt`):
+- `component1()`, `component2()` — destructuring into numerator and denominator.
+- `unaryPlus()`, `unaryMinus()`.
+- `plus(Int)`, `plus(Fraction)`.
+- `minus(Int)`, `minus(Fraction)`.
+- `times(Int)`, `times(Fraction)`.
+- `div(Int)`, `div(Fraction)`.
+
+Comparison operators (`<`, `>`, `<=`, `>=`) are available natively because `Fraction` already
+implements `Comparable<Fraction>`.
+
+**kotlin-core trait instance** (`FractionRationalArithmetic.kt`):
+- `RationalArithmetic.Companion.fraction: RationalArithmetic<Fraction, Int>` — full arithmetic for
+  `Fraction`. All defaults (`add`, `subtract`, `multiply`, `divide`, `compareTo`, `floor`, `ceil`,
+  `integerPart`, `fractionalPart`) are inherited from `RationalArithmetic<Fraction, Int>`. The `of`
+  implementation delegates to `Fraction.getReducedFraction()` for GCD reduction and handles sign
+  normalization for negative denominators. Intermediate cross-multiplications may silently overflow.
+
+**kotlin-core bridge** (`FractionBridge.kt`):
+- `Fraction.toRational(): Rational<Int>` — converts to a normalised `Rational<Int>` (positive
+  denominator, fully reduced).
+- `Rational<Int>.toFraction(): Fraction` — creates a `Fraction` from a canonical `Rational<Int>`.
+- `Rational.fractionConverter: Converter<Fraction, Rational<Int>>` — bidirectional converter.
 
 ### `org.apache.commons.lang3.Range`
 

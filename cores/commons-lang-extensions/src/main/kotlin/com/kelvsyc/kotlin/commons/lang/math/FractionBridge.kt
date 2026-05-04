@@ -7,32 +7,30 @@ import com.kelvsyc.kotlin.core.traits.rational.int
 import org.apache.commons.lang3.math.Fraction
 
 /**
- * A [Converter] between [Fraction] and [Rational]`<`[Int]`>`.
- *
- * Both types carry the same canonical form guarantee (positive denominator,
- * `gcd(|numerator|, denominator) == 1`), so the conversion is lossless in both directions.
- *
- * The forward direction produces a [Rational]`<`[Int]`>` usable with [RationalArithmetic.int];
- * the reverse direction produces a [Fraction] with the full Commons API surface.
- */
-val FractionRationalConverter: Converter<Fraction, Rational<Int>> = Converter.of(
-    forward = { RationalArithmetic.int.run { of(it.numerator, it.denominator) } },
-    backward = { Fraction.getFraction(it.numerator, it.denominator) },
-)
-
-/**
  * Converts this [Fraction] to a [Rational]`<`[Int]`>`.
  *
- * @see FractionRationalConverter
+ * Commons Lang guarantees that `Fraction` values are already reduced with positive denominator,
+ * so no additional normalization is required.
  */
-fun Fraction.toRational(): Rational<Int> = FractionRationalConverter(this)
+fun Fraction.toRational(): Rational<Int> = RationalArithmetic.int.of(numerator, denominator)
 
 /**
  * Converts this [Rational]`<`[Int]`>` to a [Fraction].
  *
- * @throws ArithmeticException if [Fraction.getFraction] rejects the components (edge case for
- * values near [Int.MIN_VALUE]).
- *
- * @see FractionRationalConverter
+ * The canonical-form invariant of [Rational] (positive denominator, fully reduced) means the
+ * resulting [Fraction] is already in lowest terms.
  */
-fun Rational<Int>.toFraction(): Fraction = FractionRationalConverter.reverse(this)
+fun Rational<Int>.toFraction(): Fraction = Fraction.getFraction(numerator, denominator)
+
+private object FractionRationalConverterInstance : Converter<Fraction, Rational<Int>>() {
+    override fun doForward(a: Fraction): Rational<Int> = a.toRational()
+    override fun doBackward(b: Rational<Int>): Fraction = b.toFraction()
+}
+
+/**
+ * [Converter] between [Fraction] and [Rational]`<`[Int]`>`.
+ *
+ * Forward: [Fraction.toRational]. Backward: [Rational.toFraction].
+ */
+val Rational.Companion.fractionConverter: Converter<Fraction, Rational<Int>>
+    get() = FractionRationalConverterInstance
