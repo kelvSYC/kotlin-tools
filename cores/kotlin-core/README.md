@@ -23,6 +23,7 @@ Extended collection types beyond the Kotlin standard library:
 - **EnumMap** (`EnumMap`, `MutableEnumMap`) — array-backed `Map` keyed by enum constants, iterating in ordinal order; supports nullable values and live-backed views; all-platforms alternative to `java.util.EnumMap`
 - **EnumListMultimap** (`EnumListMultimap`, `MutableEnumListMultimap`) — array-backed `ListMultimap` keyed by enum constants, iterating in ordinal order; `asMap` returns an `EnumMap<K, List<V>>` live view
 - **EnumSetMultimap** (`EnumSetMultimap`, `MutableEnumSetMultimap`) — array-backed `SetMultimap` keyed by enum constants, iterating in ordinal order; `asMap` returns an `EnumMap<K, Set<V>>` live view
+- **EnumSetMultiset** (`EnumSetMultiset`, `MutableEnumSetMultiset`) — `IntArray`-backed `SetMultiset` of enum constants, iterating in ordinal order; `asMap` returns an `EnumMap<K, Int>` live view
 
 ### Floating-Point Representations (`fp`)
 
