@@ -53,11 +53,7 @@ val Primality.Companion.ulong: Primality<ULong> get() = ulongInstance
 const val BIGINTEGER_CERTAINTY: Int = 64
 
 private val bigIntegerInstance: Primality<BigInteger> by lazy {
-    object : Primality<BigInteger> {
-        // isProbablePrime operates on abs(), so a negative input like -7 would return true;
-        // guard with signum() to ensure non-positive values always return false.
-        override fun BigInteger.isPrime(): Boolean = signum() > 0 && isProbablePrime(BIGINTEGER_CERTAINTY)
-    }
+    BigIntegerPrimality(BIGINTEGER_CERTAINTY) { it }
 }
 
 /**
