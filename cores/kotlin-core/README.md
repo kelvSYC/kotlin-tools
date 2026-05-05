@@ -24,6 +24,7 @@ Extended collection types beyond the Kotlin standard library:
 - **EnumListMultimap** (`EnumListMultimap`, `MutableEnumListMultimap`) — array-backed `ListMultimap` keyed by enum constants, iterating in ordinal order; `asMap` returns an `EnumMap<K, List<V>>` live view
 - **EnumSetMultimap** (`EnumSetMultimap`, `MutableEnumSetMultimap`) — array-backed `SetMultimap` keyed by enum constants, iterating in ordinal order; `asMap` returns an `EnumMap<K, Set<V>>` live view
 - **EnumSetMultiset** (`EnumSetMultiset`, `MutableEnumSetMultiset`) — `IntArray`-backed `SetMultiset` of enum constants, iterating in ordinal order; `asMap` returns an `EnumMap<K, Int>` live view
+- **PriorityQueue** (`PriorityQueue<T>`) — binary min-heap implementing `MutableCollection<T>`, ordered by a caller-supplied `Comparator`; supports `peek`/`poll`, composite `addOrPoll`/`pollOrAdd`, `drainSorted`/`toSortedList`, bulk `removeAll`/`retainAll` with O(n) re-heapification, and O(n) bottom-up construction via `heapify`; companion top-level extensions include `nSmallest`/`nLargest` (O(n log k) top-K selection) and `mergeSorted` (lazy k-way merge of pre-sorted iterables); all-platforms alternative to `java.util.PriorityQueue`
 
 ### Floating-Point Representations (`fp`)
 
