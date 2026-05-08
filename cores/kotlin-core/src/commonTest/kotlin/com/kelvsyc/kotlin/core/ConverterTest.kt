@@ -6,6 +6,9 @@ import io.kotest.matchers.equals.shouldNotBeEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
+import kotlin.properties.ReadOnlyProperty
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 class ConverterTest : FunSpec({
     val intToString = Converter.of(Int::toString, String::toInt)
@@ -146,6 +149,60 @@ class ConverterTest : FunSpec({
         test("wraps a binary operation through the converter") {
             // "3", "4" -> reverse -> 3, 4 -> add -> 7 -> forward -> "7"
             add("3", "4") shouldBe "7"
+        }
+    }
+
+    context("compose ReadOnlyProperty") {
+        test("reads through the converter's forward direction") {
+            val backing = ReadOnlyProperty<Any?, Int> { _, _ -> 42 }
+            val value by intToString.compose(backing)
+            value shouldBe "42"
+        }
+
+        test("reflects changes in the underlying delegate") {
+            var source = 10
+            val backing = ReadOnlyProperty<Any?, Int> { _, _ -> source }
+            val value by intToString.compose(backing)
+
+            value shouldBe "10"
+            source = 99
+            value shouldBe "99"
+        }
+    }
+
+    context("compose ReadWriteProperty") {
+        test("reads through the converter's forward direction") {
+            var stored = 42
+            val backing = object : ReadWriteProperty<Any?, Int> {
+                override fun getValue(thisRef: Any?, property: KProperty<*>) = stored
+                override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) { stored = value }
+            }
+            val value by intToString.compose(backing)
+            value shouldBe "42"
+        }
+
+        test("writes through the converter's reverse direction") {
+            var stored = 0
+            val backing = object : ReadWriteProperty<Any?, Int> {
+                override fun getValue(thisRef: Any?, property: KProperty<*>) = stored
+                override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) { stored = value }
+            }
+            var value by intToString.compose(backing)
+
+            value = "77"
+            stored shouldBe 77
+        }
+
+        test("round-trips through write then read") {
+            var stored = 0
+            val backing = object : ReadWriteProperty<Any?, Int> {
+                override fun getValue(thisRef: Any?, property: KProperty<*>) = stored
+                override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) { stored = value }
+            }
+            var value by intToString.compose(backing)
+
+            value = "123"
+            value shouldBe "123"
         }
     }
 })
