@@ -11,10 +11,14 @@ val componentNames = file("../../cores")
     .orEmpty()
     .map { it.name }
 
+val bomVersion = providers.exec {
+    commandLine("git", "describe", "--tags", "--match", "v*", "--abbrev=0")
+}.standardOutput.asText.map { it.trim().removePrefix("v") }
+
 dependencies {
     constraints {
         componentNames.forEach {
-            api("$group:$it:$version")
+            api("$group:$it:${bomVersion.get()}")
         }
     }
 }

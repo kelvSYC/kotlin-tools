@@ -13,9 +13,13 @@ val componentNames = file("../../cores")
     .orEmpty()
     .map { it.name }
 
+val bomVersion = providers.exec {
+    commandLine("git", "describe", "--tags", "--match", "v*", "--abbrev=0")
+}.standardOutput.asText.map { it.trim().removePrefix("v") }
+
 catalog {
     versionCatalog {
-        version(projectVersionAlias, version.toString())
+        version(projectVersionAlias, bomVersion.get())
 
         componentNames.forEach {
             library(it, group.toString(), it).versionRef(projectVersionAlias)
