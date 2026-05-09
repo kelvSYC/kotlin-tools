@@ -17,12 +17,12 @@ class MultiplicationExtensionsTest : FunSpec() {
 
     init {
         test("times multiplies") {
-            checkAll(Arb.double(0.0, 100.0), Arb.double(0.0, 100.0)) { m, n ->
+            checkAll(Arb.double(0.0, 100.0, includeNaNs = false), Arb.double(0.0, 100.0, includeNaNs = false)) { m, n ->
                 (Multipliable(m) * Multipliable(n)).value shouldBe (m * n plusOrMinus 1e-9)
             }
         }
         test("div divides via multiply-reciprocal") {
-            checkAll(Arb.double(1.0, 100.0), Arb.double(1.0, 100.0)) { m, n ->
+            checkAll(Arb.double(1.0, 100.0, includeNaNs = false), Arb.double(1.0, 100.0, includeNaNs = false)) { m, n ->
                 (Multipliable(m) / Multipliable(n)).value shouldBe (m / n plusOrMinus 1e-9)
             }
         }
