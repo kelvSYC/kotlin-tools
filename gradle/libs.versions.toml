@@ -1,6 +1,7 @@
 [versions]
 dokka = "2.2.0"
 kotlin = "2.3.21"
+moshi = "1.15.2"
 
 [libraries]
 # BOMs
@@ -20,6 +21,8 @@ commons-numbers-complex = { module = "org.apache.commons:commons-numbers-complex
 commons-numbers-core = { module = "org.apache.commons:commons-numbers-core" } # version from BOM 'commons-numbers-bom'
 commons-numbers-fraction = { module = "org.apache.commons:commons-numbers-fraction" } # version from BOM 'commons-numbers-bom'
 guava = "com.google.guava:guava:33.6.0-jre"
+moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
+moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core" } # version from BOM 'kotest-bom'
 kotest-assertions-shared = { module = "io.kotest:kotest-assertions-shared" } # version from BOM 'kotest-bom'
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine" } # version from BOM 'kotest-bom'
