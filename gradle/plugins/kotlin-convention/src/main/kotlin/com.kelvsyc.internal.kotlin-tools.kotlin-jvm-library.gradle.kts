@@ -2,6 +2,7 @@ import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
+    `java-library`
     kotlin("jvm")
     id("com.autonomousapps.dependency-analysis")
 }
@@ -42,6 +43,14 @@ dependencyAnalysis {
             }
             onUnusedDependencies { severity("fail") }
             onIncorrectConfiguration { severity("fail") }
+        }
+    }
+}
+
+pluginManager.withPlugin("maven-publish") {
+    extensions.configure<PublishingExtension> {
+        publications.register<MavenPublication>("maven") {
+            from(components["java"])
         }
     }
 }
