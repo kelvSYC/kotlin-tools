@@ -26,7 +26,7 @@ tasks.withType<Test>().configureEach {
 
 // dokka-javadoc does not support KMP, so we package KDoc HTML as the javadoc JAR instead.
 pluginManager.withPlugin("org.jetbrains.dokka") {
-    val javadocJar by tasks.registering(Jar::class) {
+    val javadocJar = tasks.register<Jar>("javadocJar") {
         archiveClassifier.set("javadoc")
         from(tasks.named("dokkaGeneratePublicationHtml"))
     }
