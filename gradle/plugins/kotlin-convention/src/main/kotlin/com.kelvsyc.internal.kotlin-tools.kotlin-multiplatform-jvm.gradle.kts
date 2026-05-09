@@ -24,12 +24,11 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
+// dokka-javadoc does not support KMP, so we package KDoc HTML as the javadoc JAR instead.
 pluginManager.withPlugin("org.jetbrains.dokka") {
-    apply(plugin = "org.jetbrains.dokka-javadoc")
-
     val javadocJar by tasks.registering(Jar::class) {
         archiveClassifier.set("javadoc")
-        from(tasks.named("dokkaGeneratePublicationJavadoc"))
+        from(tasks.named("dokkaGeneratePublicationHtml"))
     }
 
     pluginManager.withPlugin("maven-publish") {

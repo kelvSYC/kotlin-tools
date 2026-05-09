@@ -47,20 +47,25 @@ configure<DokkaExtension> {
     }
 }
 
+// dokka-javadoc does not support KMP (https://github.com/Kotlin/dokka/issues/1753).
+// KMP's JVM target applies the java plugin internally, so we must exclude it here;
+// the KMP JVM convention plugin handles javadoc JARs separately.
 pluginManager.withPlugin("java") {
-    apply(plugin = "org.jetbrains.dokka-javadoc")
-    configure<DokkaExtension> {
-        dokkaSourceSets.configureEach {
-            jdkVersion.convention(
-                project.the<JavaPluginExtension>().toolchain.languageVersion.map { it.asInt() }.orElse(25)
-            )
+    if (!pluginManager.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
+        apply(plugin = "org.jetbrains.dokka-javadoc")
+        configure<DokkaExtension> {
+            dokkaSourceSets.configureEach {
+                jdkVersion.convention(
+                    project.the<JavaPluginExtension>().toolchain.languageVersion.map { it.asInt() }.orElse(25)
+                )
+            }
         }
-    }
-    configure<JavaPluginExtension> {
-        withJavadocJar()
-    }
-    tasks.named<Jar>("javadocJar") {
-        from(tasks.named("dokkaGeneratePublicationJavadoc"))
+        configure<JavaPluginExtension> {
+            withJavadocJar()
+        }
+        tasks.named<Jar>("javadocJar") {
+            from(tasks.named("dokkaGeneratePublicationJavadoc"))
+        }
     }
 }
 
