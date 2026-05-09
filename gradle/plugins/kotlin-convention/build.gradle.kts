@@ -10,5 +10,6 @@ kotlin {
 
 dependencies {
     implementation(platform("com.kelvsyc.internal.kotlin-tools:platform"))
+    implementation(libs.dependency.analysis.plugin)
     implementation(libs.kotlin.plugin)
 }

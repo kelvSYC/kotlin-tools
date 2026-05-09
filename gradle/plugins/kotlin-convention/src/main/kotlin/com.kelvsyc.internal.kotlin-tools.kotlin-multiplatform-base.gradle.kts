@@ -3,6 +3,7 @@ import kotlin.jvm.optionals.getOrNull
 
 plugins {
     kotlin("multiplatform")
+    id("com.autonomousapps.dependency-analysis")
 }
 
 val libs = versionCatalogs.named("libs")
@@ -42,6 +43,19 @@ val checkCommonMainPlatformImports by tasks.registering {
         }
         if (violations.isNotEmpty()) {
             error("Platform-specific imports found in commonMain:\n${violations.joinToString("\n")}")
+        }
+    }
+}
+
+dependencyAnalysis {
+    issues {
+        all {
+            onUsedTransitiveDependencies {
+                severity("fail")
+                exclude("io.kotest:kotest-common")
+            }
+            onUnusedDependencies { severity("fail") }
+            onIncorrectConfiguration { severity("fail") }
         }
     }
 }

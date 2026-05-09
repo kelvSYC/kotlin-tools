@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     kotlin("jvm")
+    id("com.autonomousapps.dependency-analysis")
 }
 
 val libs = versionCatalogs.named("libs")
@@ -30,6 +31,19 @@ dependencies {
     libs.findLibrary("kotest-assertions-shared").getOrNull()?.let { testImplementation(it) }
     libs.findLibrary("kotest-framework-engine").getOrNull()?.let { testImplementation(it) }
     libs.findLibrary("kotest-runner").getOrNull()?.let { testImplementation(it) }
+}
+
+dependencyAnalysis {
+    issues {
+        all {
+            onUsedTransitiveDependencies {
+                severity("fail")
+                exclude("io.kotest:kotest-common")
+            }
+            onUnusedDependencies { severity("fail") }
+            onIncorrectConfiguration { severity("fail") }
+        }
+    }
 }
 
 tasks.withType<Test>().configureEach {
