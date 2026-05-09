@@ -235,6 +235,38 @@ val FloatingPointArithmetic.Companion.bfloat16: FloatingPointArithmetic<BFloat16
 val FloatingPointArithmetic.Companion.float16: FloatingPointArithmetic<Float16>
     get() = float16Instance
 
+/**
+ * [FloatingPointArithmetic] instance for [Float].
+ *
+ * ## Platform note — Kotlin/JS
+ *
+ * JavaScript has no 32-bit floating-point type; all numeric operations are performed in 64-bit
+ * (`Number`, i.e. `binary64`). Kotlin/JS maps [Float] storage through a `Float32Array`, so
+ * [Float.toRawBits] and [Float.fromBits][Float.Companion.fromBits] faithfully preserve the
+ * `binary32` bit pattern, but the four arithmetic operators (`+`, `-`, `*`, `/`) execute at
+ * `binary64` precision and do **not** round their results to the nearest `binary32` value.
+ *
+ * This instance uses Kotlin's built-in [Float] operators directly and therefore inherits this
+ * platform behaviour: on Kotlin/JS, intermediate results carry 53 bits of mantissa rather than
+ * 23. Algorithms that depend on exact `binary32` rounding — error-free transformations such as
+ * [TwoSum][com.kelvsyc.kotlin.core.traits.dd.TwoSum] and
+ * [TwoProduct][com.kelvsyc.kotlin.core.traits.dd.TwoProduct], or emulated
+ * [FusedMultiplyAdd] — will produce incorrect results when driven by this instance on
+ * Kotlin/JS.
+ *
+ * The standard companion instances for these traits
+ * ([TwoSum.float][com.kelvsyc.kotlin.core.traits.dd.TwoSum.Companion.float],
+ * [TwoProduct.float][com.kelvsyc.kotlin.core.traits.dd.TwoProduct.Companion.float],
+ * [TwoDiv.float][com.kelvsyc.kotlin.core.traits.dd.TwoDiv.Companion.float], and
+ * [FusedMultiplyAdd.float]) handle this transparently: on Kotlin/JS they are backed by a
+ * strict `binary32` arithmetic that round-trips each result through [Float.toRawBits] and
+ * [Float.fromBits][Float.Companion.fromBits] to force correct rounding. Callers using those
+ * instances do not need to account for the platform difference.
+ *
+ * This is analogous to why [BFloat16] and [Float16] do not expose native arithmetic operators:
+ * the platform cannot guarantee the required rounding semantics, so arithmetic is routed
+ * through a trait that documents the precision contract explicitly.
+ */
 val FloatingPointArithmetic.Companion.float: FloatingPointArithmetic<Float>
     get() = floatInstance
 

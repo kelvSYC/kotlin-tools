@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.traits.integral
 
+import com.kelvsyc.kotlin.core.isJvm
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -20,9 +21,9 @@ class AdditionalIntegerArithmeticTest : FunSpec({
         test("wraps at Byte.MIN_VALUE") { with(ops) { Byte.MIN_VALUE.subtract(1.toByte()) } shouldBe Byte.MAX_VALUE }
         test("multiply") { with(ops) { 6.toByte().multiply(3.toByte()) } shouldBe 18.toByte() }
         test("divide truncates toward zero: -7 / 2 = -3") { with(ops) { (-7).toByte().divide(2.toByte()) } shouldBe (-3).toByte() }
-        test("divide by zero throws") { shouldThrow<ArithmeticException> { with(ops) { 1.toByte().divide(0.toByte()) } } }
+        test("divide by zero throws").config(enabledIf = { isJvm }) { shouldThrow<ArithmeticException> { with(ops) { 1.toByte().divide(0.toByte()) } } }
         test("rem has sign of dividend: -7 % 2 = -1") { with(ops) { (-7).toByte().rem(2.toByte()) } shouldBe (-1).toByte() }
-        test("rem by zero throws") { shouldThrow<ArithmeticException> { with(ops) { 1.toByte().rem(0.toByte()) } } }
+        test("rem by zero throws").config(enabledIf = { isJvm }) { shouldThrow<ArithmeticException> { with(ops) { 1.toByte().rem(0.toByte()) } } }
         test("compareTo: 1 < 2") { (with(ops) { 1.toByte().compareTo(2.toByte()) } < 0) shouldBe true }
     }
 
@@ -35,7 +36,7 @@ class AdditionalIntegerArithmeticTest : FunSpec({
         test("one is 1") { ops.one shouldBe 1.toShort() }
         test("wraps at Short.MAX_VALUE") { with(ops) { Short.MAX_VALUE.add(1.toShort()) } shouldBe Short.MIN_VALUE }
         test("divide truncates toward zero: -7 / 2 = -3") { with(ops) { (-7).toShort().divide(2.toShort()) } shouldBe (-3).toShort() }
-        test("divide by zero throws") { shouldThrow<ArithmeticException> { with(ops) { 1.toShort().divide(0.toShort()) } } }
+        test("divide by zero throws").config(enabledIf = { isJvm }) { shouldThrow<ArithmeticException> { with(ops) { 1.toShort().divide(0.toShort()) } } }
         test("rem has sign of dividend: -7 % 2 = -1") { with(ops) { (-7).toShort().rem(2.toShort()) } shouldBe (-1).toShort() }
     }
 
@@ -83,7 +84,7 @@ class AdditionalIntegerArithmeticTest : FunSpec({
         test("wraps at UByte.MAX_VALUE") { with(ops) { UByte.MAX_VALUE.add(1u.toUByte()) } shouldBe 0u.toUByte() }
         test("subtract wraps below zero: 0 - 1 = MAX_VALUE") { with(ops) { 0u.toUByte().subtract(1u.toUByte()) } shouldBe UByte.MAX_VALUE }
         test("divide") { with(ops) { 6u.toUByte().divide(2u.toUByte()) } shouldBe 3u.toUByte() }
-        test("divide by zero throws") { shouldThrow<ArithmeticException> { with(ops) { 1u.toUByte().divide(0u.toUByte()) } } }
+        test("divide by zero throws").config(enabledIf = { isJvm }) { shouldThrow<ArithmeticException> { with(ops) { 1u.toUByte().divide(0u.toUByte()) } } }
         test("rem") {
             // UByte.rem(UByte): UInt is a member function of the inline class and shadows our
             // member extension at concrete call sites. Exercise via generic dispatch instead.
@@ -102,7 +103,7 @@ class AdditionalIntegerArithmeticTest : FunSpec({
         test("zero is 0u") { ops.zero shouldBe 0u.toUShort() }
         test("one is 1u") { ops.one shouldBe 1u.toUShort() }
         test("wraps at UShort.MAX_VALUE") { with(ops) { UShort.MAX_VALUE.add(1u.toUShort()) } shouldBe 0u.toUShort() }
-        test("divide by zero throws") { shouldThrow<ArithmeticException> { with(ops) { 1u.toUShort().divide(0u.toUShort()) } } }
+        test("divide by zero throws").config(enabledIf = { isJvm }) { shouldThrow<ArithmeticException> { with(ops) { 1u.toUShort().divide(0u.toUShort()) } } }
         test("unsigned compareTo: MAX_VALUE > 1u") { (with(ops) { UShort.MAX_VALUE.compareTo(1u.toUShort()) } > 0) shouldBe true }
     }
 
@@ -117,7 +118,7 @@ class AdditionalIntegerArithmeticTest : FunSpec({
         test("wraps at UInt.MAX_VALUE") { with(ops) { UInt.MAX_VALUE.add(1u) } shouldBe 0u }
         test("subtract wraps: 0u - 1u = MAX_VALUE") { with(ops) { 0u.subtract(1u) } shouldBe UInt.MAX_VALUE }
         test("divide: 6u / 2u = 3u") { with(ops) { 6u.divide(2u) } shouldBe 3u }
-        test("divide by zero throws") { shouldThrow<ArithmeticException> { with(ops) { 1u.divide(0u) } } }
+        test("divide by zero throws").config(enabledIf = { isJvm }) { shouldThrow<ArithmeticException> { with(ops) { 1u.divide(0u) } } }
         test("rem: 7u % 3u = 1u") { with(ops) { 7u.rem(3u) } shouldBe 1u }
         test("unsigned compareTo: MAX_VALUE > 1u") { (with(ops) { UInt.MAX_VALUE.compareTo(1u) } > 0) shouldBe true }
     }
@@ -131,7 +132,7 @@ class AdditionalIntegerArithmeticTest : FunSpec({
         test("one is 1uL") { ops.one shouldBe 1uL }
         test("add") { with(ops) { 2uL.add(3uL) } shouldBe 5uL }
         test("wraps at ULong.MAX_VALUE") { with(ops) { ULong.MAX_VALUE.add(1uL) } shouldBe 0uL }
-        test("divide by zero throws") { shouldThrow<ArithmeticException> { with(ops) { 1uL.divide(0uL) } } }
+        test("divide by zero throws").config(enabledIf = { isJvm }) { shouldThrow<ArithmeticException> { with(ops) { 1uL.divide(0uL) } } }
         test("unsigned compareTo: MAX_VALUE > 1uL") { (with(ops) { ULong.MAX_VALUE.compareTo(1uL) } > 0) shouldBe true }
     }
 

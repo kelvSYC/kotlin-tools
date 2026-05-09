@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
+import com.kelvsyc.kotlin.core.isJvm
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -16,14 +17,13 @@ class TwoProductTest : FunSpec({
         context("distinguishing: exact product error is recovered") {
             val a = (1 shl 13).toFloat() + 1.0f   // 8193.0f
             val b = (1 shl 13).toFloat() - 1.0f   // 8191.0f
-            val rounded = a * b                    // 2^26 = 67108864.0f
 
-            test("a * b is rounded (precondition)") {
-                rounded shouldBe 67108864.0f
+            test("a * b is rounded (precondition)").config(enabledIf = { isJvm }) {
+                (a * b) shouldBe 67108864.0f
             }
             test("twoProduct returns the rounded product") {
                 val (p, _) = with(TwoProduct.float) { a.twoProduct(b) }
-                p shouldBe rounded
+                p shouldBe 67108864.0f
             }
             test("error term is -1.0f: the exact product was 2^26 - 1") {
                 val (_, e) = with(TwoProduct.float) { a.twoProduct(b) }

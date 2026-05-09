@@ -125,7 +125,7 @@ private fun comparePositiveFinite(a: DpdFloat, b: DpdFloat): Int {
  * cohort-unaware bit equality) are needed. When cohort-aware numerical equality is needed, use
  * [Companion.numericalEquality].
  */
-@JvmInline
+@kotlin.jvm.JvmInline
 value class DpdFloat(val bits: Int) {
     companion object : Dpd32<DpdFloat> {
         /**

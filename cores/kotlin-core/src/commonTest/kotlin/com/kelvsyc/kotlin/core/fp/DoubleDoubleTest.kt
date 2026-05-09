@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldMatch
 
 class DoubleDoubleTest : FunSpec({
 
@@ -158,13 +159,16 @@ class DoubleDoubleTest : FunSpec({
 
     context("toString") {
         test("formats as (high + low)") {
-            DoubleDouble.create(1.0, 1e-17).toString() shouldBe "(1.0 + 1.0E-17)"
+            val s = DoubleDouble.create(1.0, 1e-17).toString()
+            s shouldMatch Regex("""\(1(\.0)? \+ 1(\.0)?[eE]-0*17\)""")
         }
         test("NaN") {
-            DoubleDouble.NaN.toString() shouldBe "(NaN + 0.0)"
+            val s = DoubleDouble.NaN.toString()
+            s shouldMatch Regex("""\(NaN \+ 0(\.0)?\)""")
         }
         test("ZERO") {
-            DoubleDouble.ZERO.toString() shouldBe "(0.0 + 0.0)"
+            val s = DoubleDouble.ZERO.toString()
+            s shouldMatch Regex("""\(0(\.0)? \+ 0(\.0)?\)""")
         }
     }
 

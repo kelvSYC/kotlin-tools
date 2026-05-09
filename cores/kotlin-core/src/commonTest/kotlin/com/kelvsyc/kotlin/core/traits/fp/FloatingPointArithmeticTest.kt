@@ -848,7 +848,7 @@ class FloatingPointArithmeticTest : FunSpec({
         test("Companion.double returns the same instance on repeated access") {
             FloatingPointArithmetic.double shouldBe FloatingPointArithmetic.double
         }
-        test("all four instances are distinct") {
+        test("all four base instances are distinct") {
             FloatingPointArithmetic.bfloat16 shouldNotBe FloatingPointArithmetic.float16
             FloatingPointArithmetic.float16 shouldNotBe FloatingPointArithmetic.float
             FloatingPointArithmetic.float shouldNotBe FloatingPointArithmetic.double

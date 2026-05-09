@@ -31,7 +31,7 @@ import kotlin.math.sqrt
  * `compareTo() == 0` but `equals() == false`, violating the `Comparable` contract. Use [Float16.comparator] for
  * ordering instead.
  */
-@JvmInline
+@kotlin.jvm.JvmInline
 value class Float16(val bits: Short) {
     companion object : Binary16<Float16> {
         override val significandTraits: UInt16<UShort> get() = UInt16

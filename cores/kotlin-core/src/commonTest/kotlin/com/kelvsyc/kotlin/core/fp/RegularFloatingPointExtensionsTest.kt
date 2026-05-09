@@ -182,7 +182,8 @@ class RegularFloatingPointExtensionsTest : FunSpec({
         }
 
         test("subnormal: exp=-149, sig=1 reconstructs Float.MIN_VALUE") {
-            FiniteBinaryFloatingPoint(false, -149, 1u).toFloat() shouldBe Float.MIN_VALUE
+            val result = FiniteBinaryFloatingPoint(false, -149, 1u).toFloat()
+            result.toRawBits() shouldBe Float.MIN_VALUE.toRawBits()
         }
 
         test("overflow produces positive infinity") {
@@ -201,7 +202,7 @@ class RegularFloatingPointExtensionsTest : FunSpec({
     context("Float round-trip through RegularBinaryFloatingPoint") {
         listOf(1.0f, -1.0f, 2.0f, 0.5f, 1.5f, Float.MIN_VALUE, Float.MAX_VALUE).forEach { v ->
             test("$v round-trips") {
-                v.toRegularBinaryFloatingPoint().toFloat() shouldBe v
+                v.toRegularBinaryFloatingPoint().toFloat().toRawBits() shouldBe v.toRawBits()
             }
         }
     }

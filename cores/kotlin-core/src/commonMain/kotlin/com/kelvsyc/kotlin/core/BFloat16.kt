@@ -28,7 +28,7 @@ import kotlin.math.sqrt
  * `equals`, two NaN values would satisfy `compareTo() == 0` but `equals() == false`, violating the contract.
  * Use [BFloat16.comparator] for ordering instead.
  */
-@JvmInline
+@kotlin.jvm.JvmInline
 value class BFloat16(val bits: Short) {
     companion object : BinaryBFloat16<BFloat16> {
         override val significandTraits: UInt16<UShort> get() = UInt16

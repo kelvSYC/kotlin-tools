@@ -5,7 +5,7 @@ package com.kelvsyc.kotlin.core
  *
  * This class is a Kotlinized implementation of its counterpart from Guava, though the two are otherwise incompatible.
  */
-abstract class Converter<A, B> : (A) -> B {
+abstract class Converter<A, B> {
     companion object {
         /**
          * Returns a [Converter] representing the identity conversion.
@@ -26,7 +26,7 @@ abstract class Converter<A, B> : (A) -> B {
     }
 
     private class Reverse<A, B>(override val reverse: Converter<A, B>) : Converter<B, A>() {
-        override fun invoke(a: B): A = reverse.doBackward(a)
+        override operator fun invoke(a: B): A = reverse.doBackward(a)
 
         // Since we delegate back to the original converter, these two should be treated as unreachable.
         override fun doForward(a: B): A = throw AssertionError()
@@ -64,5 +64,5 @@ abstract class Converter<A, B> : (A) -> B {
     protected abstract fun doForward(a: A): B
     protected abstract fun doBackward(b: B): A
 
-    override fun invoke(a: A): B = doForward(a)
+    open operator fun invoke(a: A): B = doForward(a)
 }

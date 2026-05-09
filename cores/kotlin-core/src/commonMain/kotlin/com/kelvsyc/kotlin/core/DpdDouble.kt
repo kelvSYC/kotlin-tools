@@ -112,7 +112,7 @@ private fun comparePositiveFinite(a: DpdDouble, b: DpdDouble): Int {
  * and [DpdDouble.hash] for [Double]-like semantics, or [Companion.numericalEquality] for cohort-aware
  * numerical equality.
  */
-@JvmInline
+@kotlin.jvm.JvmInline
 value class DpdDouble(val bits: Long) {
     companion object : Dpd64<DpdDouble> {
         /**

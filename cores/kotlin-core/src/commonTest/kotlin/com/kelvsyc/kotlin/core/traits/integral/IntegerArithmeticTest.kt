@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.traits.integral
 
+import com.kelvsyc.kotlin.core.isJvm
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -49,7 +50,7 @@ class IntegerArithmeticTest : FunSpec({
             test("truncates toward zero: -7 / 2 = -3") { with(ops) { (-7).divide(2) } shouldBe -3 }
             test("truncates toward zero: 7 / -2 = -3") { with(ops) { 7.divide(-2) } shouldBe -3 }
             test("truncates toward zero: -7 / -2 = 3") { with(ops) { (-7).divide(-2) } shouldBe 3 }
-            test("divide by zero throws ArithmeticException") {
+            test("divide by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1.divide(0) } }
             }
         }
@@ -59,7 +60,7 @@ class IntegerArithmeticTest : FunSpec({
             test("6 % 3 = 0") { with(ops) { 6.rem(3) } shouldBe 0 }
             test("remainder has sign of dividend: -7 % 3 = -1") { with(ops) { (-7).rem(3) } shouldBe -1 }
             test("remainder has sign of dividend: 7 % -3 = 1") { with(ops) { 7.rem(-3) } shouldBe 1 }
-            test("rem by zero throws ArithmeticException") {
+            test("rem by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1.rem(0) } }
             }
         }
@@ -105,7 +106,7 @@ class IntegerArithmeticTest : FunSpec({
         context("divide") {
             test("6L / 2L = 3L") { with(ops) { 6L.divide(2L) } shouldBe 3L }
             test("truncates toward zero: -7L / 2L = -3L") { with(ops) { (-7L).divide(2L) } shouldBe -3L }
-            test("divide by zero throws ArithmeticException") {
+            test("divide by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1L.divide(0L) } }
             }
         }
@@ -113,7 +114,7 @@ class IntegerArithmeticTest : FunSpec({
         context("rem") {
             test("7L % 3L = 1L") { with(ops) { 7L.rem(3L) } shouldBe 1L }
             test("remainder has sign of dividend: -7L % 3L = -1L") { with(ops) { (-7L).rem(3L) } shouldBe -1L }
-            test("rem by zero throws ArithmeticException") {
+            test("rem by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1L.rem(0L) } }
             }
         }
@@ -153,7 +154,7 @@ class IntegerArithmeticTest : FunSpec({
         context("divide") {
             test("6 / 2 = 3") { with(ops) { 6.divide(2) } shouldBe 3 }
             test("truncates toward zero: -7 / 2 = -3") { with(ops) { (-7).divide(2) } shouldBe -3 }
-            test("divide by zero throws ArithmeticException") {
+            test("divide by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1.divide(0) } }
             }
         }
@@ -161,7 +162,7 @@ class IntegerArithmeticTest : FunSpec({
         context("rem") {
             test("7 % 3 = 1") { with(ops) { 7.rem(3) } shouldBe 1 }
             test("remainder has sign of dividend: -7 % 3 = -1") { with(ops) { (-7).rem(3) } shouldBe -1 }
-            test("rem by zero throws ArithmeticException") {
+            test("rem by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1.rem(0) } }
             }
         }
@@ -196,7 +197,7 @@ class IntegerArithmeticTest : FunSpec({
             test("7 floorDiv -2 = -4 (rounds toward -inf)") { with(ops) { 7.floorDiv(-2) } shouldBe -4 }
             test("-7 floorDiv -2 = 3 (same signs, same as truncated)") { with(ops) { (-7).floorDiv(-2) } shouldBe 3 }
             test("exact division: 6 floorDiv 2 = 3") { with(ops) { 6.floorDiv(2) } shouldBe 3 }
-            test("floorDiv by zero throws ArithmeticException") {
+            test("floorDiv by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1.floorDiv(0) } }
             }
             test("MIN_VALUE floorDiv -1 wraps (wrapping instance)") {
@@ -210,7 +211,7 @@ class IntegerArithmeticTest : FunSpec({
             test("7 mod -3 = -2 (result has sign of divisor)") { with(ops) { 7.mod(-3) } shouldBe -2 }
             test("-7 mod -3 = -1 (same signs, same as rem)") { with(ops) { (-7).mod(-3) } shouldBe -1 }
             test("exact division: 6 mod 3 = 0") { with(ops) { 6.mod(3) } shouldBe 0 }
-            test("mod by zero throws ArithmeticException") {
+            test("mod by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1.mod(0) } }
             }
             test("invariant: a == b * floorDiv(a, b) + mod(a, b)") {
@@ -224,7 +225,7 @@ class IntegerArithmeticTest : FunSpec({
             test("7 ceilDiv -2 = -3 (different signs, truncation already rounds toward +inf)") { with(ops) { 7.ceilDiv(-2) } shouldBe -3 }
             test("-7 ceilDiv -2 = 4 (same signs, rounds up)") { with(ops) { (-7).ceilDiv(-2) } shouldBe 4 }
             test("exact division: 6 ceilDiv 2 = 3") { with(ops) { 6.ceilDiv(2) } shouldBe 3 }
-            test("ceilDiv by zero throws ArithmeticException") {
+            test("ceilDiv by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1.ceilDiv(0) } }
             }
             test("MIN_VALUE ceilDiv -1 wraps (wrapping instance)") {
@@ -260,7 +261,7 @@ class IntegerArithmeticTest : FunSpec({
         context("divide") {
             test("6L / 2L = 3L") { with(ops) { 6L.divide(2L) } shouldBe 3L }
             test("truncates toward zero: -7L / 2L = -3L") { with(ops) { (-7L).divide(2L) } shouldBe -3L }
-            test("divide by zero throws ArithmeticException") {
+            test("divide by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1L.divide(0L) } }
             }
         }
@@ -268,7 +269,7 @@ class IntegerArithmeticTest : FunSpec({
         context("rem") {
             test("7L % 3L = 1L") { with(ops) { 7L.rem(3L) } shouldBe 1L }
             test("remainder has sign of dividend: -7L % 3L = -1L") { with(ops) { (-7L).rem(3L) } shouldBe -1L }
-            test("rem by zero throws ArithmeticException") {
+            test("rem by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1L.rem(0L) } }
             }
         }
@@ -300,7 +301,7 @@ class IntegerArithmeticTest : FunSpec({
             test("-7L floorDiv 2L = -4L") { with(ops) { (-7L).floorDiv(2L) } shouldBe -4L }
             test("7L floorDiv -2L = -4L") { with(ops) { 7L.floorDiv(-2L) } shouldBe -4L }
             test("-7L floorDiv -2L = 3L") { with(ops) { (-7L).floorDiv(-2L) } shouldBe 3L }
-            test("floorDiv by zero throws ArithmeticException") {
+            test("floorDiv by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1L.floorDiv(0L) } }
             }
         }
@@ -308,7 +309,7 @@ class IntegerArithmeticTest : FunSpec({
         context("mod") {
             test("-7L mod 3L = 2L") { with(ops) { (-7L).mod(3L) } shouldBe 2L }
             test("7L mod -3L = -2L") { with(ops) { 7L.mod(-3L) } shouldBe -2L }
-            test("mod by zero throws ArithmeticException") {
+            test("mod by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1L.mod(0L) } }
             }
             test("invariant: a == b * floorDiv(a, b) + mod(a, b)") {
@@ -322,7 +323,7 @@ class IntegerArithmeticTest : FunSpec({
             test("7L ceilDiv -2L = -3L") { with(ops) { 7L.ceilDiv(-2L) } shouldBe -3L }
             test("-7L ceilDiv -2L = 4L") { with(ops) { (-7L).ceilDiv(-2L) } shouldBe 4L }
             test("exact division: 6L ceilDiv 2L = 3L") { with(ops) { 6L.ceilDiv(2L) } shouldBe 3L }
-            test("ceilDiv by zero throws ArithmeticException") {
+            test("ceilDiv by zero throws ArithmeticException").config(enabledIf = { isJvm }) {
                 shouldThrow<ArithmeticException> { with(ops) { 1L.ceilDiv(0L) } }
             }
         }
