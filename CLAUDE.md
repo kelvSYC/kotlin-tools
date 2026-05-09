@@ -8,6 +8,8 @@ Architectural reference for this Gradle composite build. See `AGENTS.md` for bui
 
 ## Build Commands
 
+**Always invoke Gradle from the repository root.** Never `cd` into a component directory (`cores/*`, `gradle/*`) to run Gradle — each component is an included build and does not have its own wrapper. Running Gradle from a component directory will fail or produce incorrect results.
+
 ```bash
 ./gradlew :build          # Build all cores
 ./gradlew :check          # Run tests across all cores
@@ -15,7 +17,7 @@ Architectural reference for this Gradle composite build. See `AGENTS.md` for bui
 ./gradlew dokkaGenerate   # Generate HTML API docs for all cores
 ```
 
-Single core (from repo root):
+Single core (included build form, from repository root):
 ```bash
 ./gradlew :kotlin-core:build
 ./gradlew :kotlin-core:allTests

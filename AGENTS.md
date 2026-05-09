@@ -24,6 +24,8 @@ Before using Claude Code in this repo, create `.claude/settings.local.json` (git
 
 ## Build Commands
 
+**Always invoke Gradle from the repository root.** Never `cd` into a component directory (`cores/*`, `gradle/*`) to run Gradle — each component is an included build and does not have its own wrapper. Running Gradle from a component directory will fail or produce incorrect results.
+
 Root commands (aggregate across all cores):
 ```bash
 ./gradlew :build          # Full build
@@ -49,6 +51,10 @@ No detekt is configured yet, so these are not enforced by the build. Follow them
 - Remove unused private declarations.
 
 ## Critical Gotchas
+
+### Never `cd` Into Components ⚠️
+
+This is a composite build. All Gradle commands must run from the repository root using the root wrapper (`./gradlew`). Do **not** `cd cores/kotlin-core && ./gradlew build` — the components do not have their own Gradle wrapper and rely on the root build for resolution of included builds, convention plugins, and the version catalog.
 
 ### Publishing Requires Env Vars ⚠️
 

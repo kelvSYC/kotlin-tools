@@ -4,3 +4,5 @@ build/
 *.iml
 local.properties
 .claude/settings.local.json
+.kotlin/
+**/kotlin-js-store/

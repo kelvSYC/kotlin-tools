@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldMatch
 
 class BFloat16ArrayTest : FunSpec({
 
@@ -380,12 +381,12 @@ class BFloat16ArrayTest : FunSpec({
 
         test("single element") {
             val arr = BFloat16Array(1); arr[0] = BFloat16(1.0f)
-            arr.contentToString() shouldBe "[1.0]"
+            arr.contentToString() shouldMatch Regex("""\[1(\.0)?\]""")
         }
 
         test("multiple elements are comma-separated") {
             val arr = BFloat16Array(3) { BFloat16(it.toFloat()) }
-            arr.contentToString() shouldBe "[0.0, 1.0, 2.0]"
+            arr.contentToString() shouldMatch Regex("""\[0(\.0)?, 1(\.0)?, 2(\.0)?\]""")
         }
     }
 

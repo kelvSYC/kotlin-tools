@@ -66,7 +66,7 @@ private fun comparePositiveFinite(a: BidFloat, b: BidFloat): Int {
  * cohort-unaware bit equality) are needed. When cohort-aware numerical equality is needed, use
  * [Companion.numericalEquality].
  */
-@JvmInline
+@kotlin.jvm.JvmInline
 value class BidFloat(val bits: Int) {
     companion object : Bid32<BidFloat> {
         /**

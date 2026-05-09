@@ -1,6 +1,7 @@
 # kotlin-core
 
-Core numeric types, collection extensions, and trait-based abstractions for Kotlin Multiplatform.
+Core numeric types, collection extensions, and trait-based abstractions for Kotlin Multiplatform
+(JVM and JS targets).
 
 ## Major Areas
 
@@ -102,28 +103,27 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 
 | Trait | `BFloat16` | `Float16` | `Float` | `Double` | `DoubleDouble` |
 |---|:---:|:---:|:---:|:---:|:---:|
-| `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | JVM ¹ |
+| `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | ✓ ¹ |
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointScalb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointRemainder<T>` | ✓ ² | ✓ ² | ✓ ² | ✓ ² | — |
-| `FusedMultiplyAdd<T>` | JVM ³ | JVM ³ | JVM ³ | JVM ³ | — |
+| `FusedMultiplyAdd<T>` | ✓ ³ | ✓ ³ | ✓ ³ | ✓ ³ | — |
 | `IntegerPower<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ¹ `DoubleDouble` is exposed as `DoubleBinaryFloatingPointArithmetic<DoubleDouble, Double>` — a
 sub-interface of `FloatingPointArithmetic<DoubleDouble>` — via
-`DoubleBinaryFloatingPointArithmetic.Companion.doubleDouble`. Internally it uses FMA for
-`TwoProduct`; no non-JVM instance is currently provided.
+`DoubleBinaryFloatingPointArithmetic.Companion.doubleDouble`.
 
 ² Two variants exist per type: an IEEE 754 nearest-integer remainder (e.g.
 `FloatingPointRemainder.floatIeee754`) and a truncating remainder matching Kotlin's `%` operator
 (e.g. `FloatingPointRemainder.floatTruncating`).
 
-³ The built-in `expect`/`actual` instances delegate to `java.lang.Math.fma` on JVM. A software
-emulation that satisfies the same contract — the Boldo-Melquiond algorithm — is available on all
-platforms via `FusedMultiplyAdd.Companion.from(arith, twoProduct, twoSum)`, though it cannot
-recover a finite result when `a × b` overflows to infinity.
+³ On JVM, delegates to `java.lang.Math.fma` (hardware FMA). On JS, uses the Boldo-Melquiond
+software emulation backed by strict `binary32` arithmetic (see
+[Kotlin/JS platform notes](#kotlinjs-platform-notes) below). The software emulation cannot recover
+a finite result when `a × b` overflows to infinity.
 
 #### Decimal floating-point
 
@@ -152,20 +152,26 @@ sense for floating-point types with an exact error representation.
 
 | Trait | `Float` | `Double` | Dependencies |
 |---|:---:|:---:|---|
-| `TwoSum<T>` | ✓ | ✓ | `FloatingPointArithmetic<T>` |
-| `TwoProduct<T>` | ✓ ⁵ | ✓ ⁵ | `FloatingPointArithmetic<T>` + `IeeeBinaryFloatingPoint<T>` |
-| `TwoDiv<T>` | JVM | JVM | `FloatingPointArithmetic<T>` + `FusedMultiplyAdd<T>` |
-| `DoubleBinaryFloatingPointArithmetic<F, T>` | — | JVM ⁶ | `TwoProduct<T>`, `TwoSum<T>`, optionally `TwoDiv<T>` |
+| `TwoSum<T>` | ✓ ⁵ | ✓ | `FloatingPointArithmetic<T>` |
+| `TwoProduct<T>` | ✓ ⁵⁶ | ✓ ⁶ | `FloatingPointArithmetic<T>` + `IeeeBinaryFloatingPoint<T>` |
+| `TwoDiv<T>` | ✓ ⁵ | ✓ | `FloatingPointArithmetic<T>` + `FusedMultiplyAdd<T>` |
+| `DoubleBinaryFloatingPointArithmetic<F, T>` | — | ✓ ⁷ | `TwoProduct<T>`, `TwoSum<T>`, optionally `TwoDiv<T>` |
 
-⁵ The companion instances (`TwoProduct.float`, `TwoProduct.double`) use Veltkamp-Dekker splitting,
+⁵ The `Float` companion instances (`TwoSum.float`, `TwoProduct.float`, `TwoDiv.float`) are
+`expect`/`actual` declarations. On JVM they use `FloatingPointArithmetic.float` (native `binary32`
+hardware). On JS they use strict `binary32` arithmetic that round-trips each result through
+`Float.toRawBits()` and `Float.fromBits()` to force correct rounding. See
+[Kotlin/JS platform notes](#kotlinjs-platform-notes) below.
+
+⁶ The companion instances (`TwoProduct.float`, `TwoProduct.double`) use Veltkamp-Dekker splitting,
 which requires only ordinary floating-point arithmetic and works on all platforms. An FMA-backed
 alternative — one multiply plus one FMA instead of seventeen operations — is available via
 `TwoProduct.Companion.from(arith, fma)`.
 
-⁶ `DoubleBinaryFloatingPointArithmetic.Companion.doubleDouble` is JVM-only and uses an FMA-backed
-`TwoProduct` and `TwoDiv` internally. The factory `DoubleBinaryFloatingPointArithmetic.Companion.from`
-is available on all platforms and accepts any compatible `TwoProduct` implementation, including the
-Veltkamp-Dekker one.
+⁷ `DoubleBinaryFloatingPointArithmetic.Companion.doubleDouble` uses an FMA-backed `TwoProduct` and
+`TwoDiv` internally, and is available on all platforms. The factory
+`DoubleBinaryFloatingPointArithmetic.Companion.from` accepts any compatible `TwoProduct`
+implementation, including the Veltkamp-Dekker one.
 
 #### Integer
 
@@ -241,3 +247,55 @@ The `from(arithmetic, gcd)` factory constructs a `RationalArithmetic<Rational<T>
 satisfied by every type that has a `SignedIntegerArithmetic` instance, and additionally by
 `BigInteger` and `BigDecimal` via dedicated JVM-only instances (`Signed.bigInteger`,
 `Signed.bigDecimal`).
+
+## Kotlin/JS platform notes
+
+### `Float` is not a true `binary32` on Kotlin/JS
+
+JavaScript has no 32-bit floating-point type. All numeric operations execute at 64-bit (`Number`,
+i.e. `binary64`) precision. Kotlin/JS maps `Float` storage through a `Float32Array`, so
+`Float.toRawBits()` and `Float.fromBits()` faithfully preserve the `binary32` bit pattern, but the
+four arithmetic operators (`+`, `-`, `*`, `/`) execute at `binary64` precision and do **not** round
+their results to the nearest `binary32` value.
+
+This is analogous to why `BFloat16` and `Float16` do not expose native arithmetic operators on any
+platform: the runtime cannot guarantee the required rounding semantics, so arithmetic is routed
+through a trait that documents the precision contract explicitly.
+
+### Strict `binary32` arithmetic
+
+`FloatingPointArithmetic.float` uses Kotlin's built-in `Float` operators and therefore inherits the
+platform behaviour described above. On Kotlin/JS, `FloatingPointArithmetic.float` carries 53 bits
+of mantissa rather than 23.
+
+Algorithms that depend on exact `binary32` rounding — error-free transformations (`TwoSum`,
+`TwoProduct`, `TwoDiv`) and emulated `FusedMultiplyAdd` — require a strict `binary32` arithmetic
+that forces correct rounding. On Kotlin/JS, this is provided by an internal
+`strictFloatArithmetic` instance that round-trips each arithmetic result through
+`Float.toRawBits()` and `Float.fromBits()`, quantizing the 64-bit intermediate back to 23-bit
+precision.
+
+This strict arithmetic is **not** exposed as a public API. Instead, the standard companion
+instances that require exact `binary32` rounding are wired to it automatically:
+
+| Instance | JVM backing | JS backing |
+|---|---|---|
+| `TwoSum.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (round-trip) |
+| `TwoProduct.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (round-trip) |
+| `TwoDiv.float` | `FloatingPointArithmetic.float` + hardware FMA | `strictFloatArithmetic` + emulated FMA |
+| `FusedMultiplyAdd.float` | `java.lang.Math.fma` (hardware) | Boldo-Melquiond via `strictFloatArithmetic` |
+
+Callers using these instances do not need to account for the platform difference. The overhead of
+the round-trip is a no-op on JVM (the hardware already operates in `binary32`) and necessary on JS.
+
+### `Double` is unaffected
+
+`Double` maps directly to JavaScript's `Number` type, which is IEEE 754 `binary64` on all
+platforms. `FloatingPointArithmetic.double` and all `Double`-based trait instances behave
+identically on JVM and JS.
+
+### Integer divide-by-zero
+
+On JVM, integer division by zero (`Int`, `Long`, etc.) throws `ArithmeticException`. On JS,
+integer division compiles to JavaScript's `/` operator, which returns `Infinity` or `NaN` instead
+of throwing.

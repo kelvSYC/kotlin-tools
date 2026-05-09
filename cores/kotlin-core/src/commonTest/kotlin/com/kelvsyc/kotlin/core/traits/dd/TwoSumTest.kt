@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
+import com.kelvsyc.kotlin.core.isJvm
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -24,7 +25,7 @@ class TwoSumTest : FunSpec({
                 val a = (1 shl 24).toFloat()   // 16777216.0f, ULP = 2.0f here
                 val b = 1.0f
 
-                test("fl(a + b) == a, confirming rounding (precondition)") {
+                test("fl(a + b) == a, confirming rounding (precondition)").config(enabledIf = { isJvm }) {
                     (a + b) shouldBe a
                 }
                 test("twoSum returns (a, 1.0f): the lost 1.0f is recovered in the error term") {

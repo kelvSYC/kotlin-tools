@@ -59,7 +59,7 @@ fun <K, V, R> FlatMultimap<out K, V>.flatMap(transform: (Pair<K, V>) -> Iterable
  * Returns a single list of all elements yielded from results of [transform] being invoked on each key-value pair in
  * the original multimap.
  */
-@JvmName("flatMapSequence")
+@kotlin.jvm.JvmName("flatMapSequence")
 fun <K, V, R> FlatMultimap<out K, V>.flatMap(transform: (Pair<K, V>) -> Sequence<R>): List<R> = entries.flatMap(transform)
 
 /**

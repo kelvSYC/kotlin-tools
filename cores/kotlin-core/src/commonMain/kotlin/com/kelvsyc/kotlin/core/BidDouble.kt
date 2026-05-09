@@ -80,7 +80,7 @@ private fun comparePositiveFinite(a: BidDouble, b: BidDouble): Int {
  * cohort-unaware bit equality) are needed. When cohort-aware numerical equality is needed, use
  * [Companion.numericalEquality].
  */
-@JvmInline
+@kotlin.jvm.JvmInline
 value class BidDouble(val bits: Long) {
     companion object : Bid64<BidDouble> {
         /**
