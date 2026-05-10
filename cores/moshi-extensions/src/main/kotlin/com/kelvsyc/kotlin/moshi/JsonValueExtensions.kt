@@ -48,12 +48,12 @@ fun JsonValue.isNullAt(vararg segments: String): Boolean = at(*segments)?.isNull
 /**
  * Returns the string values of a [JsonArray], filtering out non-string elements.
  */
-fun JsonArray.strings(): List<String> = elements.mapNotNull { it.asString() }
+fun JsonArray.strings(): List<String> = mapNotNull { it.asString() }
 
 /**
  * Returns the numeric values of a [JsonArray], filtering out non-number elements.
  */
-fun JsonArray.numbers(): List<Number> = elements.mapNotNull { it.asNumber() }
+fun JsonArray.numbers(): List<Number> = mapNotNull { it.asNumber() }
 
 /**
  * Evaluates a [JsonPath] expression string against this value, returning all matching nodes.

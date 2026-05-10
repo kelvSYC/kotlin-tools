@@ -164,7 +164,7 @@ private fun evaluate(nodes: List<JsonValue>, segments: List<JsonPathSegment>): L
         is JsonPathSegment.Key -> {
             val next = nodes.mapNotNull { node ->
                 when (node) {
-                    is JsonObject -> node.entries[segment.name]
+                    is JsonObject -> node.members[segment.name]
                     else -> null
                 }
             }
@@ -182,7 +182,7 @@ private fun evaluate(nodes: List<JsonValue>, segments: List<JsonPathSegment>): L
         is JsonPathSegment.Wildcard -> {
             val next = nodes.flatMap { node ->
                 when (node) {
-                    is JsonObject -> node.entries.values
+                    is JsonObject -> node.members.values
                     is JsonArray -> node.elements
                     else -> emptyList()
                 }
@@ -199,7 +199,7 @@ private fun evaluate(nodes: List<JsonValue>, segments: List<JsonPathSegment>): L
 private fun collectAll(node: JsonValue): List<JsonValue> = buildList {
     add(node)
     when (node) {
-        is JsonObject -> node.entries.values.forEach { addAll(collectAll(it)) }
+        is JsonObject -> node.members.values.forEach { addAll(collectAll(it)) }
         is JsonArray -> node.elements.forEach { addAll(collectAll(it)) }
         else -> {}
     }
