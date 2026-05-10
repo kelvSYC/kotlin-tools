@@ -14,8 +14,15 @@ package com.kelvsyc.kotlin.dice
  * - `d%` or `Nd%` — percentile dice (d100)
  * - `dF` or `NdF` — Fudge/FATE dice (grade 2: two +1, two 0, two -1)
  * - `dF.1` or `NdF.1` — Fudge die grade 1 (one +1, four 0, one -1)
+ * - `dS!` or `NdS!` — exploding dice (re-roll and add on max)
+ * - `dSX` or `NdSX` — exploding dice (alternate syntax)
  * - `expr + expr` — addition
  * - `expr - expr` — subtraction
+ *
+ * This parser covers common dice notation for convenience. Modifiers cannot be combined
+ * (e.g., `4d6!kh3` is not supported). For more complex use cases, compose [RollExpression]
+ * instances directly using [TypedRollExpression] combinators such as [map], [flatMap],
+ * and [zip].
  */
 object DiceNotation {
     fun parse(notation: String): RollExpression {
@@ -32,6 +39,7 @@ object DiceNotation {
         data object Minus : Token
         data class Keep(val high: Boolean) : Token
         data class Drop(val high: Boolean) : Token
+        data object Explode : Token
     }
 
     private fun tokenize(input: String): List<Token> {
@@ -78,6 +86,10 @@ object DiceNotation {
                         tokens.add(Token.Minus)
                         i++
                     }
+                }
+                s[i] == '!' || s[i] == 'X' || s[i] == 'x' -> {
+                    tokens.add(Token.Explode)
+                    i++
                 }
                 s[i] == 'k' || s[i] == 'K' -> {
                     val high = i + 1 < s.length && (s[i + 1] == 'h' || s[i + 1] == 'H')
@@ -146,6 +158,10 @@ object DiceNotation {
         }
         val sides = (tokens[pos] as Token.Number).value
         val nextPos = pos + 1
+
+        if (nextPos < tokens.size && tokens[nextPos] is Token.Explode) {
+            return MultipleExplodingDice(count, sides) to (nextPos + 1)
+        }
 
         if (nextPos < tokens.size && tokens[nextPos] is Token.Keep) {
             val high = (tokens[nextPos] as Token.Keep).high

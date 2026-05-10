@@ -96,6 +96,49 @@ data class MultipleFudgeDice(val count: Int, val grade: Int = 2) : RollExpressio
 }
 
 /**
+ * Roll a single exploding die with [sides] faces.
+ *
+ * If the die rolls its maximum value, it is rolled again and the results are summed.
+ * This repeats up to [maxDepth] times to prevent infinite loops.
+ *
+ * Exploding dice are intended for use with truly random sources. Using a [DeckSource]
+ * is not meaningful, as exploding relies on independent random sampling.
+ */
+data class ExplodingDie(val sides: Int, val maxDepth: Int = 100) : RollExpression {
+    override fun evaluate(source: RandomSource): RollResult {
+        val rolls = mutableListOf<Int>()
+        var remaining = maxDepth
+        do {
+            val roll = source.nextInt(1, sides + 1)
+            rolls.add(roll)
+            remaining--
+        } while (roll == sides && remaining > 0)
+        return RollResult(rolls.sum(), rolls)
+    }
+}
+
+/**
+ * Roll [count] exploding dice with [sides] faces each, summing the results.
+ *
+ * Each die explodes independently: if it rolls its maximum value, that die is rolled
+ * again and the results are summed, up to [maxDepth] times per die.
+ *
+ * Exploding dice are intended for use with truly random sources. Using a [DeckSource]
+ * is not meaningful, as exploding relies on independent random sampling.
+ */
+data class MultipleExplodingDice(val count: Int, val sides: Int, val maxDepth: Int = 100) : RollExpression {
+    override fun evaluate(source: RandomSource): RollResult {
+        val allRolls = mutableListOf<Int>()
+        val singleDie = ExplodingDie(sides, maxDepth)
+        repeat(count) {
+            val result = singleDie.evaluate(source)
+            allRolls.addAll(result.rolls)
+        }
+        return RollResult(allRolls.sum(), allRolls)
+    }
+}
+
+/**
  * Sum of two expressions.
  */
 data class Add(val left: RollExpression, val right: RollExpression) : RollExpression {

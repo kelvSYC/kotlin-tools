@@ -170,4 +170,50 @@ class DiceNotationTest : FunSpec({
             expr.evaluate(sameSource1).total shouldBe exprExplicit.evaluate(sameSource2).total
         }
     }
+
+    test("parse d6! exploding die") {
+        val expr = DiceNotation.parse("d6!")
+        val result = expr.evaluate(source)
+        result.total shouldBeInRange 1..Int.MAX_VALUE
+        result.rolls.forEach { it shouldBeInRange 1..6 }
+    }
+
+    test("parse 2d6! each die explodes independently") {
+        val expr = DiceNotation.parse("2d6!")
+        val result = expr.evaluate(source)
+        result.total shouldBeInRange 2..Int.MAX_VALUE
+        result.rolls.forEach { it shouldBeInRange 1..6 }
+    }
+
+    test("parse d6X alternate exploding syntax") {
+        val bangSource = RandomSource(Random(42))
+        val xSource = RandomSource(Random(42))
+        val bangExpr = DiceNotation.parse("d6!")
+        val xExpr = DiceNotation.parse("d6X")
+        repeat(50) {
+            bangExpr.evaluate(bangSource).total shouldBe xExpr.evaluate(xSource).total
+        }
+    }
+
+    test("exploding die can produce more rolls than dice count") {
+        val expr = ExplodingDie(2)
+        val localSource = RandomSource(Random(42))
+        val results = (1..100).map { expr.evaluate(localSource) }
+        results.any { it.rolls.size > 1 } shouldBe true
+    }
+
+    test("exploding die respects max depth") {
+        val expr = ExplodingDie(2, maxDepth = 3)
+        val localSource = RandomSource(Random(42))
+        repeat(100) {
+            val result = expr.evaluate(localSource)
+            result.rolls.size shouldBeInRange 1..3
+        }
+    }
+
+    test("parse d6!+3") {
+        val expr = DiceNotation.parse("d6!+3")
+        val result = expr.evaluate(source)
+        result.total shouldBeInRange 4..Int.MAX_VALUE
+    }
 })

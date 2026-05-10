@@ -42,8 +42,14 @@ println("Total: ${result.total}, Rolls: ${result.rolls}")
 | `d%` / `Nd%`  | Percentile dice (d100)                         |
 | `dF` / `NdF`  | Fudge/FATE dice (grade 2: two +1, two 0, two -1 on a d6) |
 | `dF.1`        | Fudge die grade 1 (one +1, four 0, one -1)     |
+| `dS!` / `NdS!`| Exploding dice (re-roll and add on max)        |
+| `dSX` / `NdSX`| Exploding dice (alternate syntax)              |
 | `expr + expr` | Addition                                       |
 | `expr - expr` | Subtraction                                    |
+
+Modifiers (keep, drop, explode) cannot be combined in notation. For example, `4d6!kh3`
+is not supported. For complex combinations, compose `RollExpression` instances directly
+using `TypedRollExpression` combinators (see [Beyond notation](#beyond-notation) below).
 
 ```kotlin
 // D&D ability score: roll 4d6, drop the lowest
@@ -54,6 +60,9 @@ val percentile = DiceNotation.parse("d%+5")
 
 // FATE dice
 val fate = DiceNotation.parse("4dF")
+
+// Exploding d6
+val exploding = DiceNotation.parse("d6!")
 ```
 
 ## Core concepts
@@ -71,7 +80,7 @@ val value = source.nextInt(1, 7)  // 1..6
 
 A `fun interface` that evaluates against a `RandomSource` to produce a `RollResult` (total + individual rolls). All parsed dice notation produces `RollExpression` instances.
 
-Expression types: `Constant`, `Die`, `MultipleDice`, `KeepHighest`, `KeepLowest`, `DropHighest`, `DropLowest`, `MultipleFudgeDice`, `Add`, `Subtract`.
+Expression types: `Constant`, `Die`, `MultipleDice`, `KeepHighest`, `KeepLowest`, `DropHighest`, `DropLowest`, `MultipleFudgeDice`, `ExplodingDie`, `MultipleExplodingDice`, `Add`, `Subtract`.
 
 ### TypedRollExpression\<T\>
 
@@ -111,6 +120,28 @@ sealed class CoinFlip {
 val coin = TypedDie(listOf(CoinFlip.Heads, CoinFlip.Tails))
 val flip = coin.evaluate(source)
 ```
+
+## Beyond notation
+
+The dice notation parser covers common cases for convenience, but it intentionally does not
+support every possible combination of modifiers. More complex use cases are better expressed
+by composing `RollExpression` and `TypedRollExpression` instances directly.
+
+For example, "roll 4 exploding d6, keep the highest 3" cannot be written in notation, but
+is straightforward with combinators:
+
+```kotlin
+val fourExplodingD6 = (1..4).map { ExplodingDie(6) }
+val keepHighest3 = TypedRollExpression { source ->
+    val results = fourExplodingD6.map { it.evaluate(source) }
+    val allRolls = results.flatMap { it.rolls }
+    val totals = results.map { it.total }.sortedDescending().take(3)
+    RollResult(totals.sum(), allRolls)
+}
+```
+
+This approach gives full control over evaluation order, which rolls to keep, and how
+to combine results — without requiring the parser to handle every edge case.
 
 ## Composing typed expressions
 
@@ -197,3 +228,9 @@ val roll = catanDeck.evaluate(source)  // draws next card (2..12)
 ```
 
 The key distinction: `DeckSource` is a *randomness source* you plug under any `RollExpression`, while `DeckExpression` *is* the expression — it represents the entire deck as a draw-from sequence.
+
+**Note:** Exploding dice (`ExplodingDie`, `MultipleExplodingDice`) are not meaningful with
+`DeckSource`. Exploding relies on independent random sampling (roll again on max), which
+conflicts with the draw-without-replacement semantics of a deck. While nothing prevents
+passing a `DeckSource` as the `RandomSource`, the results will not have coherent
+probabilistic behavior.
