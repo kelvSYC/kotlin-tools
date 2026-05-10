@@ -5,6 +5,8 @@ Critical gotchas and quick reference for automated agents working in this Gradle
 ## Requirements for All Agents
 
 - **Tests must pass.** All code changes must pass `./gradlew :check` before completing a task.
+- **Tests must exist.** New public API surface requires corresponding tests in `cores/*/src/jvmTest/kotlin/` (JVM-only) or `cores/*/src/commonTest/kotlin/` (multiplatform). Follow the Kotest `FunSpec` style used in existing tests.
+- **Update the component README.** When adding new public types or significant API surface to a core, add or update the relevant section in that core's `README.md`.
 - **Be concise.** Avoid unnecessary explanation or narrative.
 - **No unsolicited explanations.** Only explain what you're doing if explicitly asked.
 

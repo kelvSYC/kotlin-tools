@@ -248,6 +248,15 @@ satisfied by every type that has a `SignedIntegerArithmetic` instance, and addit
 `BigInteger` and `BigDecimal` via dedicated JVM-only instances (`Signed.bigInteger`,
 `Signed.bigDecimal`).
 
+### JVM Utilities
+
+Type-safe wrappers around JVM standard library return types that use raw primitives where a distinct
+type would prevent bugs:
+
+- **`Stamp`** — wraps the `Long` stamp produced by `StampedLock`; extension functions on `StampedLock` accept and return `Stamp` instead of raw longs, preventing accidental misuse of arbitrary numbers as lock tokens
+- **`Pid`** — wraps the `Long` process ID from `ProcessHandle` and `Process`; `toProcessHandle()` round-trips back to the JVM API; accessed via `ProcessHandle.pidKt`, `Process.pidKt`, or `currentPid()`
+- **`EnumSubset<E>`** — wraps `EnumSet<E>` with ordering and set algebra operations
+
 ## Kotlin/JS platform notes
 
 ### `Float` is not a true `binary32` on Kotlin/JS
