@@ -9,6 +9,7 @@ A composite build of Kotlin Multiplatform libraries, published to GitHub Package
 | `kotlin-core` | JVM, JS | Core utilities: property composition and converters |
 | `guava-extensions` | JVM | Google Guava extensions |
 | `moshi-extensions` | JVM | Moshi JSON serialization extensions |
+| `xml-extensions` | JVM | XML tree API and XPath query engine using StAX |
 | `commons-lang-extensions` | JVM | Apache Commons Lang 3 extensions |
 | `commons-numbers-extensions` | JVM | Apache Commons Numbers extensions |
 
