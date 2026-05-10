@@ -13,8 +13,8 @@ Groovy's `JsonSlurper` and `JsonBuilder` play for Groovy users.
 
 A sealed class hierarchy representing JSON values without requiring data classes or adapters:
 
-- `JsonObject` — a JSON object with named entries (`Map<String, JsonValue>`)
-- `JsonArray` — an ordered list of JSON values
+- `JsonObject` — a JSON object; implements `Map<String, JsonValue>` by delegation
+- `JsonArray` — an ordered JSON array; implements `List<JsonValue>` by delegation
 - `JsonString` — a string value
 - `JsonNumber` — a numeric value
 - `JsonBoolean` — a boolean value
@@ -22,6 +22,28 @@ A sealed class hierarchy representing JSON values without requiring data classes
 
 Each subtype provides typed accessors (`asString()`, `asNumber()`, `asBoolean()`, `asObject()`,
 `asArray()`, `isNull()`) that return `null` when the value is not of the expected type.
+
+### Collection interop
+
+`JsonObject` implements `Map<String, JsonValue>` and `JsonArray` implements `List<JsonValue>`,
+so standard Kotlin collection operations work directly:
+
+```kotlin
+val json = """{"users": [{"name": "Alice", "active": true}, {"name": "Bob", "active": false}]}""".parseJson()
+
+// Map operations on JsonObject
+val obj = json as JsonObject
+obj.keys                          // Set<String>
+obj.forEach { (key, value) -> }
+obj.filter { (_, v) -> v is JsonString }
+
+// List operations on JsonArray
+val users = json.arrayAt("users")!!
+users.filter { it.booleanAt("active") == true }
+users.map { it.stringAt("name") }
+users.first()
+users.any { it.stringAt("name") == "Alice" }
+```
 
 ### Path-based navigation
 

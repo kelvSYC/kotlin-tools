@@ -49,11 +49,12 @@ class JsonValueTest : FunSpec({
         }
     }
 
-    context("JsonObject access") {
+    context("JsonObject as Map") {
         val obj = JsonObject(
             mapOf(
                 "name" to JsonString("Alice"),
                 "age" to JsonNumber(30.0),
+                "active" to JsonBoolean(true),
             )
         )
 
@@ -66,11 +67,53 @@ class JsonValueTest : FunSpec({
         }
 
         test("keys returns all keys") {
-            obj.keys shouldBe setOf("name", "age")
+            obj.keys shouldBe setOf("name", "age", "active")
+        }
+
+        test("values returns all values") {
+            obj.values.toSet() shouldBe setOf(JsonString("Alice"), JsonNumber(30.0), JsonBoolean(true))
+        }
+
+        test("size returns entry count") {
+            obj.size shouldBe 3
+        }
+
+        test("containsKey checks key presence") {
+            obj.containsKey("name") shouldBe true
+            obj.containsKey("missing") shouldBe false
+        }
+
+        test("entries returns Map.Entry set") {
+            obj.entries.map { it.key }.toSet() shouldBe setOf("name", "age", "active")
+        }
+
+        test("filter works as Map filter") {
+            val strings = obj.filter { (_, v) -> v is JsonString }
+            strings.keys shouldBe setOf("name")
+        }
+
+        test("mapValues transforms values") {
+            val stringified = obj.mapValues { (_, v) -> v.asString() ?: v.asNumber()?.toString() }
+            stringified["name"] shouldBe "Alice"
+            stringified["age"] shouldBe "30.0"
+        }
+
+        test("forEach iterates over entries") {
+            val collected = mutableListOf<String>()
+            obj.forEach { (key, _) -> collected.add(key) }
+            collected shouldBe listOf("name", "age", "active")
+        }
+
+        test("isEmpty returns false for non-empty object") {
+            obj.isEmpty() shouldBe false
+        }
+
+        test("isEmpty returns true for empty object") {
+            JsonObject(emptyMap()).isEmpty() shouldBe true
         }
     }
 
-    context("JsonArray access") {
+    context("JsonArray as List") {
         val arr = JsonArray(listOf(JsonString("a"), JsonString("b"), JsonString("c")))
 
         test("get returns element by index") {
@@ -80,6 +123,47 @@ class JsonValueTest : FunSpec({
 
         test("size returns element count") {
             arr.size shouldBe 3
+        }
+
+        test("contains checks element presence") {
+            arr.contains(JsonString("b")) shouldBe true
+            arr.contains(JsonString("z")) shouldBe false
+        }
+
+        test("indexOf returns element position") {
+            arr.indexOf(JsonString("b")) shouldBe 1
+        }
+
+        test("filter works as List filter") {
+            val filtered = arr.filter { it.asString() != "b" }
+            filtered shouldBe listOf(JsonString("a"), JsonString("c"))
+        }
+
+        test("map transforms elements") {
+            val upper = arr.map { it.asString()!!.uppercase() }
+            upper shouldBe listOf("A", "B", "C")
+        }
+
+        test("first returns first element") {
+            arr.first() shouldBe JsonString("a")
+        }
+
+        test("any checks predicate") {
+            arr.any { it.asString() == "b" } shouldBe true
+            arr.any { it.asString() == "z" } shouldBe false
+        }
+
+        test("isEmpty returns false for non-empty array") {
+            arr.isEmpty() shouldBe false
+        }
+
+        test("isEmpty returns true for empty array") {
+            JsonArray(emptyList()).isEmpty() shouldBe true
+        }
+
+        test("iterator provides all elements in order") {
+            val collected = arr.iterator().asSequence().toList()
+            collected shouldBe listOf(JsonString("a"), JsonString("b"), JsonString("c"))
         }
     }
 

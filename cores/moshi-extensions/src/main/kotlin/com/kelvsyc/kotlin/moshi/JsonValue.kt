@@ -48,7 +48,7 @@ sealed class JsonValue {
         var current: JsonValue? = this
         for (segment in segments) {
             current = when (current) {
-                is JsonObject -> current.entries[segment]
+                is JsonObject -> current.members[segment]
                 is JsonArray -> segment.toIntOrNull()?.let { index ->
                     current.elements.getOrNull(index)
                 }
@@ -60,41 +60,27 @@ sealed class JsonValue {
 }
 
 /**
- * A JSON object, containing named entries.
+ * A JSON object, containing named members.
  *
- * @property entries The key-value mappings in this object.
+ * Implements [Map] by delegation, so standard collection operations like [forEach], [filter],
+ * [map], and destructuring work directly.
+ *
+ * @property members The key-value mappings in this object.
  */
-data class JsonObject(val entries: Map<String, JsonValue>) : JsonValue() {
+data class JsonObject(val members: Map<String, JsonValue>) : JsonValue(), Map<String, JsonValue> by members {
     override fun asObject(): JsonObject = this
-
-    /**
-     * Returns the value associated with [key], or `null` if not present.
-     */
-    operator fun get(key: String): JsonValue? = entries[key]
-
-    /**
-     * Returns the keys in this object.
-     */
-    val keys: Set<String> get() = entries.keys
 }
 
 /**
  * A JSON array, containing ordered elements.
  *
+ * Implements [List] by delegation, so standard collection operations like [forEach], [filter],
+ * [map], [first], and indexed access work directly.
+ *
  * @property elements The values in this array.
  */
-data class JsonArray(val elements: List<JsonValue>) : JsonValue() {
+data class JsonArray(val elements: List<JsonValue>) : JsonValue(), List<JsonValue> by elements {
     override fun asArray(): JsonArray = this
-
-    /**
-     * Returns the element at the given [index].
-     */
-    operator fun get(index: Int): JsonValue = elements[index]
-
-    /**
-     * Returns the number of elements in this array.
-     */
-    val size: Int get() = elements.size
 }
 
 /**

@@ -63,7 +63,7 @@ class JsonValueAdapter : JsonAdapter<JsonValue>() {
         writer.beginObject()
         val wasSerializeNulls = writer.serializeNulls
         writer.serializeNulls = true
-        for ((key, value) in obj.entries) {
+        for ((key, value) in obj.members) {
             writer.name(key)
             toJson(writer, value)
         }
