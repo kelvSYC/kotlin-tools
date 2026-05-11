@@ -15,5 +15,6 @@ dependencies {
     constraints {
         api(libs.moshi)
         api(libs.moshi.kotlin)
+        api(libs.snakeyaml.engine)
     }
 }
