@@ -27,6 +27,7 @@ commons-numbers-fraction = { module = "org.apache.commons:commons-numbers-fracti
 guava = "com.google.guava:guava:33.6.0-jre"
 moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
+snakeyaml-engine = "org.snakeyaml:snakeyaml-engine:2.9"
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core" } # version from BOM 'kotest-bom'
 kotest-assertions-shared = { module = "io.kotest:kotest-assertions-shared" } # version from BOM 'kotest-bom'
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine" } # version from BOM 'kotest-bom'
