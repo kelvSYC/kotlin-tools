@@ -1,20 +1,50 @@
 package com.kelvsyc.kotlin.moshi
 
+import java.io.Serial
+import java.io.Serializable
+
 /**
  * A segment in a parsed [JsonPath] expression.
  */
-sealed class JsonPathSegment {
+sealed class JsonPathSegment : Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     /** Access an object property by name. */
-    data class Key(val name: String) : JsonPathSegment()
+    data class Key(val name: String) : JsonPathSegment() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     /** Access an array element by index. */
-    data class Index(val index: Int) : JsonPathSegment()
+    data class Index(val index: Int) : JsonPathSegment() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     /** Wildcard: all children of an object or array. */
-    data object Wildcard : JsonPathSegment()
+    data object Wildcard : JsonPathSegment() {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
+        @Serial
+        private fun readResolve(): Any = Wildcard
+    }
 
     /** Recursive descent: search all descendants. */
-    data object RecursiveDescent : JsonPathSegment()
+    data object RecursiveDescent : JsonPathSegment() {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
+        @Serial
+        private fun readResolve(): Any = RecursiveDescent
+    }
 }
 
 /**
@@ -33,7 +63,7 @@ sealed class JsonPathSegment {
  * @property segments The parsed path segments.
  */
 @JvmInline
-value class JsonPath private constructor(val segments: List<JsonPathSegment>) {
+value class JsonPath private constructor(val segments: List<JsonPathSegment>) : Serializable {
 
     /**
      * Evaluates this path against the given [root] value, returning all matching nodes.
@@ -82,6 +112,9 @@ value class JsonPath private constructor(val segments: List<JsonPathSegment>) {
     }
 
     companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
         /**
          * Parses a JSONPath expression string.
          *
