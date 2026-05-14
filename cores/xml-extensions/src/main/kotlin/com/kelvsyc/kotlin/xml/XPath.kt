@@ -1,51 +1,122 @@
 package com.kelvsyc.kotlin.xml
 
+import java.io.Serial
+import java.io.Serializable
 import javax.xml.namespace.QName
 
 /**
  * A step in a parsed [XPath] expression.
  */
-sealed class XPathStep {
+sealed class XPathStep : Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     /** Navigate to a child element by name. */
-    data class Child(val name: String) : XPathStep()
+    data class Child(val name: String) : XPathStep() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     /** Navigate to a child element by qualified name. */
-    data class QualifiedChild(val prefix: String, val localName: String) : XPathStep()
+    data class QualifiedChild(val prefix: String, val localName: String) : XPathStep() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     /** Wildcard: all child elements. */
-    data object Wildcard : XPathStep()
+    data object Wildcard : XPathStep() {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
+        @Serial
+        private fun readResolve(): Any = Wildcard
+    }
 
     /** Select text nodes. */
-    data object TextNodes : XPathStep()
+    data object TextNodes : XPathStep() {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
+        @Serial
+        private fun readResolve(): Any = TextNodes
+    }
 
     /** Select all child nodes regardless of type. */
-    data object AllNodes : XPathStep()
+    data object AllNodes : XPathStep() {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
+        @Serial
+        private fun readResolve(): Any = AllNodes
+    }
 
     /** Access an attribute by name. */
-    data class Attribute(val name: String) : XPathStep()
+    data class Attribute(val name: String) : XPathStep() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     /** Recursive descent (from `//`): search all descendants. */
-    data object RecursiveDescent : XPathStep()
+    data object RecursiveDescent : XPathStep() {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
+        @Serial
+        private fun readResolve(): Any = RecursiveDescent
+    }
 }
 
 /**
  * A predicate that filters nodes selected by an [XPathStep].
  */
-sealed class XPathPredicate {
+sealed class XPathPredicate : Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     /** Positional predicate (1-based index). */
-    data class Position(val index: Int) : XPathPredicate()
+    data class Position(val index: Int) : XPathPredicate() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     /** Attribute value equality predicate. */
-    data class AttributeEquals(val name: String, val value: String) : XPathPredicate()
+    data class AttributeEquals(val name: String, val value: String) : XPathPredicate() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     /** Child element existence predicate. */
-    data class ChildExists(val name: String) : XPathPredicate()
+    data class ChildExists(val name: String) : XPathPredicate() {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 }
 
 /**
  * A single location step with optional predicates.
  */
-data class XPathLocation(val step: XPathStep, val predicates: List<XPathPredicate> = emptyList())
+data class XPathLocation(val step: XPathStep, val predicates: List<XPathPredicate> = emptyList()) : Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 /**
  * A parsed XPath expression supporting a practical subset of XPath 1.0.
@@ -67,7 +138,7 @@ data class XPathLocation(val step: XPathStep, val predicates: List<XPathPredicat
  * @property locations The parsed location steps.
  */
 @JvmInline
-value class XPath private constructor(val locations: List<XPathLocation>) {
+value class XPath private constructor(val locations: List<XPathLocation>) : Serializable {
 
     /**
      * Evaluates this path against the given [root] element, returning all matching nodes.
@@ -86,6 +157,9 @@ value class XPath private constructor(val locations: List<XPathLocation>) {
     }
 
     companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+
         /**
          * Parses an XPath expression string.
          *
