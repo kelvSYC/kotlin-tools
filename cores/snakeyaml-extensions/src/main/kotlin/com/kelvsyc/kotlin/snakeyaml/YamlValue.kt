@@ -1,5 +1,8 @@
 package com.kelvsyc.kotlin.snakeyaml
 
+import java.io.Serial
+import java.io.Serializable
+
 /**
  * A type-safe representation of a YAML value, providing an untyped tree API for navigating
  * parsed YAML without requiring data classes.
@@ -8,7 +11,12 @@ package com.kelvsyc.kotlin.snakeyaml
  * provides typed coercion methods. Unlike JSON, YAML does not distinguish between strings,
  * numbers, and booleans at the node level — the tag and context determine interpretation.
  */
-sealed class YamlValue {
+sealed class YamlValue : Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     /**
      * Returns this value as a [YamlMapping], or `null` if it is not a mapping.
      */
@@ -61,6 +69,11 @@ sealed class YamlValue {
  * @property members The key-value mappings.
  */
 data class YamlMapping(val members: Map<String, YamlValue>) : YamlValue(), Map<String, YamlValue> by members {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     override fun asMapping(): YamlMapping = this
 }
 
@@ -73,6 +86,11 @@ data class YamlMapping(val members: Map<String, YamlValue>) : YamlValue(), Map<S
  * @property elements The values in this sequence.
  */
 data class YamlSequence(val elements: List<YamlValue>) : YamlValue(), List<YamlValue> by elements {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     override fun asSequence(): YamlSequence = this
 }
 
@@ -82,6 +100,11 @@ data class YamlSequence(val elements: List<YamlValue>) : YamlValue(), List<YamlV
  * @property value The raw string content of the scalar.
  */
 data class YamlScalar(val value: String) : YamlValue() {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     override fun asScalar(): YamlScalar = this
 
     /**
@@ -115,5 +138,11 @@ data class YamlScalar(val value: String) : YamlValue() {
  * The YAML null value, representing an explicit `null`, `~`, or empty value.
  */
 data object YamlNull : YamlValue() {
+    @Serial
+    private const val serialVersionUID: Long = 1L
+
     override fun isNull(): Boolean = true
+
+    @Serial
+    private fun readResolve(): Any = YamlNull
 }
