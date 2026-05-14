@@ -1,5 +1,7 @@
 package com.kelvsyc.kotlin.xml
 
+import java.io.Serial
+import java.io.Serializable
 import javax.xml.namespace.QName
 
 /**
@@ -13,7 +15,12 @@ import javax.xml.namespace.QName
  * the tree structure. [XmlAttribute] is a projection node that only appears in
  * XPath query results when the `@attr` syntax is used.
  */
-sealed class XmlNode {
+sealed class XmlNode : Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     /**
      * The XPath string-value of this node.
      *
@@ -42,6 +49,11 @@ data class XmlElement(
     val attributes: Map<QName, String>,
     val children: List<XmlNode>,
 ) : XmlNode() {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
 
     override val stringValue: String
         get() = buildString { appendTextContent(this@XmlElement, this) }
@@ -95,6 +107,11 @@ data class XmlElement(
  * @property content The text content.
  */
 data class XmlText(val content: String) : XmlNode() {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     override val stringValue: String get() = content
 }
 
@@ -104,6 +121,11 @@ data class XmlText(val content: String) : XmlNode() {
  * @property content The comment text (without `<!--` and `-->` delimiters).
  */
 data class XmlComment(val content: String) : XmlNode() {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     override val stringValue: String get() = content
 }
 
@@ -114,6 +136,11 @@ data class XmlComment(val content: String) : XmlNode() {
  * @property data The PI data content.
  */
 data class XmlProcessingInstruction(val target: String, val data: String) : XmlNode() {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     override val stringValue: String get() = data
 }
 
@@ -128,6 +155,11 @@ data class XmlProcessingInstruction(val target: String, val data: String) : XmlN
  * @property value The attribute value.
  */
 data class XmlAttribute(val name: QName, val value: String) : XmlNode() {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 1L
+    }
+
     override val stringValue: String get() = value
 }
 
