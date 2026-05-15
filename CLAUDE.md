@@ -5,6 +5,8 @@ Architectural reference for this Gradle composite build. See `AGENTS.md` for bui
 ## Requirements
 
 - **Tests must pass** before any task is complete: `./gradlew :check`.
+- **README must stay current** when adding or modifying public API — new types, interfaces, factory functions, or trait instances must be reflected in the component's `README.md`.
+- **Root README must stay current** when adding a new core — add it to the Components table in the root `README.md`.
 
 ## Build Commands
 
