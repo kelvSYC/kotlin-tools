@@ -4,13 +4,18 @@ private val _floatIsNaN: (Float) -> Boolean = Float::isNaN
 private val _floatIsInfinite: (Float) -> Boolean = Float::isInfinite
 private val _floatIsFinite: (Float) -> Boolean = Float::isFinite
 
+// Rounds a Float (held at binary64 precision by the JS runtime) to the nearest binary32 value.
+// Equivalent to Float.fromBits(x.toRawBits()), but delegates directly to the JS engine intrinsic.
+@Suppress("NOTHING_TO_INLINE")
+private inline fun fround(x: Float): Float = js("Math.fround(x)")
+
 /**
  * [FloatingPointArithmetic] instance for [Float] that guarantees true `binary32` rounding on
  * Kotlin/JS.
  *
- * Each arithmetic result is round-tripped through [Float.toRawBits] and
- * [Float.fromBits][Float.Companion.fromBits], forcing the value to the nearest representable
- * `binary32` even though JavaScript performs all arithmetic at `binary64` precision.
+ * Each arithmetic result is passed through JavaScript's `Math.fround()`, forcing the value to the
+ * nearest representable `binary32` even though JavaScript performs all arithmetic at `binary64`
+ * precision.
  *
  * This instance backs the JS-side actuals of
  * [TwoSum.float][com.kelvsyc.kotlin.core.traits.dd.TwoSum.Companion.float],
@@ -44,10 +49,10 @@ internal val strictFloatArithmetic: FloatingPointArithmetic<Float> by lazy {
         override fun Float.copySign(other: Float): Float =
             Float.fromBits((toRawBits() and Int.MAX_VALUE) or (other.toRawBits() and Int.MIN_VALUE))
 
-        override fun Float.add(other: Float): Float = Float.fromBits((this + other).toRawBits())
-        override fun Float.subtract(other: Float): Float = Float.fromBits((this - other).toRawBits())
-        override fun Float.multiply(other: Float): Float = Float.fromBits((this * other).toRawBits())
-        override fun Float.divide(other: Float): Float = Float.fromBits((this / other).toRawBits())
+        override fun Float.add(other: Float): Float = fround(this + other)
+        override fun Float.subtract(other: Float): Float = fround(this - other)
+        override fun Float.multiply(other: Float): Float = fround(this * other)
+        override fun Float.divide(other: Float): Float = fround(this / other)
 
         override fun Float.compareTo(other: Float): Int = this.compareTo(other)
     }

@@ -13,12 +13,18 @@ package com.kelvsyc.kotlin.core.traits.integral
  * Note that [divide] also throws [ArithmeticException] for division by zero (inherited from [IntegerArithmetic]) as
  * well as for overflow (the only overflow case for integer division is `MIN_VALUE / -1`).
  *
- * This interface has no JavaScript implementation, as JavaScript provides no mechanism for integer overflow
- * detection without software emulation.
+ * ## JavaScript implementation note
+ *
+ * The JS target provides an [Int] instance (`Companion.int`) that uses Double-promotion: since
+ * JavaScript's `number` type has a 53-bit mantissa, all 32-bit integer values are exactly
+ * representable. Each arithmetic operation widens both operands to `Double`, performs the operation,
+ * and checks whether the result lies within `Int.MIN_VALUE..Int.MAX_VALUE` before truncating.
+ * [Long] has no JS implementation because 64 bits exceed the 53-bit mantissa.
  *
  * ## Standard implementations
  *
  * JVM instances for [Int] and [Long] are available as `Companion.int` and `Companion.long`.
+ * JS instance for [Int] is available as `Companion.int`.
  */
 interface OverflowCheckedArithmetic<T> : IntegerArithmetic<T> {
     companion object
