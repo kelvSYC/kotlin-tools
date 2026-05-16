@@ -176,31 +176,35 @@ implementation, including the Veltkamp-Dekker one.
 
 #### Integer
 
-Signed: `Byte`, `Short`, `Int`, `Long`, `BigInteger` (JVM only)
+Signed: `Byte`, `Short`, `Int`, `Long`, `BigInteger` (JVM only), `BigInt` (JS only)
 Unsigned: `UByte`, `UShort`, `UInt`, `ULong`
 
-| Trait | Signed ⁷ | Unsigned | `BigInteger` |
-|---|:---:|:---:|:---:|
-| `SignedIntegerArithmetic<T>` | ✓ | — | JVM |
-| `UnsignedIntegerArithmetic<T>` | — | ✓ | — |
-| `OverflowCheckedArithmetic<T>` | `Int` (JVM, JS ⁹), `Long` (JVM) | — | — |
-| `Gcd<T>` | ✓ | ✓ | — |
-| `Bitwise<T>` | `Int`, `Long` | `UShort`, `UInt`, `ULong` | — |
-| `BitShift<T>` | ✓ | ✓ | — |
-| `ArithmeticRightShift<T>` | ✓ | — | JVM |
-| `RoundingRightShift<T>` | ✓ | ✓ | — |
-| `StickyRightShift<T>` | ✓ | ✓ | — |
-| `PowerOfTwo<T>` | ✓ | ✓ | — |
-| `Sqrt<T>` (integer) | ✓ | ✓ | — |
-| `Log2<T>` | ✓ | ✓ | — |
-| `Log10<T>` | ✓ | ✓ | — |
-| `Primality<T>` | `Int`, `Long` | `UInt`, `ULong` (JVM) | JVM |
-| `IntegerPower<T>` | `Int`, `Long` | — | JVM |
+| Trait | Signed ⁷ | Unsigned | `BigInteger` | `BigInt` |
+|---|:---:|:---:|:---:|:---:|
+| `SignedIntegerArithmetic<T>` | ✓ | — | JVM | JS |
+| `UnsignedIntegerArithmetic<T>` | — | ✓ | — | — |
+| `OverflowCheckedArithmetic<T>` | `Int` (JVM, JS ⁹), `Long` (JVM, JS ¹⁰) | — | — | — |
+| `Gcd<T>` | ✓ | ✓ | — | JS |
+| `Bitwise<T>` | `Int`, `Long` | `UShort`, `UInt`, `ULong` | — | — |
+| `BitShift<T>` | ✓ | ✓ | — | — |
+| `ArithmeticRightShift<T>` | ✓ | — | JVM | JS |
+| `RoundingRightShift<T>` | ✓ | ✓ | — | — |
+| `StickyRightShift<T>` | ✓ | ✓ | — | — |
+| `PowerOfTwo<T>` | ✓ | ✓ | — | — |
+| `Sqrt<T>` (integer) | ✓ | ✓ | — | — |
+| `Log2<T>` | ✓ | ✓ | — | — |
+| `Log10<T>` | ✓ | ✓ | — | — |
+| `Primality<T>` | `Int`, `Long` | `UInt`, `ULong` (JVM) | JVM | JS |
+| `IntegerPower<T>` | `Int`, `Long` | — | JVM | JS |
 
 ⁷ All four signed primitive types (`Byte`, `Short`, `Int`, `Long`) unless noted otherwise.
 
 ⁹ JS `Int` instance uses Double-promotion (exact for 32-bit values; see
-[Kotlin/JS platform notes](#kotlinjs-platform-notes)). `Long` has no JS implementation.
+[Kotlin/JS platform notes](#kotlinjs-platform-notes)).
+
+¹⁰ JS `Long` instance uses BigInt-promotion (see [Kotlin/JS platform notes](#kotlinjs-platform-notes)).
+`BigInt` is arbitrary-precision so `Long.MIN_VALUE / -1` and other overflow cases are caught by a
+range check after the operation.
 
 #### BigDecimal (JVM only)
 
@@ -235,6 +239,7 @@ arithmetic instance: wrapping for primitives, overflow-checked or overflow-free 
 |---|---|---|
 | `RationalArithmetic.int` | `RationalArithmetic<Rational<Int>, Int>` | Wrapping arithmetic; cross-multiplications may silently overflow |
 | `RationalArithmetic.long` | `RationalArithmetic<Rational<Long>, Long>` | Same; use `checkedLong` on JVM to detect overflow |
+| `RationalArithmetic.bigInt` | `RationalArithmetic<Rational<BigInt>, BigInt>` | JS only; overflow-free (BigInt is arbitrary-precision) |
 | `RationalArithmetic.checkedInt` | `RationalArithmetic<Rational<Int>, Int>` | JVM only; throws `ArithmeticException` on overflow |
 | `RationalArithmetic.checkedLong` | `RationalArithmetic<Rational<Long>, Long>` | JVM only |
 | `RationalArithmetic.bigInteger` | `RationalArithmetic<Rational<BigInteger>, BigInteger>` | JVM only; overflow-free |
@@ -321,8 +326,40 @@ of throwing.
 using Double-promotion. Since JavaScript's `number` type has a 53-bit mantissa, all 32-bit integer
 values are exactly representable: each arithmetic operation widens both operands to `Double`,
 computes the result, checks whether it lies within `Int.MIN_VALUE..Int.MAX_VALUE`, and throws
-`ArithmeticException` on overflow. `Long` (64-bit) cannot be handled this way and has no JS
-implementation.
+`ArithmeticException` on overflow.
+
+`OverflowCheckedArithmetic.long` and `OverflowCheckedSignedArithmetic.long` are also available on
+JS, using BigInt-promotion. Each operation widens both `Long` operands to `BigInt`, performs the
+operation in arbitrary precision, checks whether the result lies within
+`Long.MIN_VALUE..Long.MAX_VALUE`, and throws `ArithmeticException` on overflow (including the
+`MIN_VALUE / -1` overflow case). Division by zero throws `ArithmeticException` before reaching
+BigInt. Remainder and comparison use the native Kotlin `Long` operators directly (no overflow is
+possible for either operation).
+
+### `BigInt` external declaration (JS only)
+
+JavaScript's `BigInt` primitive provides arbitrary-precision integer arithmetic. This library
+declares it as `external interface BigInt` — a structural type with no corresponding Kotlin class —
+and exposes it through a set of inline operator extensions (`+`, `-`, `*`, `/`, `%`, unary `-`,
+`compareTo`) that compile directly to the native BigInt operators.
+
+`bigIntOf(value: String)` and `bigIntOf(value: Int)` are factory functions mapped via `@JsName("BigInt")`
+to the global JavaScript `BigInt()` constructor. `BigInt.comparator` provides a `Comparator<BigInt>`
+for use with `sortedWith`, `maxWith`, and similar APIs.
+
+Converters between `BigInt` and Kotlin primitive types are available on the `BigInt.Companion`:
+
+| Property | Direction | Notes |
+|---|---|---|
+| `BigInt.longConverter` | `Converter<BigInt, Long>` | Narrowing: throws `ArithmeticException` on out-of-range |
+| `BigInt.intConverter` | `Converter<BigInt, Int>` | Narrowing: throws `ArithmeticException` on out-of-range |
+
+Widening extension functions (no range check needed):
+
+| Function | Result |
+|---|---|
+| `SignedIntegral<T>.toBigInt(value: T)` | `BigInt` via `toLong()` |
+| `UnsignedIntegral<T>.toBigInt(value: T)` | `BigInt` via `toULong()` |
 
 ### `Pid` and `currentPid()`
 
