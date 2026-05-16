@@ -8,7 +8,7 @@ package com.kelvsyc.kotlin.core
  * cost.
  */
 @JvmInline
-value class Pid @PublishedApi internal constructor(val value: Long) {
+actual value class Pid @PublishedApi internal constructor(actual val value: Long) {
     /**
      * Returns the [ProcessHandle] for this PID, or `null` if the process is not alive
      * or otherwise inaccessible.
@@ -23,4 +23,4 @@ val ProcessHandle.pidKt: Pid get() = Pid(pid())
 val Process.pidKt: Pid get() = Pid(pid())
 
 /** Returns the [Pid] of the current process. */
-fun currentPid(): Pid = ProcessHandle.current().pidKt
+actual fun currentPid(): Pid = ProcessHandle.current().pidKt

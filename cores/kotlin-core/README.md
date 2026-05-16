@@ -183,7 +183,7 @@ Unsigned: `UByte`, `UShort`, `UInt`, `ULong`
 |---|:---:|:---:|:---:|
 | `SignedIntegerArithmetic<T>` | ✓ | — | JVM |
 | `UnsignedIntegerArithmetic<T>` | — | ✓ | — |
-| `OverflowCheckedArithmetic<T>` | `Int`, `Long` (JVM) | — | — |
+| `OverflowCheckedArithmetic<T>` | `Int` (JVM, JS ⁹), `Long` (JVM) | — | — |
 | `Gcd<T>` | ✓ | ✓ | — |
 | `Bitwise<T>` | `Int`, `Long` | `UShort`, `UInt`, `ULong` | — |
 | `BitShift<T>` | ✓ | ✓ | — |
@@ -198,6 +198,9 @@ Unsigned: `UByte`, `UShort`, `UInt`, `ULong`
 | `IntegerPower<T>` | `Int`, `Long` | — | JVM |
 
 ⁷ All four signed primitive types (`Byte`, `Short`, `Int`, `Long`) unless noted otherwise.
+
+⁹ JS `Int` instance uses Double-promotion (exact for 32-bit values; see
+[Kotlin/JS platform notes](#kotlinjs-platform-notes)). `Long` has no JS implementation.
 
 #### BigDecimal (JVM only)
 
@@ -249,13 +252,16 @@ satisfied by every type that has a `SignedIntegerArithmetic` instance, and addit
 `BigInteger` and `BigDecimal` via dedicated JVM-only instances (`Signed.bigInteger`,
 `Signed.bigDecimal`).
 
+### Platform Utilities
+
+- **`Pid`** — type-safe wrapper around a process ID (`Long`); `currentPid()` returns the running process's PID. On JVM: backed by `ProcessHandle.pid()`; `toProcessHandle()`, `ProcessHandle.pidKt`, and `Process.pidKt` are also available. On JS (Node.js): backed by `process.pid`.
+
 ### JVM Utilities
 
 Type-safe wrappers around JVM standard library return types that use raw primitives where a distinct
 type would prevent bugs:
 
 - **`Stamp`** — wraps the `Long` stamp produced by `StampedLock`; extension functions on `StampedLock` accept and return `Stamp` instead of raw longs, preventing accidental misuse of arbitrary numbers as lock tokens
-- **`Pid`** — wraps the `Long` process ID from `ProcessHandle` and `Process`; `toProcessHandle()` round-trips back to the JVM API; accessed via `ProcessHandle.pidKt`, `Process.pidKt`, or `currentPid()`
 - **`EnumSubset<E>`** — wraps `EnumSet<E>` with ordering and set algebra operations
 
 ## Kotlin/JS platform notes
@@ -281,22 +287,21 @@ of mantissa rather than 23.
 Algorithms that depend on exact `binary32` rounding — error-free transformations (`TwoSum`,
 `TwoProduct`, `TwoDiv`) and emulated `FusedMultiplyAdd` — require a strict `binary32` arithmetic
 that forces correct rounding. On Kotlin/JS, this is provided by an internal
-`strictFloatArithmetic` instance that round-trips each arithmetic result through
-`Float.toRawBits()` and `Float.fromBits()`, quantizing the 64-bit intermediate back to 23-bit
-precision.
+`strictFloatArithmetic` instance that passes each arithmetic result through JavaScript's
+`Math.fround()`, quantizing the 64-bit intermediate back to 23-bit precision.
 
 This strict arithmetic is **not** exposed as a public API. Instead, the standard companion
 instances that require exact `binary32` rounding are wired to it automatically:
 
 | Instance | JVM backing | JS backing |
 |---|---|---|
-| `TwoSum.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (round-trip) |
-| `TwoProduct.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (round-trip) |
+| `TwoSum.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (`Math.fround`) |
+| `TwoProduct.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (`Math.fround`) |
 | `TwoDiv.float` | `FloatingPointArithmetic.float` + hardware FMA | `strictFloatArithmetic` + emulated FMA |
 | `FusedMultiplyAdd.float` | `java.lang.Math.fma` (hardware) | Boldo-Melquiond via `strictFloatArithmetic` |
 
-Callers using these instances do not need to account for the platform difference. The overhead of
-the round-trip is a no-op on JVM (the hardware already operates in `binary32`) and necessary on JS.
+Callers using these instances do not need to account for the platform difference. The `Math.fround`
+call is a no-op on JVM (the hardware already operates in `binary32`) and necessary on JS.
 
 ### `Double` is unaffected
 
@@ -309,3 +314,18 @@ identically on JVM and JS.
 On JVM, integer division by zero (`Int`, `Long`, etc.) throws `ArithmeticException`. On JS,
 integer division compiles to JavaScript's `/` operator, which returns `Infinity` or `NaN` instead
 of throwing.
+
+### Overflow-checked arithmetic
+
+`OverflowCheckedArithmetic.int` and `OverflowCheckedSignedArithmetic.int` are available on JS
+using Double-promotion. Since JavaScript's `number` type has a 53-bit mantissa, all 32-bit integer
+values are exactly representable: each arithmetic operation widens both operands to `Double`,
+computes the result, checks whether it lies within `Int.MIN_VALUE..Int.MAX_VALUE`, and throws
+`ArithmeticException` on overflow. `Long` (64-bit) cannot be handled this way and has no JS
+implementation.
+
+### `Pid` and `currentPid()`
+
+`Pid` and `currentPid()` are available on JS (Node.js). `currentPid()` reads `process.pid` and
+widens the result from the native JS integer to `Long`. The JVM-only members (`toProcessHandle()`,
+`ProcessHandle.pidKt`, `Process.pidKt`) are not available on JS.
