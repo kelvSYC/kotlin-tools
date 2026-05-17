@@ -13,6 +13,7 @@ dependencies {
     api(platform(libs.kotlin.gradle.plugins.bom))
     api(platform(libs.commons.numbers.bom))
     constraints {
+        api(libs.kotlinx.datetime)
         api(libs.moshi)
         api(libs.moshi.kotlin)
         api(libs.snakeyaml.engine)
