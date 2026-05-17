@@ -7,6 +7,7 @@ A composite build of Kotlin Multiplatform libraries, published to GitHub Package
 | Library | Targets | Description |
 |---|---|---|
 | `kotlin-core` | JVM, JS | Core utilities: property composition and converters |
+| `lodash-extensions` | JS | Lodash extensions: function decorators and string utilities |
 | `guava-extensions` | JVM | Google Guava extensions |
 | `moshi-extensions` | JVM | Moshi JSON serialization extensions |
 | `xml-extensions` | JVM | XML tree API and XPath query engine using StAX |
