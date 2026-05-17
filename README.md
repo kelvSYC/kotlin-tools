@@ -10,6 +10,7 @@ A composite build of Kotlin Multiplatform libraries, published to GitHub Package
 | `lodash-extensions` | JS | Lodash extensions: function decorators and string utilities |
 | `luxon-extensions` | JS | Luxon date/time extensions: Kotlin/kotlinx-datetime interop |
 | `decimal-extensions` | JS | Decimal.js extensions: arbitrary-precision decimal arithmetic |
+| `immutable-extensions` | JS | Immutable.js extensions: persistent List, Map, and Set with Kotlin idioms |
 | `guava-extensions` | JVM | Google Guava extensions |
 | `moshi-extensions` | JVM | Moshi JSON serialization extensions |
 | `xml-extensions` | JVM | XML tree API and XPath query engine using StAX |
