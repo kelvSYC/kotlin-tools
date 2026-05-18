@@ -38,9 +38,10 @@ class ListExtensionsTest : FunSpec({
         test("custom equator with numeric tolerance") {
             val result = listOf(1, 2, 3, 4).longestCommonSubsequence(
                 listOf(1, 3, 5, 6)
-            ) { a, b -> (a - b).coerceAtMost(1) >= 0 && (a - b).coerceAtLeast(-1) <= 0 }
-            // This should find common subsequence with tolerance
-            result.isNotEmpty() shouldBe true
+            ) { a, b -> kotlin.math.abs(a - b) <= 1 }
+            // With tolerance ±1: [2,3,4] from first list matches [1,3,5] from second
+            // 2 matches 1 (diff 1), 3 matches 3 (diff 0), 4 matches 5 (diff 1)
+            result shouldBe listOf(2, 3, 4)
         }
     }
 
