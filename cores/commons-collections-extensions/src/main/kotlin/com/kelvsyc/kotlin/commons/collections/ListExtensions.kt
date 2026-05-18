@@ -24,7 +24,7 @@ fun <T> List<T>.longestCommonSubsequence(
 ): List<T> =
     ListUtils.longestCommonSubsequence(this, other, object : org.apache.commons.collections4.Equator<T> {
         override fun equate(o1: T, o2: T): Boolean = equator(o1, o2)
-        override fun hash(o: T): Int = o?.hashCode() ?: 0
+        override fun hash(o: T): Int = o.hashCode()
     })
 
 /**

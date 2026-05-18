@@ -29,7 +29,7 @@ as-is. This document maps each area of the library to one of three categories.
 - `operator fun plusAssign(element: E)` — adds one occurrence of the element via `+=`.
 - `operator fun plusAssign(other: Bag<E>)` — merges another bag via `+=` (adds all elements with their multiplicities).
 - `operator fun minusAssign(element: E)` — removes one occurrence of the element via `-=`.
-- `operator fun minusAssign(predicate: (E) -> Boolean)` — removes all elements matching the predicate via `-=`.
+- `operator fun minusAssign(other: Bag<E>)` — removes all elements of another bag (by multiplicity) via `-=`.
 
 ### `org.apache.commons.collections4.BidiMap`
 
