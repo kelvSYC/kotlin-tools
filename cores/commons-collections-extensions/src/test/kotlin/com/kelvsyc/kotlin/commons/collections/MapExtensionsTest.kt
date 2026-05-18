@@ -17,7 +17,7 @@ class MapExtensionsTest : FunSpec({
             val original = mapOf("a" to 1, "b" to 1)
             val inverted = original.invertedMap()
             inverted.size shouldBe 1
-            inverted.containsValue("a") || inverted.containsValue("b") shouldBe true
+            inverted.containsKey(1) shouldBe true
         }
 
         test("works with empty map") {
