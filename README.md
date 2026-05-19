@@ -17,6 +17,7 @@ A composite build of Kotlin Multiplatform libraries, published to GitHub Package
 | `snakeyaml-extensions` | JVM | YAML tree API and typed navigation using snakeyaml-engine |
 | `commons-lang-extensions` | JVM | Apache Commons Lang 3 extensions |
 | `commons-numbers-extensions` | JVM | Apache Commons Numbers extensions |
+| `commons-collections-extensions` | JVM | Apache Commons Collections 4 extensions |
 
 All libraries are published under the group `com.kelvsyc.kotlin`.
 

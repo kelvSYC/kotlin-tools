@@ -17,5 +17,6 @@ dependencies {
         api(libs.moshi)
         api(libs.moshi.kotlin)
         api(libs.snakeyaml.engine)
+        api(libs.commons.collections4)
     }
 }
