@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin
+
 plugins {
     id("com.google.devtools.ksp")
     id("io.kotest")
@@ -11,10 +14,12 @@ kotlin {
     }
 }
 
-// kotlinNodeJsSetup manages a shared Node.js installation in ~/.gradle/nodejs/ that Gradle
-// cannot reliably fingerprint across CI runners (the tarball contains OS-specific headers that
-// may not extract fully, causing MD5 hash failures on missing files). Opting out of state
-// tracking means Gradle always runs the task but never tries to snapshot its outputs.
-tasks.matching { it.name == "kotlinNodeJsSetup" }.configureEach {
-    doNotTrackState("Node.js installation directory contains platform-specific files that may not fully extract on all CI runners")
+// Pin Node.js to 22.x LTS. Node.js 24.x bundles OpenSSL 3.3/3.4 headers that include
+// architecture-specific fipskey.h symlinks which don't resolve on Linux, causing
+// calculateDirHash to crash with FileNotFoundException in kotlinNodeJsSetup.
+// OpenSSL 3.2.x (used by Node.js 22.x) does not have this issue.
+rootProject.plugins.withType<NodeJsPlugin> {
+    rootProject.extensions.configure<NodeJsEnvSpec> {
+        version.set("22.12.0")
+    }
 }
