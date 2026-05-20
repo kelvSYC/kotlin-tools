@@ -36,13 +36,11 @@ Extended collection types beyond the Kotlin standard library:
 - **BiMap** (`BiMap<K,V>`, `MutableBiMap<K,V>`) — a `Map` that enforces a bijection: each value maps to exactly one key; exposes a live `inverse: BiMap<V,K>` view backed by the same storage; `MutableBiMap.put` throws `IllegalArgumentException` on value collision while `forcePut` removes the conflicting key first; all-platforms alternative to Guava's `BiMap` and Apache Commons' `BidiMap`; factory functions in `BiMaps.kt`
 
 - **EnumBiMap** (`EnumBiMap<K:Enum,V>`, `MutableEnumBiMap<K:Enum,V>`) — ordinal-array-backed BiMap keyed by enum constants, iterating in ordinal order; `inverse` is a plain `BiMap<V,K>`; factory functions in `EnumBiMaps.kt`
-
-  Sub-interfaces are provided for future specialized implementations (no backing implementation or factory functions yet):
-  - `SortedBiMap<K,V>` / `MutableSortedBiMap<K,V>` — key side comparator-ordered; `inverse` is plain `BiMap<V,K>`
-  - `BiSortedBiMap<K,V>` / `MutableBiSortedBiMap<K,V>` — both directions comparator-ordered; `inverse` is `SortedBiMap<V,K>`
-  - `BiEnumBiMap<K:Enum,V:Enum>` / `MutableBiEnumBiMap<K:Enum,V:Enum>` — both directions enum-backed; `inverse` is `EnumBiMap<V,K>`
-  - `EnumSortedBiMap<K:Enum,V>` / `MutableEnumSortedBiMap<K:Enum,V>` — enum keys, sorted values; `inverse` is `SortedEnumBiMap<V,K>`
-  - `SortedEnumBiMap<K,V:Enum>` / `MutableSortedEnumBiMap<K,V:Enum>` — sorted keys, enum values; `inverse` is `EnumSortedBiMap<V,K>` (mutual inverse of `EnumSortedBiMap`)
+- **SortedBiMap** (`SortedBiMap<K,V>`, `MutableSortedBiMap<K,V>`) — key side comparator-ordered, backed by a red-black tree; `inverse` is a plain `BiMap<V,K>`; factory functions in `SortedBiMaps.kt`
+- **BiSortedBiMap** (`BiSortedBiMap<K,V>`, `MutableBiSortedBiMap<K,V>`) — both directions comparator-ordered, each backed by a red-black tree; `inverse` is a `SortedBiMap<V,K>`; factory functions in `BiSortedBiMaps.kt`
+- **BiEnumBiMap** (`BiEnumBiMap<K:Enum,V:Enum>`, `MutableBiEnumBiMap<K:Enum,V:Enum>`) — both directions ordinal-array-backed; iterates keys in ordinal order; `inverse` is an `EnumBiMap<V,K>`; factory functions in `BiEnumBiMaps.kt`
+- **EnumSortedBiMap** (`EnumSortedBiMap<K:Enum,V>`, `MutableEnumSortedBiMap<K:Enum,V>`) — enum-backed keys (ordinal order) and comparator-sorted values; `inverse` is a `SortedEnumBiMap<V,K>`; factory functions in `EnumSortedBiMaps.kt`
+- **SortedEnumBiMap** (`SortedEnumBiMap<K,V:Enum>`, `MutableSortedEnumBiMap<K,V:Enum>`) — comparator-sorted keys and enum-backed values; `inverse` is an `EnumSortedBiMap<V,K>` (mutual inverse pair with `EnumSortedBiMap`); factory functions in `EnumSortedBiMaps.kt`
 
 ### Floating-Point Representations (`fp`)
 
