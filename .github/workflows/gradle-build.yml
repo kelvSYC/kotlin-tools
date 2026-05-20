@@ -38,6 +38,10 @@ jobs:
           build-scan-terms-of-use-agree: "yes"
       - name: Clean stale Node.js Gradle cache
         run: rm -rf ~/.gradle/nodejs
+      - name: Setup Node.js for Kotlin/JS targets
+        run: |
+          ./gradlew :dice-core:kotlinNodeJsSetup
+          find ~/.gradle/nodejs -name "node" -type f -exec chmod +x {} \;
       - name: Build
         run: ./gradlew --info --stacktrace :build
       - name: Upload KDoc
