@@ -6,8 +6,6 @@ import kotlin.enums.EnumEntries
  * An [EnumBiMap] where both the key side and the value side are enum-backed.
  *
  * Because values are an enum type, the [inverse] is itself an [EnumBiMap].
- *
- * *Not yet implemented — no backing implementation or factory functions exist.*
  */
 interface BiEnumBiMap<K : Enum<K>, V : Enum<V>> : EnumBiMap<K, V> {
     val valueEnumEntries: EnumEntries<V>

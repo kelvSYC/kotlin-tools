@@ -5,7 +5,7 @@ import com.kelvsyc.kotlin.core.collections.MutableEnumBiMap
 import kotlin.enums.EnumEntries
 
 @PublishedApi
-internal class ArrayEnumBiMap<K : Enum<K>, V> private constructor(
+internal class ArrayEnumBiMap<K : Enum<K>, V> internal constructor(
     override val enumEntries: EnumEntries<K>,
     private val inner: FlexBiMap<K, V>,
 ) : MutableEnumBiMap<K, V>, MutableBiMap<K, V> by inner {

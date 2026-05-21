@@ -5,8 +5,6 @@ package com.kelvsyc.kotlin.core.collections
  *
  * The inverse has sorted keys (original values) and enum-backed values (original keys), so
  * [inverse] is typed as [SortedEnumBiMap]. These two interfaces are mutual inverses.
- *
- * *Not yet implemented — no backing implementation or factory functions exist.*
  */
 interface EnumSortedBiMap<K : Enum<K>, V> : EnumBiMap<K, V> {
     val valueComparator: Comparator<in V>

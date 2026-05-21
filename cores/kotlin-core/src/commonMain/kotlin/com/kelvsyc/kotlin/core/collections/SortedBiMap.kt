@@ -5,8 +5,6 @@ package com.kelvsyc.kotlin.core.collections
  *
  * The value side carries no ordering constraint; the [inverse] is therefore a plain [BiMap].
  * For a BiMap where both directions are comparator-ordered, see [BiSortedBiMap].
- *
- * *Not yet implemented — no backing implementation or factory functions exist.*
  */
 interface SortedBiMap<K, V> : BiMap<K, V> {
     val comparator: Comparator<in K>
