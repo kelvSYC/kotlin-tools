@@ -3,7 +3,7 @@ package com.kelvsyc.internal.kotlin.core.collections
 import com.kelvsyc.kotlin.core.collections.MutableBiMap
 
 @PublishedApi
-internal class FlexBiMap<K, V>(
+internal open class FlexBiMap<K, V>(
     private val fwd: MapStore<K, V>,
     private val bwd: MapStore<V, K>,
 ) : MutableBiMap<K, V> {
@@ -60,9 +60,9 @@ internal class FlexBiMap<K, V>(
 
     // ── Views — fields, not getters, to avoid repeated allocation ─────────────
 
-    override val entries: MutableSet<MutableMap.MutableEntry<K, V>> = EntrySet()
-    override val keys: MutableSet<K> = KeySet()
-    override val values: MutableCollection<V> = ValueCollection()
+    open override val entries: MutableSet<MutableMap.MutableEntry<K, V>> = EntrySet()
+    open override val keys: MutableSet<K> = KeySet()
+    open override val values: MutableCollection<V> = ValueCollection()
 
     // ── equals / hashCode / toString ──────────────────────────────────────────
 
