@@ -10,20 +10,15 @@ import kotlin.enums.EnumEntries
 internal class SortedEnumBiMapImpl<K, V : Enum<V>> internal constructor(
     override val comparator: Comparator<in K>,
     override val valueEnumEntries: EnumEntries<V>,
-    private val sortedFwd: NavigableMapStore<K, V>,
+    private val sortedFwd: TreeMapStore<K, V>,
     private val enumBwd: ArrayMapStore<V, K>,
 ) : FlexBiMap<K, V>(sortedFwd, enumBwd), MutableSortedEnumBiMap<K, V> {
 
     override val inverse: MutableEnumSortedBiMap<V, K> by lazy {
-        // TODO(bimap-inverse): Share live stores for true live inverse view.
-        // Currently, we create a snapshot to avoid complex type casting issues.
-        val result = EnumSortedBiMapImpl<V, K>(valueEnumEntries, comparator)
-        val iter = sortedFwd.entryIterator()
-        while (iter.hasNext()) {
-            val e = iter.next()
-            result.put(e.value, e.key)
-        }
-        result
+        // Share the same live stores with the inverse by swapping them.
+        // sortedFwd (TreeMapStore<K,V>) becomes bwd for the inverse (storing K→V mappings).
+        // enumBwd (ArrayMapStore<V,K>) becomes fwd for the inverse (storing V→K mappings).
+        EnumSortedBiMapImpl(valueEnumEntries, comparator, FlexBiMap(enumBwd, sortedFwd), sortedFwd, enumBwd)
     }
 
     // ── SortedSet keys view ───────────────────────────────────────────────────
