@@ -16,9 +16,9 @@ internal class SortedEnumBiMapImpl<K, V : Enum<V>> internal constructor(
 
     override val inverse: MutableEnumSortedBiMap<V, K> by lazy {
         // Share the same live stores with the inverse by swapping them.
-        // sortedFwd (TreeMapStore<K,V>) becomes bwd for the inverse (storing K→V mappings).
-        // enumBwd (ArrayMapStore<V,K>) becomes fwd for the inverse (storing V→K mappings).
-        EnumSortedBiMapImpl(valueEnumEntries, comparator, FlexBiMap(enumBwd, sortedFwd), sortedFwd, enumBwd)
+        // enumBwd (ArrayMapStore<V,K>) becomes enumFwd for the inverse.
+        // sortedFwd (TreeMapStore<K,V>) becomes sortedBwd for the inverse.
+        EnumSortedBiMapImpl(valueEnumEntries, comparator, enumBwd, sortedFwd)
     }
 
     // ── SortedSet keys view ───────────────────────────────────────────────────
