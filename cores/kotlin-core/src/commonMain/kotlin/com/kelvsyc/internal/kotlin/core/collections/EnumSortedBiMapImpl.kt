@@ -16,8 +16,9 @@ internal class EnumSortedBiMapImpl<K : Enum<K>, V> internal constructor(
 ) : MutableEnumSortedBiMap<K, V>, MutableBiMap<K, V> by inner {
 
     override val inverse: MutableSortedEnumBiMap<V, K> by lazy {
-        // bwd (TreeMapStore<V,K>) becomes fwd in the inverse; fwd (ArrayMapStore<K,V>) becomes bwd.
-        SortedEnumBiMapImpl(valueComparator, enumEntries, FlexBiMap(bwd, fwd), fwd, bwd)
+        // bwd (TreeMapStore<V,K>) becomes sortedFwd of the inverse;
+        // fwd (ArrayMapStore<K,V>) becomes enumBwd of the inverse.
+        SortedEnumBiMapImpl(valueComparator, enumEntries, bwd, fwd)
     }
 
     override fun equals(other: Any?): Boolean = inner.equals(other)
