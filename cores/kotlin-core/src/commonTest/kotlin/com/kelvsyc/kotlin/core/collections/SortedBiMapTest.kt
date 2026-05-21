@@ -7,6 +7,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 class SortedBiMapTest : FunSpec({
 
@@ -205,6 +206,113 @@ class SortedBiMapTest : FunSpec({
             val bm = sortedBiMapOf(alpha, "a" to 1, "b" to 2)
             val rm = mapOf("a" to 1, "b" to 2)
             bm.hashCode() shouldBe rm.hashCode()
+        }
+    }
+
+    context("navigable key methods") {
+        val m = sortedBiMapOf(alpha, "a" to 1, "b" to 2, "c" to 3, "d" to 4)
+
+        test("firstKey returns least key") {
+            m.firstKey() shouldBe "a"
+        }
+
+        test("lastKey returns greatest key") {
+            m.lastKey() shouldBe "d"
+        }
+
+        test("firstKeyOrNull returns null on empty map") {
+            sortedBiMapOf<String, Int>(alpha).firstKeyOrNull().shouldBeNull()
+        }
+
+        test("lastKeyOrNull returns null on empty map") {
+            sortedBiMapOf<String, Int>(alpha).lastKeyOrNull().shouldBeNull()
+        }
+
+        test("floorKey returns greatest key <= query") {
+            m.floorKey("b") shouldBe "b"
+            m.floorKey("bb") shouldBe "b"
+        }
+
+        test("ceilingKey returns least key >= query") {
+            m.ceilingKey("b") shouldBe "b"
+            m.ceilingKey("aa") shouldBe "b"
+        }
+
+        test("lowerKey returns greatest key strictly < query") {
+            m.lowerKey("b") shouldBe "a"
+            m.lowerKey("a").shouldBeNull()
+        }
+
+        test("higherKey returns least key strictly > query") {
+            m.higherKey("c") shouldBe "d"
+            m.higherKey("d").shouldBeNull()
+        }
+
+        test("keys is a SortedSet with the declared comparator") {
+            m.keys.shouldBeInstanceOf<SortedSet<String>>()
+            m.keys.toList() shouldBe listOf("a", "b", "c", "d")
+        }
+
+        test("descendingKeySet returns keys in reverse order") {
+            m.descendingKeySet().toList() shouldBe listOf("d", "c", "b", "a")
+        }
+    }
+
+    context("range views") {
+        val m = sortedBiMapOf(alpha, "a" to 1, "b" to 2, "c" to 3, "d" to 4)
+
+        test("headMap exclusive returns entries with key < bound") {
+            val h = m.headMap("c", false)
+            h.keys.toList() shouldBe listOf("a", "b")
+            h.inverse[1] shouldBe "a"
+        }
+
+        test("headMap inclusive returns entries with key <= bound") {
+            val h = m.headMap("c", true)
+            h.keys.toList() shouldBe listOf("a", "b", "c")
+        }
+
+        test("tailMap exclusive returns entries with key > bound") {
+            val t = m.tailMap("b", false)
+            t.keys.toList() shouldBe listOf("c", "d")
+        }
+
+        test("tailMap inclusive returns entries with key >= bound") {
+            val t = m.tailMap("b", true)
+            t.keys.toList() shouldBe listOf("b", "c", "d")
+        }
+
+        test("subMap returns entries within [from, to)") {
+            val s = m.subMap("b", true, "d", false)
+            s.keys.toList() shouldBe listOf("b", "c")
+        }
+
+        test("subMap inclusive both bounds") {
+            val s = m.subMap("b", true, "c", true)
+            s.keys.toList() shouldBe listOf("b", "c")
+            s.inverse[2] shouldBe "b"
+            s.inverse[3] shouldBe "c"
+        }
+
+        test("descendingMap returns entries in reverse key order") {
+            val d = m.descendingMap()
+            d.keys.toList() shouldBe listOf("d", "c", "b", "a")
+        }
+
+        test("range view is a snapshot — mutations to original not reflected") {
+            val mut = mutableSortedBiMapOf(alpha, "a" to 1, "b" to 2, "c" to 3)
+            val snap = mut.headMap("b", true)
+            mut["d"] = 4
+            snap.containsKey("d").shouldBeFalse()
+        }
+
+        test("range view is itself a SortedBiMap") {
+            m.headMap("b", true).shouldBeInstanceOf<SortedBiMap<String, Int>>()
+        }
+
+        test("range view inverse is a BiMap") {
+            val h = m.headMap("b", true)
+            h.inverse.shouldBeInstanceOf<BiMap<Int, String>>()
         }
     }
 })
