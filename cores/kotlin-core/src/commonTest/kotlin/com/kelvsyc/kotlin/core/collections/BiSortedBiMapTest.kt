@@ -7,6 +7,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 class BiSortedBiMapTest : FunSpec({
 
@@ -131,6 +132,46 @@ class BiSortedBiMapTest : FunSpec({
 
         test("not equal when different values") {
             biSortedBiMapOf(alpha, numeric, "a" to 1) shouldNotBe biSortedBiMapOf(alpha, numeric, "a" to 2)
+        }
+    }
+
+    context("navigable key methods") {
+        val m = biSortedBiMapOf(alpha, numeric, "a" to 10, "b" to 20, "c" to 30)
+
+        test("firstKey and lastKey") {
+            m.firstKey() shouldBe "a"
+            m.lastKey() shouldBe "c"
+        }
+
+        test("floorKey and ceilingKey") {
+            m.floorKey("b") shouldBe "b"
+            m.ceilingKey("aa") shouldBe "b"
+        }
+
+        test("lowerKey and higherKey") {
+            m.lowerKey("b") shouldBe "a"
+            m.higherKey("b") shouldBe "c"
+        }
+
+        test("keys is a SortedSet in comparator order") {
+            m.keys.shouldBeInstanceOf<SortedSet<String>>()
+            m.keys.toList() shouldBe listOf("a", "b", "c")
+        }
+    }
+
+    context("range views") {
+        val m = biSortedBiMapOf(alpha, numeric, "a" to 10, "b" to 20, "c" to 30, "d" to 40)
+
+        test("headMap returns SortedBiMap snapshot") {
+            val h = m.headMap("c", false)
+            h.keys.toList() shouldBe listOf("a", "b")
+            h.shouldBeInstanceOf<SortedBiMap<String, Int>>()
+        }
+
+        test("inverse of headMap is a live-inverse BiMap") {
+            val h = m.headMap("b", true)
+            h.inverse[10] shouldBe "a"
+            h.inverse[20] shouldBe "b"
         }
     }
 })
