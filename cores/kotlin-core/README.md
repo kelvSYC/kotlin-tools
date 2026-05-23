@@ -1,7 +1,7 @@
 # kotlin-core
 
 Core numeric types, collection extensions, and trait-based abstractions for Kotlin Multiplatform
-(JVM and JS targets).
+(JVM, JS, and Native targets).
 
 ## Major Areas
 
@@ -135,10 +135,12 @@ sub-interface of `FloatingPointArithmetic<DoubleDouble>` — via
 `FloatingPointRemainder.floatIeee754`) and a truncating remainder matching Kotlin's `%` operator
 (e.g. `FloatingPointRemainder.floatTruncating`).
 
-³ On JVM, delegates to `java.lang.Math.fma` (hardware FMA). On JS, uses the Boldo-Melquiond
-software emulation backed by strict `binary32` arithmetic (see
-[Kotlin/JS platform notes](#kotlinjs-platform-notes) below). The software emulation cannot recover
-a finite result when `a × b` overflows to infinity.
+³ On JVM, delegates to `java.lang.Math.fma` (hardware FMA). On Native (macOS ARM64, Windows x64),
+delegates to `platform.posix.fma` / `platform.posix.fmaf` (hardware FMA). On Native (Linux x64),
+uses Boldo-Melquiond software emulation backed by hardware `binary32` arithmetic (`platform.posix.fma`
+is excluded from the Linux platform bindings). On JS, uses the Boldo-Melquiond software emulation
+backed by strict `binary32` arithmetic (see [Kotlin/JS platform notes](#kotlinjs-platform-notes)
+below). The software emulation cannot recover a finite result when `a × b` overflows to infinity.
 
 #### Decimal floating-point
 
@@ -173,9 +175,9 @@ sense for floating-point types with an exact error representation.
 | `DoubleBinaryFloatingPointArithmetic<F, T>` | — | ✓ ⁷ | `TwoProduct<T>`, `TwoSum<T>`, optionally `TwoDiv<T>` |
 
 ⁵ The `Float` companion instances (`TwoSum.float`, `TwoProduct.float`, `TwoDiv.float`) are
-`expect`/`actual` declarations. On JVM they use `FloatingPointArithmetic.float` (native `binary32`
-hardware). On JS they use strict `binary32` arithmetic that round-trips each result through
-`Float.toRawBits()` and `Float.fromBits()` to force correct rounding. See
+`expect`/`actual` declarations. On JVM and Native they use `FloatingPointArithmetic.float` (native
+`binary32` hardware). On JS they use strict `binary32` arithmetic that round-trips each result
+through `Float.toRawBits()` and `Float.fromBits()` to force correct rounding. See
 [Kotlin/JS platform notes](#kotlinjs-platform-notes) below.
 
 ⁶ The companion instances (`TwoProduct.float`, `TwoProduct.double`) use Veltkamp-Dekker splitting,
@@ -273,7 +275,7 @@ satisfied by every type that has a `SignedIntegerArithmetic` instance, and addit
 
 ### Platform Utilities
 
-- **`Pid`** — type-safe wrapper around a process ID (`Long`); `currentPid()` returns the running process's PID. On JVM: backed by `ProcessHandle.pid()`; `toProcessHandle()`, `ProcessHandle.pidKt`, and `Process.pidKt` are also available. On JS (Node.js): backed by `process.pid`.
+- **`Pid`** — type-safe wrapper around a process ID (`Long`); `currentPid()` returns the running process's PID. On JVM: backed by `ProcessHandle.pid()`; `toProcessHandle()`, `ProcessHandle.pidKt`, and `Process.pidKt` are also available. On JS (Node.js): backed by `process.pid`. On Native (Linux x64, macOS ARM64): backed by POSIX `getpid()`. On Native (Windows x64): backed by `GetCurrentProcessId()`.
 
 ### JVM Utilities
 
@@ -312,12 +314,17 @@ that forces correct rounding. On Kotlin/JS, this is provided by an internal
 This strict arithmetic is **not** exposed as a public API. Instead, the standard companion
 instances that require exact `binary32` rounding are wired to it automatically:
 
-| Instance | JVM backing | JS backing |
-|---|---|---|
-| `TwoSum.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (`Math.fround`) |
-| `TwoProduct.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (`Math.fround`) |
-| `TwoDiv.float` | `FloatingPointArithmetic.float` + hardware FMA | `strictFloatArithmetic` + emulated FMA |
-| `FusedMultiplyAdd.float` | `java.lang.Math.fma` (hardware) | Boldo-Melquiond via `strictFloatArithmetic` |
+| Instance | JVM backing | JS backing | Native backing |
+|---|---|---|---|
+| `TwoSum.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (`Math.fround`) | `FloatingPointArithmetic.float` (native) |
+| `TwoProduct.float` | `FloatingPointArithmetic.float` (native) | `strictFloatArithmetic` (`Math.fround`) | `FloatingPointArithmetic.float` (native) |
+| `TwoDiv.float` | `FloatingPointArithmetic.float` + hardware FMA | `strictFloatArithmetic` + emulated FMA | `FloatingPointArithmetic.float` + FMA ¹¹ |
+| `FusedMultiplyAdd.float` | `java.lang.Math.fma` (hardware) | Boldo-Melquiond via `strictFloatArithmetic` | `platform.posix.fmaf` (macOS/Win) or Boldo-Melquiond (Linux) ¹¹ |
+
+¹¹ On Linux x64, `platform.posix.fma`/`fmaf` are excluded from the platform bindings (GCC built-ins
+not accessible via cinterop). The Boldo-Melquiond emulation is used instead, backed by hardware
+`binary32` arithmetic. On macOS ARM64 and Windows x64, hardware FMA is available via
+`platform.posix.fma`/`fmaf`.
 
 Callers using these instances do not need to account for the platform difference. The `Math.fround`
 call is a no-op on JVM (the hardware already operates in `binary32`) and necessary on JS.
@@ -380,3 +387,32 @@ Widening extension functions (no range check needed):
 `Pid` and `currentPid()` are available on JS (Node.js). `currentPid()` reads `process.pid` and
 widens the result from the native JS integer to `Long`. The JVM-only members (`toProcessHandle()`,
 `ProcessHandle.pidKt`, `Process.pidKt`) are not available on JS.
+
+## Kotlin/Native platform notes
+
+### `Float` is a true `binary32` on Kotlin/Native
+
+Unlike Kotlin/JS, Kotlin/Native targets have genuine hardware 32-bit floating-point arithmetic.
+`FloatingPointArithmetic.float` and the `Float`-based companion instances (`TwoSum.float`,
+`TwoProduct.float`, `TwoDiv.float`) behave identically to their JVM counterparts.
+
+### `FusedMultiplyAdd`, `FloatingPointScalb`, and `FloatingPointRemainder`
+
+These operations call into the C99 math library (`libm`) via Kotlin/Native's C interop. Availability
+depends on the target's platform bindings:
+
+| Operation | Linux x64 | macOS ARM64 | Windows x64 |
+|---|---|---|---|
+| `fma` / `fmaf` | Emulated (Boldo-Melquiond) | `platform.posix.fma` / `fmaf` | `platform.posix.fma` / `fmaf` |
+| `scalbn` / `scalbnf` | Emulated | `platform.posix.scalbn` / `scalbnf` | `platform.posix.scalbn` / `scalbnf` |
+| `remainder` / `remainderf` | Emulated | `platform.posix.remainder` / `remainderf` | `platform.posix.remainder` / `remainderf` |
+
+On Linux x64, `platform.posix` excludes `fma`, `scalbn`, and `remainder` because GCC implements
+them as built-ins or inline functions that the Kotlin/Native cinterop tool cannot bind to. The
+emulated fallbacks produce correct results but without hardware FMA performance.
+
+### `Pid` and `currentPid()`
+
+`currentPid()` uses POSIX `getpid()` on Linux x64 and macOS ARM64, and `GetCurrentProcessId()`
+on Windows x64. The JVM-only members (`toProcessHandle()`, `ProcessHandle.pidKt`, `Process.pidKt`)
+are not available on Native.

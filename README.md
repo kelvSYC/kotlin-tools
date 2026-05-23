@@ -6,7 +6,7 @@ A composite build of Kotlin Multiplatform libraries, published to GitHub Package
 
 | Library | Targets | Description |
 |---|---|---|
-| `kotlin-core` | JVM, JS | Core utilities: property composition and converters |
+| `kotlin-core` | JVM, JS, Native | Core utilities: property composition and converters |
 | `lodash-extensions` | JS | Lodash extensions: function decorators and string utilities |
 | `luxon-extensions` | JS | Luxon date/time extensions: Kotlin/kotlinx-datetime interop |
 | `decimal-extensions` | JS | Decimal.js extensions: arbitrary-precision decimal arithmetic |
