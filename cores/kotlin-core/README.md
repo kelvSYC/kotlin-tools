@@ -63,6 +63,8 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointRounding<T>` — floor and ceiling (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FloatingPointTrigonometry<T>` — circular and hyperbolic trigonometric functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` instances widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
+- `FloatingPointExpLog<T>` — exponential and logarithmic functions (`exp`, `expm1`, `ln`, `ln1p`, `log2`, `log10`, `pow`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
+- `FloatingPointExp2<T>` — 2^x with Cody-Waite range reduction; instances for `BFloat16`, `Float16`, `Float`, `Double`. On macOS arm64 and Windows x64 delegates to `platform.posix.exp2`/`exp2f` (≤ 1 ULP); on JVM, JS, and Linux x64 uses Cody-Waite emulation (≤ 2 ULP). No `DoubleDouble` instance.
 - `FloatingPointSinCos<T>` — atomic joint sine/cosine: `sincos` returns `(sin(x), cos(x))` without a redundant argument reduction pass. Modelled after `FusedMultiplyAdd`: instances only where the platform provides a native joint operation. Instances for `Float` and `Double` on macOS arm64 and Linux x64, via a custom cinterop targeting `<math.h>`; absent on JVM, JS, and Windows.
 - `FusedMultiplyAdd<T>` — fused multiply-add with accurate rounding
 - Sub-interfaces: `Binary16<T>`, `Binary32<T>`, `Binary64<T>` — format-specific specializations (e.g. `Float16` implements `Binary16<Float16>` via its companion object)
@@ -124,6 +126,8 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointTrigonometry<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointExpLog<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointExp2<T>` | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | — |
 | `FloatingPointSinCos<T>` | — | — | ✓ ¹² | ✓ ¹² | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointScalb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -150,6 +154,12 @@ below). The software emulation cannot recover a finite result when `a × b` over
 `<math.h>`. `sincos`/`sincosf` are BSD/GNU extensions absent from `platform.posix` and
 `platform.darwin`; on Linux the cinterop passes `-D_GNU_SOURCE` to expose them. No instance on
 JVM, JS, or Windows (mingwX64).
+
+¹³ On macOS ARM64 and Windows x64, delegates to `platform.posix.exp2` / `platform.posix.exp2f`
+(≤ 1 ULP). On JVM, JS, and Linux x64, uses Cody-Waite range reduction:
+`exp2(x) = scalbn(exp((x − round(x)) × ln 2), round(x))` (≤ 2 ULP for all finite normal inputs).
+The naive alternative `exp(x × ln 2)` would produce up to ~176 ULP error for `Float` and
+~1418 ULP for `Double`. `Float16`/`BFloat16` instances widen to `Float` and narrow back.
 
 #### Decimal floating-point
 
@@ -415,6 +425,7 @@ depends on the target's platform bindings:
 | `fma` / `fmaf` | Emulated (Boldo-Melquiond) | `platform.posix.fma` / `fmaf` | `platform.posix.fma` / `fmaf` |
 | `scalbn` / `scalbnf` | Emulated | `platform.posix.scalbn` / `scalbnf` | `platform.posix.scalbn` / `scalbnf` |
 | `remainder` / `remainderf` | Emulated | `platform.posix.remainder` / `remainderf` | `platform.posix.remainder` / `remainderf` |
+| `exp2` / `exp2f` | Emulated (Cody-Waite) | `platform.posix.exp2` / `exp2f` | `platform.posix.exp2` / `exp2f` |
 
 On Linux x64, `platform.posix` excludes `fma`, `scalbn`, and `remainder` because GCC implements
 them as built-ins or inline functions that the Kotlin/Native cinterop tool cannot bind to. The
