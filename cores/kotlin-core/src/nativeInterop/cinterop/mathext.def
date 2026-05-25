@@ -1,0 +1,3 @@
+headers = math.h
+compilerOpts.linux = -D_GNU_SOURCE
+linkerOpts.linux = -lm

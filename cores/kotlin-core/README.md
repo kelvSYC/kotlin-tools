@@ -62,6 +62,8 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointClassification<T>` — NaN / infinity detection
 - `FloatingPointRounding<T>` — floor and ceiling (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
+- `FloatingPointTrigonometry<T>` — circular and hyperbolic trigonometric functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` instances widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
+- `FloatingPointSinCos<T>` — atomic joint sine/cosine: `sincos` returns `(sin(x), cos(x))` without a redundant argument reduction pass. Modelled after `FusedMultiplyAdd`: instances only where the platform provides a native joint operation. Instances for `Float` and `Double` on macOS arm64 and Linux x64, via a custom cinterop targeting `<math.h>`; absent on JVM, JS, and Windows.
 - `FusedMultiplyAdd<T>` — fused multiply-add with accurate rounding
 - Sub-interfaces: `Binary16<T>`, `Binary32<T>`, `Binary64<T>` — format-specific specializations (e.g. `Float16` implements `Binary16<Float16>` via its companion object)
 
@@ -121,6 +123,8 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | ✓ ¹ |
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointTrigonometry<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointSinCos<T>` | — | — | ✓ ¹² | ✓ ¹² | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointScalb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointRemainder<T>` | ✓ ² | ✓ ² | ✓ ² | ✓ ² | — |
@@ -141,6 +145,11 @@ uses Boldo-Melquiond software emulation backed by hardware `binary32` arithmetic
 is excluded from the Linux platform bindings). On JS, uses the Boldo-Melquiond software emulation
 backed by strict `binary32` arithmetic (see [Kotlin/JS platform notes](#kotlinjs-platform-notes)
 below). The software emulation cannot recover a finite result when `a × b` overflows to infinity.
+
+¹² Available on Native **macOS arm64** and **Linux x64** only, via a custom cinterop targeting
+`<math.h>`. `sincos`/`sincosf` are BSD/GNU extensions absent from `platform.posix` and
+`platform.darwin`; on Linux the cinterop passes `-D_GNU_SOURCE` to expose them. No instance on
+JVM, JS, or Windows (mingwX64).
 
 #### Decimal floating-point
 
