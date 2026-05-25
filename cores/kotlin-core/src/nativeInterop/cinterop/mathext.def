@@ -1,0 +1,15 @@
+headers = math.h
+linkerOpts.linux = -lm
+---
+// sincos/sincosf are guarded by feature-test macros in math.h (_DARWIN_C_SOURCE on
+// Apple, _GNU_SOURCE on Linux). Forward-declaring them here bypasses those guards;
+// the symbols exist in the system math library on macOS 10.9+ and Linux with glibc.
+extern void sincos(double, double *, double *);
+extern void sincosf(float, float *, float *);
+
+static inline void kotlin_sincos(double x, double *s, double *c) {
+    sincos(x, s, c);
+}
+static inline void kotlin_sincosf(float x, float *s, float *c) {
+    sincosf(x, s, c);
+}
