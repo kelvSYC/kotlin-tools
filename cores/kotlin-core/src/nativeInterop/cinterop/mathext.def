@@ -1,3 +1,12 @@
 headers = math.h
 compilerOpts.linux = -D_GNU_SOURCE
 linkerOpts.linux = -lm
+---
+// sincos/sincosf are declared as macros on Apple and as GNU extensions on Linux.
+// Wrapping them here gives cinterop a concrete function symbol to bind.
+static inline void kotlin_sincos(double x, double *s, double *c) {
+    sincos(x, s, c);
+}
+static inline void kotlin_sincosf(float x, float *s, float *c) {
+    sincosf(x, s, c);
+}

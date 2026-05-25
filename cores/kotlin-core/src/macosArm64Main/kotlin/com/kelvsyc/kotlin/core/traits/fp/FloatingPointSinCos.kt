@@ -6,8 +6,8 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
-import mathext.sincos as nativeSincos
-import mathext.sincosf as nativeSincosf
+import mathext.kotlin_sincos as nativeSincos
+import mathext.kotlin_sincosf as nativeSincosf
 
 private val floatInstance: FloatingPointSinCos<Float> = object : FloatingPointSinCos<Float> {
     override fun Float.sincos(): Pair<Float, Float> = memScoped {
