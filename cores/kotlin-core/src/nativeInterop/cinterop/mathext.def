@@ -1,5 +1,6 @@
 headers = math.h
 compilerOpts.linux = -D_GNU_SOURCE
+compilerOpts.osx = -D_DARWIN_C_SOURCE
 linkerOpts.linux = -lm
 ---
 // sincos/sincosf are declared as macros on Apple and as GNU extensions on Linux.
