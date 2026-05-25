@@ -231,8 +231,13 @@ Unsigned: `UByte`, `UShort`, `UInt`, `ULong`
 | `Log10<T>` | ✓ | ✓ | — | — |
 | `Primality<T>` | `Int`, `Long` | `UInt`, `ULong` (JVM) | JVM | JS |
 | `IntegerPower<T>` | `Int`, `Long` | — | JVM | JS |
+| `DivRem<T>` | `Int`, `Long` ¹¹ | — | JVM | — |
 
 ⁷ All four signed primitive types (`Byte`, `Short`, `Int`, `Long`) unless noted otherwise.
+
+¹¹ Native only (`Int` via C stdlib `div()`, `Long` via `lldiv()`); absent on JVM and JS for primitive
+types (no single-pass primitive exists). Unsigned types and `Byte`/`Short` have no instances. The
+JVM `BigInteger` instance uses `BigInteger.divideAndRemainder()`.
 
 ⁹ JS `Int` instance uses Double-promotion (exact for 32-bit values; see
 [Kotlin/JS platform notes](#kotlinjs-platform-notes)).
