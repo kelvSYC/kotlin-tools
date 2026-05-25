@@ -10,20 +10,20 @@ import mathext.kotlin_sincos as nativeSincos
 import mathext.kotlin_sincosf as nativeSincosf
 
 private val floatInstance: FloatingPointSinCos<Float> = object : FloatingPointSinCos<Float> {
-    override fun Float.sincos(): Pair<Float, Float> = memScoped {
+    override fun Float.sincos(): SinCosResult<Float> = memScoped {
         val s = alloc<FloatVar>()
         val c = alloc<FloatVar>()
         nativeSincosf(this@sincos, s.ptr, c.ptr)
-        s.value to c.value
+        SinCosResult(s.value, c.value)
     }
 }
 
 private val doubleInstance: FloatingPointSinCos<Double> = object : FloatingPointSinCos<Double> {
-    override fun Double.sincos(): Pair<Double, Double> = memScoped {
+    override fun Double.sincos(): SinCosResult<Double> = memScoped {
         val s = alloc<DoubleVar>()
         val c = alloc<DoubleVar>()
         nativeSincos(this@sincos, s.ptr, c.ptr)
-        s.value to c.value
+        SinCosResult(s.value, c.value)
     }
 }
 
