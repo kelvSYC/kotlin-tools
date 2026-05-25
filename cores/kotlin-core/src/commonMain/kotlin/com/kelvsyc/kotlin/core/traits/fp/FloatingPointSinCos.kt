@@ -30,8 +30,8 @@ interface FloatingPointSinCos<T> {
     companion object
 
     /**
-     * Returns `(sin(this), cos(this))` computed atomically. The first component is the sine and
-     * the second is the cosine, matching the convention of [kotlin.math.sin]/[kotlin.math.cos].
+     * Returns `SinCosResult(sin(this), cos(this))` computed atomically, matching the convention
+     * of [kotlin.math.sin]/[kotlin.math.cos].
      */
-    fun T.sincos(): Pair<T, T>
+    fun T.sincos(): SinCosResult<T>
 }
