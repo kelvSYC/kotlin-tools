@@ -2,6 +2,10 @@ package com.kelvsyc.kotlin.core.traits.fp
 
 import com.kelvsyc.kotlin.core.BFloat16
 import com.kelvsyc.kotlin.core.Float16
+import kotlin.math.pow
+
+private val floatPow: Float.(Float) -> Float = Float::pow
+private val doublePow: Double.(Double) -> Double = Double::pow
 
 /**
  * `FloatingPointExpLog` is a trait providing implementations of exponential and logarithmic
@@ -39,7 +43,7 @@ private val bfloat16Instance: FloatingPointExpLog<BFloat16> = object : FloatingP
     override fun BFloat16.ln1p(): BFloat16 = calculate { kotlin.math.ln1p(it) }
     override fun BFloat16.log2(): BFloat16 = calculate { kotlin.math.log2(it) }
     override fun BFloat16.log10(): BFloat16 = calculate { kotlin.math.log10(it) }
-    override fun BFloat16.pow(y: BFloat16): BFloat16 = calculate { it.pow(y.toFloat()) }
+    override fun BFloat16.pow(y: BFloat16): BFloat16 = calculate { floatPow(it, y.toFloat()) }
 }
 
 private val float16Instance: FloatingPointExpLog<Float16> = object : FloatingPointExpLog<Float16> {
@@ -49,7 +53,7 @@ private val float16Instance: FloatingPointExpLog<Float16> = object : FloatingPoi
     override fun Float16.ln1p(): Float16 = calculate { kotlin.math.ln1p(it) }
     override fun Float16.log2(): Float16 = calculate { kotlin.math.log2(it) }
     override fun Float16.log10(): Float16 = calculate { kotlin.math.log10(it) }
-    override fun Float16.pow(y: Float16): Float16 = calculate { it.pow(y.toFloat()) }
+    override fun Float16.pow(y: Float16): Float16 = calculate { floatPow(it, y.toFloat()) }
 }
 
 private val floatInstance: FloatingPointExpLog<Float> = object : FloatingPointExpLog<Float> {
@@ -59,7 +63,7 @@ private val floatInstance: FloatingPointExpLog<Float> = object : FloatingPointEx
     override fun Float.ln1p(): Float = kotlin.math.ln1p(this)
     override fun Float.log2(): Float = kotlin.math.log2(this)
     override fun Float.log10(): Float = kotlin.math.log10(this)
-    override fun Float.pow(y: Float): Float = this.pow(y)
+    override fun Float.pow(y: Float): Float = floatPow(this, y)
 }
 
 private val doubleInstance: FloatingPointExpLog<Double> = object : FloatingPointExpLog<Double> {
@@ -69,7 +73,7 @@ private val doubleInstance: FloatingPointExpLog<Double> = object : FloatingPoint
     override fun Double.ln1p(): Double = kotlin.math.ln1p(this)
     override fun Double.log2(): Double = kotlin.math.log2(this)
     override fun Double.log10(): Double = kotlin.math.log10(this)
-    override fun Double.pow(y: Double): Double = this.pow(y)
+    override fun Double.pow(y: Double): Double = doublePow(this, y)
 }
 
 val FloatingPointExpLog.Companion.bfloat16: FloatingPointExpLog<BFloat16> get() = bfloat16Instance
