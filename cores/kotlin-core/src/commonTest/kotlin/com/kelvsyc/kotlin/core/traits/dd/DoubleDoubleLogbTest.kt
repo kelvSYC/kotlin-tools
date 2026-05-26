@@ -56,6 +56,12 @@ class DoubleDoubleLogbTest : FunSpec({
                 val r = with(ops) { DoubleDouble(8.0, 0.5).logb() }
                 r.low shouldBe 0.0
             }
+
+            test("subnormal Double.MIN_VALUE returns -1074.0") {
+                val r = with(ops) { DoubleDouble(Double.MIN_VALUE, 0.0).logb() }
+                r.high shouldBe -1074.0
+                r.low shouldBe 0.0
+            }
         }
 
         context("ilogb") {
@@ -85,6 +91,10 @@ class DoubleDoubleLogbTest : FunSpec({
 
             test("4.0 with non-zero lo still returns 2") {
                 with(ops) { DoubleDouble(4.0, 1e-15).ilogb() } shouldBe 2
+            }
+
+            test("subnormal Double.MIN_VALUE returns -1074") {
+                with(ops) { DoubleDouble(Double.MIN_VALUE, 0.0).ilogb() } shouldBe -1074
             }
         }
     }

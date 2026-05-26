@@ -39,7 +39,7 @@ private val doubleDoubleInstance: FloatingPointLogb<DoubleDouble> =
                             // Subnormal number - count leading zeros in mantissa
                             val mantissa = bits and 0xFFFFFFFFFFFFL
                             if (mantissa == 0L) Int.MIN_VALUE
-                            else -1022 - (64 - mantissa.countLeadingZeroBits() - 12)
+                            else -1023 - (mantissa.countLeadingZeroBits() - 12)
                         }
                     }
                 }

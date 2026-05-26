@@ -56,6 +56,12 @@ class DdFloatingPointLogbTest : FunSpec() {
                     val r = with(ops) { DD.ofSum(8.0, 0.5).logb() }
                     r.lo() shouldBe 0.0
                 }
+
+                test("subnormal Double.MIN_VALUE returns -1074.0") {
+                    val r = with(ops) { DD.of(Double.MIN_VALUE).logb() }
+                    r.hi() shouldBe -1074.0
+                    r.lo() shouldBe 0.0
+                }
             }
 
             context("ilogb") {
@@ -85,6 +91,10 @@ class DdFloatingPointLogbTest : FunSpec() {
 
                 test("4.0 with non-zero lo still returns 2") {
                     with(ops) { DD.ofSum(4.0, 1e-15).ilogb() } shouldBe 2
+                }
+
+                test("subnormal Double.MIN_VALUE returns -1074") {
+                    with(ops) { DD.of(Double.MIN_VALUE).ilogb() } shouldBe -1074
                 }
             }
         }
