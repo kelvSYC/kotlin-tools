@@ -21,5 +21,10 @@ kotlin {
                 defFile(project.file("src/nativeInterop/cinterop/mathext.def"))
             }
         }
+        if (name == "linuxX64") {
+            compilations.getByName("main").cinterops.create("gnumath") {
+                defFile(project.file("src/nativeInterop/cinterop/gnumath.def"))
+            }
+        }
     }
 }

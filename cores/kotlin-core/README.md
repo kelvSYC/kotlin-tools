@@ -70,6 +70,8 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointTrigonometry<T>` — circular and hyperbolic trigonometric functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` instances widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExpLog<T>` — exponential and logarithmic functions (`exp`, `expm1`, `ln`, `ln1p`, `log2`, `log10`, `pow`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExp2<T>` — 2^x with Cody-Waite range reduction; instances for `BFloat16`, `Float16`, `Float`, `Double`. On macOS arm64 and Windows x64 delegates to `platform.posix.exp2`/`exp2f` (≤ 1 ULP); on JVM, JS, and Linux x64 uses Cody-Waite emulation (≤ 2 ULP). No `DoubleDouble` instance.
+- `FloatingPointExp10<T>` — 10^x with accurate Cody-Waite range reduction; instances for `BFloat16`, `Float16`, `Float`, `Double`. On Linux x64 delegates to `exp10`/`exp10f` (glibc GNU extension, ≤ 1 ULP); on all other platforms uses Cody-Waite with a Dekker-split `log10(2)` constant (≤ 2 ULP). The naive `exp(x × ln 10)` accumulates O(|x|) ULP error and is intentionally excluded. No `DoubleDouble` instance.
+- `FloatingPointIeee754ExpLog<T>` — IEEE 754-2019 / C23 recommended operations: `exp2m1` (2^x−1), `exp10m1` (10^x−1), `log2p1` (log₂(1+x)), `log10p1` (log₁₀(1+x)), all accurate near zero. Pure commonMain (no platform split). Instances for `BFloat16`, `Float16`, `Float`, `Double`. No `DoubleDouble` instance.
 - `FloatingPointSinhCosh<T>` — combined hyperbolic sine and cosine: `sinhcosh` returns `SinhCoshResult<T>(sinh, cosh)` computed from a single `exp` evaluation (or `exp(x)` + `exp(-x)` for `Double`), saving work compared to calling `sinh` and `cosh` separately. Universal commonMain implementation (no platform split required, unlike `FloatingPointSinCos`); instances for `BFloat16`, `Float16`, `Float`, and `Double`. No `DoubleDouble` instance.
 - `FloatingPointSinCos<T>` — atomic joint sine/cosine: `sincos` returns `SinCosResult<T>(sin, cos)` without a redundant argument reduction pass. Modelled after `FusedMultiplyAdd`: instances only where the platform provides a native joint operation. Instances for `Float` and `Double` on macOS arm64 and Linux x64, via a custom cinterop targeting `<math.h>`; absent on JVM, JS, and Windows.
 - `FusedMultiplyAdd<T>` — fused multiply-add with accurate rounding
@@ -138,6 +140,8 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointTrigonometry<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExpLog<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExp2<T>` | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | — |
+| `FloatingPointExp10<T>` | ✓ ¹⁴ | ✓ ¹⁴ | ✓ ¹⁴ | ✓ ¹⁴ | — |
+| `FloatingPointIeee754ExpLog<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointSinhCosh<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointSinCos<T>` | — | — | ✓ ¹² | ✓ ¹² | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -172,6 +176,13 @@ JVM, JS, or Windows (mingwX64).
 `exp2(x) = scalbn(exp((x − round(x)) × ln 2), round(x))` (≤ 2 ULP for all finite normal inputs).
 The naive alternative `exp(x × ln 2)` would produce up to ~176 ULP error for `Float` and
 ~1418 ULP for `Double`. `Float16`/`BFloat16` instances widen to `Float` and narrow back.
+
+¹⁴ On Linux x64, delegates to `exp10`/`exp10f` from glibc via a dedicated `gnumath` cinterop
+(`exp10` is a GNU extension, not part of POSIX, and absent from macOS and Windows). On all
+other platforms uses Cody-Waite with a Dekker-split `log10(2)` constant: split into a 26-bit
+high part and a low correction so that `n × log10(2)_hi` is exact, eliminating catastrophic
+cancellation (≤ 2 ULP). `Float` uses the same Cody-Waite step widened to `Double` (sufficient
+for 24-bit precision). `Float16`/`BFloat16` widen to `Float` and narrow back.
 
 #### Decimal floating-point
 
