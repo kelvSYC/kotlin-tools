@@ -1,0 +1,14 @@
+headers = math.h
+linkerOpts.linux = -lm
+---
+// exp10/exp10f are guarded by _GNU_SOURCE in math.h. Forward-declaring them here
+// bypasses that guard; the symbols exist in libm on Linux with glibc.
+extern double exp10(double);
+extern float exp10f(float);
+
+static inline double kotlin_exp10(double x) {
+    return exp10(x);
+}
+static inline float kotlin_exp10f(float x) {
+    return exp10f(x);
+}
