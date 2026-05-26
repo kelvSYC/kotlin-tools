@@ -131,7 +131,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | ✓ ¹ |
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
-| `FloatingPointLogb<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointLogb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointNextValue<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointCubeRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointHypot<T>` | ✓ | ✓ | ✓ | ✓ | — |

@@ -83,6 +83,7 @@ implementation status.
 | `FloatingPointArithmetic<T>` | ✓ | `FloatingPointArithmetic.dd` |
 | `FloatingPointSquare<T>` | ✓ | `FloatingPointSquare.dd` — delegates to `DD.multiply(this)` |
 | `FloatingPointSquareRoot<T>` | ✓ | `FloatingPointSquareRoot.dd` — delegates to `DD.sqrt()` |
+| `FloatingPointLogb<T>` | ✓ | `FloatingPointLogb.dd` — delegates `logb`/`ilogb` to `hi()` via `FloatingPointLogb.double` |
 | `FloatingPointRounding<T>` | ✓ | `FloatingPointRounding.dd` — delegates to `DD.floor()` / `DD.ceil()` |
 | `FloatingPointScalb<T>` | ✓ | `FloatingPointScalb.dd` — delegates to `DD.scalb(Int)` |
 | `IntegerPower<T>` | ✓ * | `IntegerPower.dd` — binary exponentiation via `DD.multiply()` |
