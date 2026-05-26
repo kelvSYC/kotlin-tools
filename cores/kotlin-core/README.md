@@ -92,6 +92,11 @@ Type-level abstractions defining operations for numeric types. All concrete type
 #### Complex Numbers (`traits/complex`)
 - `ComplexArithmetic<C, T>` — arithmetic operations on complex type `C` with component type `T`; defaults for `add`/`subtract`/`negate`/`conjugate`; `multiply`/`divide` remain abstract (naive vs strict are fundamentally different algorithms). Supports naive (textbook) and strict (FMA + Annex G) variants for `Complex<Float>` and `Complex<Double>`.
 - `ComplexModulus<C, T>` — modulus operations (`squaredModulus`, `modulus`) on complex type `C`
+- `ComplexArg<C, T>` — argument (phase angle) of a complex value: `arg()` in radians, `argPi()` in units of π (result in (−1, 1])
+- `ComplexExpLog<C, T>` — exponential (`exp`), natural logarithm (`ln`), and power (`pow` for scalar exponent, `powComplex` for complex exponent); factory functions `from(expLog, trig, hypot, arith)` and `from(expLog, sinCos, trig, hypot, arith)`
+- `ComplexSquareRoot<C, T>` — principal square root (`sqrt`) with numerically stable formula via `FloatingPointHypot`
+- `ComplexTrigonometry<C, T>` — forward trig (`sin`, `cos`, `tan`, `sinh`, `cosh`, `tanh`) and inverse trig (`asin`, `acos`, `atan`, `asinh`, `acosh`, `atanh`)
+- `ComplexCubeRoot<C, T>` — principal cube root (`cbrt`) via polar form with π-scaled trig for accuracy at rational multiples of π
 - `ImaginaryArithmetic<T>` — arithmetic on `Imaginary<T>` values
 
 #### Rational Numbers (`traits/rational`)
@@ -319,6 +324,34 @@ arithmetic instance: wrapping for primitives, overflow-checked or overflow-free 
 The `from(arithmetic, gcd)` factory constructs a `RationalArithmetic<Rational<T>, T>` for any
 `SignedIntegerArithmetic<T>` and matching `Gcd<T>`. For other rational types (e.g. `Fraction`,
 `BigFraction`), see the commons-numbers-extensions module.
+
+#### Complex (kotlin-core types)
+
+All instances target `Complex<Float>` and `Complex<Double>` (i.e. `C = Complex<T>`, `T = Float` or `Double`).
+
+| Instance | Type |
+|---|---|
+| `ComplexArithmetic.naiveFloat` | `ComplexArithmetic<Complex<Float>, Float>` — textbook multiply/divide |
+| `ComplexArithmetic.strictFloat` | `ComplexArithmetic<Complex<Float>, Float>` — FMA + Annex G fixup |
+| `ComplexArithmetic.naiveDouble` | `ComplexArithmetic<Complex<Double>, Double>` — textbook multiply/divide |
+| `ComplexArithmetic.strictDouble` | `ComplexArithmetic<Complex<Double>, Double>` — FMA + Annex G fixup |
+| `ComplexModulus.float` | `ComplexModulus<Complex<Float>, Float>` |
+| `ComplexModulus.double` | `ComplexModulus<Complex<Double>, Double>` |
+| `ComplexArg.float` | `ComplexArg<Complex<Float>, Float>` |
+| `ComplexArg.double` | `ComplexArg<Complex<Double>, Double>` |
+| `ComplexExpLog.float` | `ComplexExpLog<Complex<Float>, Float>` — universal (separate sin/cos calls) |
+| `ComplexExpLog.double` | `ComplexExpLog<Complex<Double>, Double>` — universal (separate sin/cos calls) |
+| `ComplexSquareRoot.float` | `ComplexSquareRoot<Complex<Float>, Float>` |
+| `ComplexSquareRoot.double` | `ComplexSquareRoot<Complex<Double>, Double>` |
+| `ComplexTrigonometry.float` | `ComplexTrigonometry<Complex<Float>, Float>` |
+| `ComplexTrigonometry.double` | `ComplexTrigonometry<Complex<Double>, Double>` |
+| `ComplexCubeRoot.float` | `ComplexCubeRoot<Complex<Float>, Float>` |
+| `ComplexCubeRoot.double` | `ComplexCubeRoot<Complex<Double>, Double>` |
+
+`ComplexExpLog.Companion.from(expLog, sinCos, trig, hypot, arith)` constructs an optimised instance
+where `FloatingPointSinCos` is available (macOS ARM64, Linux x64), using a single `sincos()` call in
+`exp()` instead of separate `sin()` and `cos()` calls. The `powComplex(w: C)` method is named
+distinctly (not `pow`) to avoid a JVM type-erasure clash with `pow(y: T)`.
 
 #### Cross-cutting granular traits
 
