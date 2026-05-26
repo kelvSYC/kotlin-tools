@@ -30,118 +30,94 @@ interface FloatingPointLogb<T> {
     fun T.ilogb(): Int
 }
 
-// ── Double ────────────────────────────────────────────────────────────────────
+// ── Generic helpers ───────────────────────────────────────────────────────────
 
-private fun doubleIlogb(x: Double): Int {
-    if (x.isNaN() || x.isInfinite()) return Int.MAX_VALUE
-    if (x == 0.0) return Int.MIN_VALUE
-    val bits = x.toRawBits()
-    val biasedExp = ((bits ushr 52) and 0x7FFL).toInt()
+/**
+ * Computes `ilogb` for any IEEE interchange format using the descriptor's metadata.
+ *
+ * [getBiasedExp] and [getMantissa] extract the raw exponent and mantissa fields from a
+ * value of type [T]. The mantissa must be right-aligned in a 64-bit [Long] so that
+ * [Long.countLeadingZeroBits] gives the correct leading-zero count for subnormals.
+ */
+private fun <T> ilogbGeneric(
+    x: T,
+    descriptor: IeeeBinaryFloatingPoint<T>,
+    getBiasedExp: (T) -> Int,
+    getMantissa: (T) -> Long,
+): Int {
+    with(descriptor.classification) {
+        if (x.isNaN() || x.isInfinite()) return Int.MAX_VALUE
+        if (x.isZero()) return Int.MIN_VALUE
+    }
+    val biasedExp = getBiasedExp(x)
     return if (biasedExp != 0) {
-        biasedExp - 1023
+        biasedExp - descriptor.exponentBias
     } else {
-        // subnormal: logb = -bias - (leading zeros in the 52-bit mantissa field)
-        val mantissa = bits and 0x000FFFFFFFFFFFFFL
-        -1023 - (mantissa.countLeadingZeroBits() - 12)
+        // subnormal: logb = −bias − (leading zeros in the mantissa field)
+        // The mantissa is right-aligned in a Long, so the leading-zero count includes
+        // (Long.SIZE_BITS − mantissaBits) non-field prefix bits to subtract.
+        -descriptor.exponentBias - (getMantissa(x).countLeadingZeroBits() - (Long.SIZE_BITS - descriptor.mantissaBits))
     }
 }
 
-private fun doubleLogb(x: Double): Double = when {
-    x.isNaN() -> Double.NaN
-    x.isInfinite() -> Double.POSITIVE_INFINITY
-    x == 0.0 -> Double.NEGATIVE_INFINITY
-    else -> doubleIlogb(x).toDouble()
-}
-
-// ── Float ─────────────────────────────────────────────────────────────────────
-
-private fun floatIlogb(x: Float): Int {
-    if (x.isNaN() || x.isInfinite()) return Int.MAX_VALUE
-    if (x == 0.0f) return Int.MIN_VALUE
-    val bits = x.toRawBits()
-    val biasedExp = (bits ushr 23) and 0xFF
-    return if (biasedExp != 0) {
-        biasedExp - 127
-    } else {
-        // subnormal: logb = -bias - (leading zeros in the 23-bit mantissa field)
-        val mantissa = bits and 0x007FFFFF
-        -127 - (mantissa.countLeadingZeroBits() - 9)
+private fun <T> logbGeneric(
+    x: T,
+    descriptor: IeeeBinaryFloatingPoint<T>,
+    ilogb: (T) -> Int,
+    fromInt: (Int) -> T,
+): T {
+    with(descriptor.classification) {
+        if (x.isNaN()) return descriptor.NaN
+        if (x.isInfinite()) return descriptor.positiveInfinity
+        if (x.isZero()) return descriptor.negativeInfinity
     }
-}
-
-private fun floatLogb(x: Float): Float = when {
-    x.isNaN() -> Float.NaN
-    x.isInfinite() -> Float.POSITIVE_INFINITY
-    x == 0.0f -> Float.NEGATIVE_INFINITY
-    else -> floatIlogb(x).toFloat()
-}
-
-// ── BFloat16 ──────────────────────────────────────────────────────────────────
-
-private fun bfloat16Ilogb(x: BFloat16): Int {
-    if (x.isNaN() || x.isInfinite()) return Int.MAX_VALUE
-    if (x.toFloat() == 0.0f) return Int.MIN_VALUE
-    val bits = x.bits.toInt() and 0xFFFF
-    val biasedExp = (bits ushr 7) and 0xFF
-    return if (biasedExp != 0) {
-        biasedExp - 127
-    } else {
-        // subnormal: logb = -bias - (leading zeros in the 7-bit mantissa field)
-        val mantissa = bits and 0x7F
-        -127 - (mantissa.countLeadingZeroBits() - 25)
-    }
-}
-
-private fun bfloat16Logb(x: BFloat16): BFloat16 = when {
-    x.isNaN() -> BFloat16.NaN
-    x.isInfinite() -> BFloat16.POSITIVE_INFINITY
-    x.toFloat() == 0.0f -> BFloat16.NEGATIVE_INFINITY
-    else -> BFloat16(bfloat16Ilogb(x).toFloat())
-}
-
-// ── Float16 ───────────────────────────────────────────────────────────────────
-
-private fun float16Ilogb(x: Float16): Int {
-    if (x.isNaN() || x.isInfinite()) return Int.MAX_VALUE
-    if (x.toFloat() == 0.0f) return Int.MIN_VALUE
-    val bits = x.bits.toInt() and 0xFFFF
-    val biasedExp = (bits ushr 10) and 0x1F
-    return if (biasedExp != 0) {
-        biasedExp - 15
-    } else {
-        // subnormal: logb = -bias - (leading zeros in the 10-bit mantissa field)
-        val mantissa = bits and 0x3FF
-        -15 - (mantissa.countLeadingZeroBits() - 22)
-    }
-}
-
-private fun float16Logb(x: Float16): Float16 = when {
-    x.isNaN() -> Float16.NaN
-    x.isInfinite() -> Float16.POSITIVE_INFINITY
-    x.toFloat() == 0.0f -> Float16.NEGATIVE_INFINITY
-    else -> Float16(float16Ilogb(x).toFloat())
+    return fromInt(ilogb(x))
 }
 
 // ── Instances ─────────────────────────────────────────────────────────────────
 
 private val doubleInstance: FloatingPointLogb<Double> = object : FloatingPointLogb<Double> {
-    override fun Double.logb(): Double = doubleLogb(this)
-    override fun Double.ilogb(): Int = doubleIlogb(this)
+    private fun compute(x: Double) = ilogbGeneric(
+        x, Binary64,
+        getBiasedExp = { ((it.toRawBits() ushr Binary64.mantissaBits) and ((1L shl Binary64.exponentBits) - 1L)).toInt() },
+        getMantissa  = { it.toRawBits() and ((1L shl Binary64.mantissaBits) - 1L) },
+    )
+
+    override fun Double.ilogb(): Int = compute(this)
+    override fun Double.logb(): Double = logbGeneric(this, Binary64, ::compute) { it.toDouble() }
 }
 
 private val floatInstance: FloatingPointLogb<Float> = object : FloatingPointLogb<Float> {
-    override fun Float.logb(): Float = floatLogb(this)
-    override fun Float.ilogb(): Int = floatIlogb(this)
+    private fun compute(x: Float) = ilogbGeneric(
+        x, Binary32,
+        getBiasedExp = { (it.toRawBits() ushr Binary32.mantissaBits) and ((1 shl Binary32.exponentBits) - 1) },
+        getMantissa  = { (it.toRawBits() and ((1 shl Binary32.mantissaBits) - 1)).toLong() },
+    )
+
+    override fun Float.ilogb(): Int = compute(this)
+    override fun Float.logb(): Float = logbGeneric(this, Binary32, ::compute) { it.toFloat() }
 }
 
 private val bfloat16Instance: FloatingPointLogb<BFloat16> = object : FloatingPointLogb<BFloat16> {
-    override fun BFloat16.logb(): BFloat16 = bfloat16Logb(this)
-    override fun BFloat16.ilogb(): Int = bfloat16Ilogb(this)
+    private fun compute(x: BFloat16) = ilogbGeneric(
+        x, BFloat16,
+        getBiasedExp = { it.biasedExponent },
+        getMantissa  = { it.mantissa.toLong() },
+    )
+
+    override fun BFloat16.ilogb(): Int = compute(this)
+    override fun BFloat16.logb(): BFloat16 = logbGeneric(this, BFloat16, ::compute) { BFloat16(it.toFloat()) }
 }
 
 private val float16Instance: FloatingPointLogb<Float16> = object : FloatingPointLogb<Float16> {
-    override fun Float16.logb(): Float16 = float16Logb(this)
-    override fun Float16.ilogb(): Int = float16Ilogb(this)
+    private fun compute(x: Float16) = ilogbGeneric(
+        x, Float16,
+        getBiasedExp = { it.biasedExponent },
+        getMantissa  = { it.mantissa.toLong() },
+    )
+
+    override fun Float16.ilogb(): Int = compute(this)
+    override fun Float16.logb(): Float16 = logbGeneric(this, Float16, ::compute) { Float16(it.toFloat()) }
 }
 
 val FloatingPointLogb.Companion.double: FloatingPointLogb<Double> get() = doubleInstance
