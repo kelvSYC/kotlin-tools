@@ -58,19 +58,14 @@ private fun doubleRoundHalfDown(x: Double): Double {
     return if (x >= 0.0) kotlin.math.ceil(x - 0.5) else kotlin.math.floor(x + 0.5)
 }
 
-// Ties to even: add 2^mantissaBits to |x|, which forces the FPU to round using the
-// default (ties-to-even) rounding mode, then subtract back. Only applies when
-// |x| < 2^mantissaBits; larger values are already integral.
-private val FLOAT_ROUND_EVEN_CONST = 8388608.0f   // 2^23
+// Ties to even: add 2^52 to |x| in double precision, which forces the FPU to round using
+// the default (ties-to-even) rounding mode, then subtract back. Only applies when
+// |x| < 2^52; larger values are already integral.
+// Using double precision for both Float and Double ensures correctness on Kotlin/JS where
+// Float is backed by a 64-bit JS number (so a 2^23 float constant would not force rounding).
 private val DOUBLE_ROUND_EVEN_CONST = 4503599627370496.0  // 2^52
 
-private fun floatRoundEven(x: Float): Float {
-    if (x.isNaN() || x.isInfinite() || x == 0.0f) return x
-    val abs = kotlin.math.abs(x)
-    if (abs >= FLOAT_ROUND_EVEN_CONST) return x
-    val rounded = (abs + FLOAT_ROUND_EVEN_CONST) - FLOAT_ROUND_EVEN_CONST
-    return if (x < 0.0f) -rounded else rounded
-}
+private fun floatRoundEven(x: Float): Float = doubleRoundEven(x.toDouble()).toFloat()
 
 private fun doubleRoundEven(x: Double): Double {
     if (x.isNaN() || x.isInfinite() || x == 0.0) return x

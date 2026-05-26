@@ -10,6 +10,55 @@ class DoubleDoubleRoundingTest : FunSpec({
     context("FloatingPointRounding.Companion.doubleDouble") {
         val ops = FloatingPointRounding.doubleDouble
 
+        context("trunc") {
+            test("positive non-integer rounds toward zero") {
+                val r = with(ops) { DoubleDouble.create(1.7, 0.0).trunc() }
+                r.high shouldBe 1.0
+                r.low shouldBe 0.0
+            }
+            test("negative non-integer rounds toward zero") {
+                val r = with(ops) { DoubleDouble.create(-1.7, 0.0).trunc() }
+                r.high shouldBe -1.0
+                r.low shouldBe 0.0
+            }
+            test("integer hi, positive lo: lo has no fractional effect") {
+                // trunc(3.0 + 0.3) = trunc(3.3) = 3.0
+                val r = with(ops) { DoubleDouble.create(3.0, 0.3).trunc() }
+                r.high shouldBe 3.0
+                r.low shouldBe 0.0
+            }
+            test("integer hi, negative lo: lo carries borrow") {
+                // trunc(3.0 + (-0.3)) = trunc(2.7) = 2.0
+                val r = with(ops) { DoubleDouble.create(3.0, -0.3).trunc() }
+                r.high shouldBe 2.0
+                r.low shouldBe 0.0
+            }
+            test("NaN returns NaN") {
+                with(ops) { DoubleDouble.NaN.trunc() }.high.isNaN() shouldBe true
+            }
+        }
+
+        context("roundUp") {
+            test("positive non-integer rounds away from zero") {
+                val r = with(ops) { DoubleDouble.create(1.3, 0.0).roundUp() }
+                r.high shouldBe 2.0
+                r.low shouldBe 0.0
+            }
+            test("negative non-integer rounds away from zero") {
+                val r = with(ops) { DoubleDouble.create(-1.3, 0.0).roundUp() }
+                r.high shouldBe -2.0
+                r.low shouldBe 0.0
+            }
+            test("integer is unchanged") {
+                val r = with(ops) { DoubleDouble.create(3.0, 0.0).roundUp() }
+                r.high shouldBe 3.0
+                r.low shouldBe 0.0
+            }
+            test("NaN returns NaN") {
+                with(ops) { DoubleDouble.NaN.roundUp() }.high.isNaN() shouldBe true
+            }
+        }
+
         context("floor") {
             test("positive non-integer hi, lo ignored") {
                 // hi=1.5 is not an integer → result is (floor(1.5), 0) = (1.0, 0.0)
