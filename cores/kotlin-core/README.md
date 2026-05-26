@@ -73,6 +73,7 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointExp10<T>` — 10^x with accurate Cody-Waite range reduction; instances for `BFloat16`, `Float16`, `Float`, `Double`. On Linux x64 delegates to `exp10`/`exp10f` (glibc GNU extension, ≤ 1 ULP); on all other platforms uses Cody-Waite with a Dekker-split `log10(2)` constant (≤ 2 ULP). The naive `exp(x × ln 10)` accumulates O(|x|) ULP error and is intentionally excluded. No `DoubleDouble` instance.
 - `FloatingPointIeee754ExpLog<T>` — IEEE 754-2019 / C23 recommended operations: `exp2m1` (2^x−1), `exp10m1` (10^x−1), `log2p1` (log₂(1+x)), `log10p1` (log₁₀(1+x)), all accurate near zero. Pure commonMain (no platform split). Instances for `BFloat16`, `Float16`, `Float`, `Double`. No `DoubleDouble` instance.
 - `FloatingPointSinhCosh<T>` — combined hyperbolic sine and cosine: `sinhcosh` returns `SinhCoshResult<T>(sinh, cosh)` computed from a single `exp` evaluation (or `exp(x)` + `exp(-x)` for `Double`), saving work compared to calling `sinh` and `cosh` separately. Universal commonMain implementation (no platform split required, unlike `FloatingPointSinCos`); instances for `BFloat16`, `Float16`, `Float`, and `Double`. No `DoubleDouble` instance.
+- `FloatingPointTrigPi<T>` — π-scaled trigonometric and inverse functions: `sinPi` (sin(πx)), `cosPi` (cos(πx)), `tanPi` (tan(πx)), `asinPi` (asin(x)/π), `acosPi` (acos(x)/π), `atanPi` (atan(x)/π), `atan2Pi` (atan2(y,x)/π); instances for `BFloat16`, `Float16`, `Float`, `Double`. Exact zeros at integer inputs and exact ±1 at half-integer inputs are guaranteed. On macOS arm64 delegates to native `sinpi`/`cospi`/etc. via a Darwin-C-Source cinterop (≤ 1 ULP); on all other platforms uses exact mod-2 argument reduction with a Dekker-split π (≤ 2 ULP). Naive `sin(x × Math.PI)` is intentionally excluded. No `DoubleDouble` instance.
 - `FloatingPointSinCos<T>` — atomic joint sine/cosine: `sincos` returns `SinCosResult<T>(sin, cos)` without a redundant argument reduction pass. Modelled after `FusedMultiplyAdd`: instances only where the platform provides a native joint operation. Instances for `Float` and `Double` on macOS arm64 and Linux x64, via a custom cinterop targeting `<math.h>`; absent on JVM, JS, and Windows.
 - `FusedMultiplyAdd<T>` — fused multiply-add with accurate rounding
 - Sub-interfaces: `Binary16<T>`, `Binary32<T>`, `Binary64<T>` — format-specific specializations (e.g. `Float16` implements `Binary16<Float16>` via its companion object)
@@ -142,6 +143,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointExp2<T>` | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | — |
 | `FloatingPointExp10<T>` | ✓ ¹⁴ | ✓ ¹⁴ | ✓ ¹⁴ | ✓ ¹⁴ | — |
 | `FloatingPointIeee754ExpLog<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointTrigPi<T>` | ✓ ¹⁵ | ✓ ¹⁵ | ✓ ¹⁵ | ✓ ¹⁵ | — |
 | `FloatingPointSinhCosh<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointSinCos<T>` | — | — | ✓ ¹² | ✓ ¹² | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -183,6 +185,13 @@ other platforms uses Cody-Waite with a Dekker-split `log10(2)` constant: split i
 high part and a low correction so that `n × log10(2)_hi` is exact, eliminating catastrophic
 cancellation (≤ 2 ULP). `Float` uses the same Cody-Waite step widened to `Double` (sufficient
 for 24-bit precision). `Float16`/`BFloat16` widen to `Float` and narrow back.
+
+¹⁵ On macOS ARM64, delegates to `sinpi`/`cospi`/`tanpi`/`asinpi`/`acospi`/`atanpi`/`atan2pi`
+and their `f` float variants from the Darwin `<math.h>` extension via a `macmath` cinterop
+(≤ 1 ULP). On all other platforms (JVM, JS, Linux x64, Windows x64), uses exact mod-2 argument
+reduction: `n = floor(|x|)`, `frac = |x| − n`, then `sin(PI_HI × frac + PI_LO × frac)` where
+`(PI_HI, PI_LO)` is a Dekker-split of π (≤ 2 ULP). Integer and half-integer inputs are
+hard-returned exactly. `Float16`/`BFloat16` widen to `Float` and narrow back.
 
 #### Decimal floating-point
 
