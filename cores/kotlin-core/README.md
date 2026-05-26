@@ -62,6 +62,7 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointClassification<T>` — NaN / infinity detection
 - `FloatingPointRounding<T>` — floor and ceiling (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
+- `FloatingPointLogb<T>` — `logb` (IEEE 754 §5.3.3, returns exponent as `T`: `logb(0)=−∞`, `logb(±∞)=+∞`, sign ignored) and `ilogb` (returns exponent as `Int`: `ilogb(0)=Int.MIN_VALUE`, `ilogb(±∞/NaN)=Int.MAX_VALUE`); instances for `BFloat16`, `Float16`, `Float`, `Double`. Pure commonMain bit-pattern arithmetic, no platform split. No `DoubleDouble` instance.
 - `FloatingPointNextValue<T>` — `nextUp` and `nextDown` (IEEE 754 §5.3.1 required operations); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` delegate to their member functions; `Float`/`Double` use bit-pattern arithmetic (`toRawBits`/`fromBits`) since `Float.nextUp()` is absent from the Kotlin/JS stdlib. No `DoubleDouble` instance.
 - `FloatingPointCubeRoot<T>` — cube root (`cbrt`); defined for negative inputs; instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP). No `DoubleDouble` instance.
 - `FloatingPointHypot<T>` — hypotenuse (`sqrt(x² + y²)`) without intermediate overflow or underflow; instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP). No `DoubleDouble` instance.
@@ -129,6 +130,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | ✓ ¹ |
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointLogb<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointNextValue<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointCubeRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointHypot<T>` | ✓ | ✓ | ✓ | ✓ | — |
