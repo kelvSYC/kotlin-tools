@@ -1,0 +1,27 @@
+headers = math.h
+---
+// sinpi/cospi/etc. are Darwin-C-Source extensions in <math.h> (macOS 10.9+).
+// Forward-declaring them here bypasses the feature-test guard; the symbols are
+// present in the system math library and linked automatically on macOS.
+extern double sinpi(double);    extern float sinpif(float);
+extern double cospi(double);    extern float cospif(float);
+extern double tanpi(double);    extern float tanpif(float);
+extern double asinpi(double);   extern float asinpif(float);
+extern double acospi(double);   extern float acospif(float);
+extern double atanpi(double);   extern float atanpif(float);
+extern double atan2pi(double, double);  extern float atan2pif(float, float);
+
+static inline double kotlin_sinpi(double x)  { return sinpi(x);  }
+static inline float  kotlin_sinpif(float x)  { return sinpif(x); }
+static inline double kotlin_cospi(double x)  { return cospi(x);  }
+static inline float  kotlin_cospif(float x)  { return cospif(x); }
+static inline double kotlin_tanpi(double x)  { return tanpi(x);  }
+static inline float  kotlin_tanpif(float x)  { return tanpif(x); }
+static inline double kotlin_asinpi(double x) { return asinpi(x); }
+static inline float  kotlin_asinpif(float x) { return asinpif(x); }
+static inline double kotlin_acospi(double x) { return acospi(x); }
+static inline float  kotlin_acospif(float x) { return acospif(x); }
+static inline double kotlin_atanpi(double x) { return atanpi(x); }
+static inline float  kotlin_atanpif(float x) { return atanpif(x); }
+static inline double kotlin_atan2pi(double y, double x)  { return atan2pi(y, x);  }
+static inline float  kotlin_atan2pif(float y, float x)   { return atan2pif(y, x); }
