@@ -84,6 +84,7 @@ implementation status.
 | `FloatingPointSquare<T>` | ✓ | `FloatingPointSquare.dd` — delegates to `DD.multiply(this)` |
 | `FloatingPointSquareRoot<T>` | ✓ | `FloatingPointSquareRoot.dd` — delegates to `DD.sqrt()` |
 | `FloatingPointLogb<T>` | ✓ | `FloatingPointLogb.dd` — delegates `logb`/`ilogb` to `hi()` via inline bit-pattern arithmetic |
+| `FloatingPointCubeRoot<T>` | ✓ | `FloatingPointCubeRoot.dd` — Newton refinement: `r = cbrt(hi)`, correction `(|x|−r³)/(3r²)`, sign restored |
 | `FloatingPointRounding<T>` | ✓ | `FloatingPointRounding.dd` — delegates to `DD.floor()` / `DD.ceil()` |
 | `FloatingPointNearestRounding<T>` | ✓ | `FloatingPointNearestRounding.dd` — implements roundHalfUp / roundHalfDown / roundEven via the `ddNearestRound` helper and `DD.ofSum` re-normalisation |
 | `FloatingPointScalb<T>` | ✓ | `FloatingPointScalb.dd` — delegates to `DD.scalb(Int)` |
