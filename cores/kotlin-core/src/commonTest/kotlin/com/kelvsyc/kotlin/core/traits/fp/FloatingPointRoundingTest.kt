@@ -12,6 +12,36 @@ class FloatingPointRoundingTest : FunSpec({
     context("FloatingPointRounding.Companion.bfloat16") {
         val ops = FloatingPointRounding.bfloat16
 
+        context("trunc") {
+            test("positive non-integer rounds toward zero") {
+                with(ops) { BFloat16(1.7f).trunc() } shouldBe BFloat16(1.0f)
+            }
+            test("negative non-integer rounds toward zero") {
+                with(ops) { BFloat16(-1.7f).trunc() } shouldBe BFloat16(-1.0f)
+            }
+            test("integer is unchanged") {
+                with(ops) { BFloat16(3.0f).trunc() } shouldBe BFloat16(3.0f)
+            }
+            test("NaN returns NaN") {
+                with(ops) { BFloat16.NaN.trunc() }.isNaN() shouldBe true
+            }
+        }
+
+        context("roundUp") {
+            test("positive non-integer rounds away from zero") {
+                with(ops) { BFloat16(1.3f).roundUp() } shouldBe BFloat16(2.0f)
+            }
+            test("negative non-integer rounds away from zero") {
+                with(ops) { BFloat16(-1.3f).roundUp() } shouldBe BFloat16(-2.0f)
+            }
+            test("integer is unchanged") {
+                with(ops) { BFloat16(3.0f).roundUp() } shouldBe BFloat16(3.0f)
+            }
+            test("NaN returns NaN") {
+                with(ops) { BFloat16.NaN.roundUp() }.isNaN() shouldBe true
+            }
+        }
+
         context("floor") {
             test("positive non-integer rounds down") {
                 with(ops) { BFloat16(1.5f).floor() } shouldBe BFloat16(1.0f)
@@ -53,6 +83,36 @@ class FloatingPointRoundingTest : FunSpec({
 
     context("FloatingPointRounding.Companion.float16") {
         val ops = FloatingPointRounding.float16
+
+        context("trunc") {
+            test("positive non-integer rounds toward zero") {
+                with(ops) { Float16(1.7f).trunc() } shouldBe Float16(1.0f)
+            }
+            test("negative non-integer rounds toward zero") {
+                with(ops) { Float16(-1.7f).trunc() } shouldBe Float16(-1.0f)
+            }
+            test("integer is unchanged") {
+                with(ops) { Float16(3.0f).trunc() } shouldBe Float16(3.0f)
+            }
+            test("NaN returns NaN") {
+                with(ops) { Float16.NaN.trunc() }.isNaN() shouldBe true
+            }
+        }
+
+        context("roundUp") {
+            test("positive non-integer rounds away from zero") {
+                with(ops) { Float16(1.3f).roundUp() } shouldBe Float16(2.0f)
+            }
+            test("negative non-integer rounds away from zero") {
+                with(ops) { Float16(-1.3f).roundUp() } shouldBe Float16(-2.0f)
+            }
+            test("integer is unchanged") {
+                with(ops) { Float16(3.0f).roundUp() } shouldBe Float16(3.0f)
+            }
+            test("NaN returns NaN") {
+                with(ops) { Float16.NaN.roundUp() }.isNaN() shouldBe true
+            }
+        }
 
         context("floor") {
             test("positive non-integer rounds down") {
@@ -96,6 +156,36 @@ class FloatingPointRoundingTest : FunSpec({
     context("FloatingPointRounding.Companion.float") {
         val ops = FloatingPointRounding.float
 
+        context("trunc") {
+            test("positive non-integer rounds toward zero") {
+                with(ops) { 1.7f.trunc() } shouldBe 1.0f
+            }
+            test("negative non-integer rounds toward zero") {
+                with(ops) { (-1.7f).trunc() } shouldBe -1.0f
+            }
+            test("integer is unchanged") {
+                with(ops) { 3.0f.trunc() } shouldBe 3.0f
+            }
+            test("NaN returns NaN") {
+                with(ops) { Float.NaN.trunc() }.isNaN() shouldBe true
+            }
+        }
+
+        context("roundUp") {
+            test("positive non-integer rounds away from zero") {
+                with(ops) { 1.3f.roundUp() } shouldBe 2.0f
+            }
+            test("negative non-integer rounds away from zero") {
+                with(ops) { (-1.3f).roundUp() } shouldBe -2.0f
+            }
+            test("integer is unchanged") {
+                with(ops) { 3.0f.roundUp() } shouldBe 3.0f
+            }
+            test("NaN returns NaN") {
+                with(ops) { Float.NaN.roundUp() }.isNaN() shouldBe true
+            }
+        }
+
         context("floor") {
             test("positive non-integer rounds down") {
                 with(ops) { 1.5f.floor() } shouldBe 1.0f
@@ -137,6 +227,36 @@ class FloatingPointRoundingTest : FunSpec({
 
     context("FloatingPointRounding.Companion.double") {
         val ops = FloatingPointRounding.double
+
+        context("trunc") {
+            test("positive non-integer rounds toward zero") {
+                with(ops) { 1.7.trunc() } shouldBe 1.0
+            }
+            test("negative non-integer rounds toward zero") {
+                with(ops) { (-1.7).trunc() } shouldBe -1.0
+            }
+            test("integer is unchanged") {
+                with(ops) { 3.0.trunc() } shouldBe 3.0
+            }
+            test("NaN returns NaN") {
+                with(ops) { Double.NaN.trunc() }.isNaN() shouldBe true
+            }
+        }
+
+        context("roundUp") {
+            test("positive non-integer rounds away from zero") {
+                with(ops) { 1.3.roundUp() } shouldBe 2.0
+            }
+            test("negative non-integer rounds away from zero") {
+                with(ops) { (-1.3).roundUp() } shouldBe -2.0
+            }
+            test("integer is unchanged") {
+                with(ops) { 3.0.roundUp() } shouldBe 3.0
+            }
+            test("NaN returns NaN") {
+                with(ops) { Double.NaN.roundUp() }.isNaN() shouldBe true
+            }
+        }
 
         context("floor") {
             test("positive non-integer rounds down") {

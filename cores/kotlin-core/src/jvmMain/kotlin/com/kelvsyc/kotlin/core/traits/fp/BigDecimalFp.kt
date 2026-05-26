@@ -15,6 +15,8 @@ private val bigDecimalRoundingInstance: FloatingPointRounding<BigDecimal> =
     object : FloatingPointRounding<BigDecimal> {
         override fun BigDecimal.floor(): BigDecimal = setScale(0, RoundingMode.FLOOR)
         override fun BigDecimal.ceil(): BigDecimal = setScale(0, RoundingMode.CEILING)
+        override fun BigDecimal.trunc(): BigDecimal = setScale(0, RoundingMode.DOWN)
+        override fun BigDecimal.roundUp(): BigDecimal = setScale(0, RoundingMode.UP)
     }
 
 val FloatingPointRounding.Companion.bigDecimal: FloatingPointRounding<BigDecimal>
