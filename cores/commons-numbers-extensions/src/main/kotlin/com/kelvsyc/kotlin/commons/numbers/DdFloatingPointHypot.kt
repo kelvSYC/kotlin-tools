@@ -8,14 +8,11 @@ private object DdHypot : FloatingPointHypot<DD> {
     private val sqrt = FloatingPointSquareRoot.dd
 
     override fun DD.hypot(y: DD): DD {
-        val hx = hi()
-        val hy = y.hi()
-
-        if (hx.isInfinite() || hy.isInfinite()) {
+        if (hi().isInfinite() || y.hi().isInfinite()) {
             return DD.of(Double.POSITIVE_INFINITY)
         }
 
-        if (hx.isNaN() || hy.isNaN()) {
+        if (hi().isNaN() || y.hi().isNaN()) {
             return DD.of(Double.NaN)
         }
 
@@ -42,15 +39,7 @@ private object DdHypot : FloatingPointHypot<DD> {
 }
 
 /**
- * [FloatingPointHypot] instance for Commons Numbers [DD].
- *
- * Computes `sqrt(x² + y²)` using Knuth scaling: `ax * sqrt(1 + (ay/ax)²)` where `ax ≥ ay ≥ 0`.
- * This avoids intermediate overflow or underflow in the standard formula `sqrt(x² + y²)`.
- *
- * Special cases follow IEEE 754:
- * - `hypot(±∞, y) = +∞` (infinity dominates NaN)
- * - `hypot(x, NaN) = NaN`
- * - `hypot(x, 0) = |x|`
- * - The operation is symmetric: `hypot(x, y) == hypot(y, x)`
+ * [FloatingPointHypot] instance for Commons Numbers [DD], computing `sqrt(x² + y²)` via Knuth
+ * scaling to avoid intermediate overflow or underflow.
  */
 val FloatingPointHypot.Companion.dd: FloatingPointHypot<DD> get() = DdHypot

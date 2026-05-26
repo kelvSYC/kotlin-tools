@@ -10,14 +10,11 @@ private val doubleDoubleInstance: FloatingPointHypot<DoubleDouble> =
         private val sqrt = FloatingPointSquareRoot.doubleDouble
 
         override fun DoubleDouble.hypot(y: DoubleDouble): DoubleDouble {
-            val hx = high
-            val hy = y.high
-
-            if (hx.isInfinite() || hy.isInfinite()) {
+            if (high.isInfinite() || y.high.isInfinite()) {
                 return DoubleDouble.POSITIVE_INFINITY
             }
 
-            if (hx.isNaN() || hy.isNaN()) {
+            if (high.isNaN() || y.high.isNaN()) {
                 return DoubleDouble.NaN
             }
 
@@ -44,16 +41,8 @@ private val doubleDoubleInstance: FloatingPointHypot<DoubleDouble> =
     }
 
 /**
- * [FloatingPointHypot] instance for [DoubleDouble].
- *
- * Computes `sqrt(x² + y²)` using Knuth scaling: `ax * sqrt(1 + (ay/ax)²)` where `ax ≥ ay ≥ 0`.
- * This avoids intermediate overflow or underflow in the standard formula `sqrt(x² + y²)`.
- *
- * Special cases follow IEEE 754:
- * - `hypot(±∞, y) = +∞` (infinity dominates NaN)
- * - `hypot(x, NaN) = NaN`
- * - `hypot(x, 0) = |x|`
- * - The operation is symmetric: `hypot(x, y) == hypot(y, x)`
+ * [FloatingPointHypot] instance for [DoubleDouble], computing `sqrt(x² + y²)` via Knuth scaling
+ * to avoid intermediate overflow or underflow.
  */
 val FloatingPointHypot.Companion.doubleDouble: FloatingPointHypot<DoubleDouble>
     get() = doubleDoubleInstance
