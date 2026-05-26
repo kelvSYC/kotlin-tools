@@ -60,6 +60,7 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `IeeeBinaryFloatingPoint<T>` — IEEE 754-specific metadata (sign bits, exponent/significand widths)
 - `FloatingPointArithmetic<T>` — standard math operations (+, −, ×, ÷, sqrt, remainder, etc.)
 - `FloatingPointClassification<T>` — NaN / infinity detection
+- `FloatingPointSquareRoot<T>` — square root operation; correctly rounded following IEEE 754; instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`.
 - `FloatingPointRounding<T>` — directed rounding: `floor` (toward −∞), `ceil` (toward +∞), `trunc` (toward 0), `roundUp` (away from 0); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. JVM-only `BigDecimal` instance via `FloatingPointRounding.bigDecimal`.
 - `FloatingPointNearestRounding<T>` — nearest-integer rounding with tie-breaking: `roundHalfUp` (ties away from zero, C99 `round` / `RoundingMode.HALF_UP`), `roundHalfDown` (ties toward zero / `RoundingMode.HALF_DOWN`), `roundEven` (banker's rounding, `RoundingMode.HALF_EVEN`); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. All commonMain, no platform split.
 - `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
@@ -130,7 +131,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 |---|:---:|:---:|:---:|:---:|:---:|
 | `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | ✓ ¹ |
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointLogb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointNextValue<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointCubeRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
