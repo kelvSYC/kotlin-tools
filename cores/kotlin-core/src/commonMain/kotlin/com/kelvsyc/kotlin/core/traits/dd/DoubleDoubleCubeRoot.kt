@@ -12,18 +12,16 @@ private val doubleDoubleInstance: FloatingPointCubeRoot<DoubleDouble> =
             if (high.isInfinite()) return DoubleDouble(high, 0.0)  // ±∞ → ±∞ with lo=0
             if (high == 0.0) return this  // preserves ±0
 
-            // cbrt handles negatives: cbrt(-x) = -cbrt(x)
-            // Work on the absolute value, restore sign at the end
             val negative = high < 0.0
             val absThis = if (negative) with(arith) { this@cbrt.negate() } else this@cbrt
 
-            val r = kotlin.math.cbrt(absThis.high)  // double-precision seed
+            val r = kotlin.math.cbrt(absThis.high)
             val rDD = DoubleDouble(r, 0.0)
-            val r2 = with(arith) { rDD.multiply(rDD) }                   // r²
-            val r3 = with(arith) { r2.multiply(rDD) }                    // r³
-            val diff = with(arith) { absThis.subtract(r3) }              // |x| - r³
-            val three_r2 = with(arith) { r2.multiply(DoubleDouble(3.0, 0.0)) }  // 3r²
-            val correction = with(arith) { diff.divide(three_r2) }       // correction
+            val r2 = with(arith) { rDD.multiply(rDD) }
+            val r3 = with(arith) { r2.multiply(rDD) }
+            val diff = with(arith) { absThis.subtract(r3) }
+            val threeR2 = with(arith) { r2.multiply(DoubleDouble(3.0, 0.0)) }
+            val correction = with(arith) { diff.divide(threeR2) }
             val result = with(arith) { rDD.add(correction) }
 
             return if (negative) with(arith) { result.negate() } else result

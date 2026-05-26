@@ -1,12 +1,9 @@
 package com.kelvsyc.kotlin.commons.numbers
 
-import com.kelvsyc.kotlin.core.traits.fp.FloatingPointArithmetic
 import com.kelvsyc.kotlin.core.traits.fp.FloatingPointCubeRoot
 import org.apache.commons.numbers.core.DD
 
 private object DdCubeRoot : FloatingPointCubeRoot<DD> {
-    private val arith = FloatingPointArithmetic.dd
-
     override fun DD.cbrt(): DD {
         val hi = hi()
         if (hi.isNaN()) return DD.of(Double.NaN)
@@ -21,8 +18,8 @@ private object DdCubeRoot : FloatingPointCubeRoot<DD> {
         val r2 = rDD.multiply(rDD)
         val r3 = r2.multiply(rDD)
         val diff = absThis.subtract(r3)
-        val three_r2 = r2.multiply(DD.of(3.0))
-        val correction = diff.divide(three_r2)
+        val threeR2 = r2.multiply(DD.of(3.0))
+        val correction = diff.divide(threeR2)
         val result = rDD.add(correction)
 
         return if (negative) result.negate() else result
