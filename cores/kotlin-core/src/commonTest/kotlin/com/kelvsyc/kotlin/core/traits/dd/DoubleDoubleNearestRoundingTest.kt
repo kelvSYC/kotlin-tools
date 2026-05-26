@@ -120,6 +120,16 @@ class DoubleDoubleNearestRoundingTest : FunSpec({
             test("NaN returns NaN") {
                 with(ops) { DoubleDouble.NaN.roundHalfDown() }.high.isNaN() shouldBe true
             }
+            test("positive infinity returns positive infinity") {
+                val r = with(ops) { DoubleDouble.POSITIVE_INFINITY.roundHalfDown() }
+                r.high shouldBe Double.POSITIVE_INFINITY
+                r.low shouldBe 0.0
+            }
+            test("negative infinity returns negative infinity") {
+                val r = with(ops) { DoubleDouble.NEGATIVE_INFINITY.roundHalfDown() }
+                r.high shouldBe Double.NEGATIVE_INFINITY
+                r.low shouldBe 0.0
+            }
         }
 
         context("roundEven") {
@@ -179,6 +189,11 @@ class DoubleDoubleNearestRoundingTest : FunSpec({
             test("positive infinity returns positive infinity") {
                 val r = with(ops) { DoubleDouble.POSITIVE_INFINITY.roundEven() }
                 r.high shouldBe Double.POSITIVE_INFINITY
+                r.low shouldBe 0.0
+            }
+            test("negative infinity returns negative infinity") {
+                val r = with(ops) { DoubleDouble.NEGATIVE_INFINITY.roundEven() }
+                r.high shouldBe Double.NEGATIVE_INFINITY
                 r.low shouldBe 0.0
             }
         }

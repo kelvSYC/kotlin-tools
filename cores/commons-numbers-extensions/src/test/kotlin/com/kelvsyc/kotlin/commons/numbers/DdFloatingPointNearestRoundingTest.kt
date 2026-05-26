@@ -120,6 +120,16 @@ class DdFloatingPointNearestRoundingTest : FunSpec() {
                 test("NaN returns NaN") {
                     with(ops) { DD.of(Double.NaN).roundHalfDown() }.hi().isNaN() shouldBe true
                 }
+                test("positive infinity returns positive infinity") {
+                    val r = with(ops) { DD.of(Double.POSITIVE_INFINITY).roundHalfDown() }
+                    r.hi() shouldBe Double.POSITIVE_INFINITY
+                    r.lo() shouldBe 0.0
+                }
+                test("negative infinity returns negative infinity") {
+                    val r = with(ops) { DD.of(Double.NEGATIVE_INFINITY).roundHalfDown() }
+                    r.hi() shouldBe Double.NEGATIVE_INFINITY
+                    r.lo() shouldBe 0.0
+                }
             }
 
             context("roundEven") {
@@ -179,6 +189,11 @@ class DdFloatingPointNearestRoundingTest : FunSpec() {
                 test("positive infinity returns positive infinity") {
                     val r = with(ops) { DD.of(Double.POSITIVE_INFINITY).roundEven() }
                     r.hi() shouldBe Double.POSITIVE_INFINITY
+                    r.lo() shouldBe 0.0
+                }
+                test("negative infinity returns negative infinity") {
+                    val r = with(ops) { DD.of(Double.NEGATIVE_INFINITY).roundEven() }
+                    r.hi() shouldBe Double.NEGATIVE_INFINITY
                     r.lo() shouldBe 0.0
                 }
             }
