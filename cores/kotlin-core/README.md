@@ -61,7 +61,7 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointArithmetic<T>` — standard math operations (+, −, ×, ÷, sqrt, remainder, etc.)
 - `FloatingPointClassification<T>` — NaN / infinity detection
 - `FloatingPointRounding<T>` — directed rounding: `floor` (toward −∞), `ceil` (toward +∞), `trunc` (toward 0), `roundUp` (away from 0); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. JVM-only `BigDecimal` instance via `FloatingPointRounding.bigDecimal`.
-- `FloatingPointNearestRounding<T>` — nearest-integer rounding with tie-breaking: `roundHalfUp` (ties away from zero, C99 `round` / `RoundingMode.HALF_UP`), `roundHalfDown` (ties toward zero / `RoundingMode.HALF_DOWN`), `roundEven` (banker's rounding, `RoundingMode.HALF_EVEN`); instances for `BFloat16`, `Float16`, `Float`, `Double`. All commonMain, no platform split.
+- `FloatingPointNearestRounding<T>` — nearest-integer rounding with tie-breaking: `roundHalfUp` (ties away from zero, C99 `round` / `RoundingMode.HALF_UP`), `roundHalfDown` (ties toward zero / `RoundingMode.HALF_DOWN`), `roundEven` (banker's rounding, `RoundingMode.HALF_EVEN`); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. All commonMain, no platform split.
 - `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FloatingPointLogb<T>` — `logb` (IEEE 754 §5.3.3, returns exponent as `T`: `logb(0)=−∞`, `logb(±∞)=+∞`, sign ignored) and `ilogb` (returns exponent as `Int`: `ilogb(0)=Int.MIN_VALUE`, `ilogb(±∞/NaN)=Int.MAX_VALUE`); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. Pure commonMain bit-pattern arithmetic, no platform split.
 - `FloatingPointNextValue<T>` — `nextUp` and `nextDown` (IEEE 754 §5.3.1 required operations); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` delegate to their member functions; `Float`/`Double` use bit-pattern arithmetic (`toRawBits`/`fromBits`) since `Float.nextUp()` is absent from the Kotlin/JS stdlib. No `DoubleDouble` instance.
@@ -141,7 +141,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointSinhCosh<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointSinCos<T>` | — | — | ✓ ¹² | ✓ ¹² | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `FloatingPointNearestRounding<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointNearestRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointScalb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointRemainder<T>` | ✓ ² | ✓ ² | ✓ ² | ✓ ² | — |
 | `FusedMultiplyAdd<T>` | ✓ ³ | ✓ ³ | ✓ ³ | ✓ ³ | — |

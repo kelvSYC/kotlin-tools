@@ -85,6 +85,7 @@ implementation status.
 | `FloatingPointSquareRoot<T>` | ✓ | `FloatingPointSquareRoot.dd` — delegates to `DD.sqrt()` |
 | `FloatingPointLogb<T>` | ✓ | `FloatingPointLogb.dd` — delegates `logb`/`ilogb` to `hi()` via inline bit-pattern arithmetic |
 | `FloatingPointRounding<T>` | ✓ | `FloatingPointRounding.dd` — delegates to `DD.floor()` / `DD.ceil()` |
+| `FloatingPointNearestRounding<T>` | ✓ | `FloatingPointNearestRounding.dd` — delegates to `DD.floor()` / `DD.ceil()` via `ddNearestRound` helper |
 | `FloatingPointScalb<T>` | ✓ | `FloatingPointScalb.dd` — delegates to `DD.scalb(Int)` |
 | `IntegerPower<T>` | ✓ * | `IntegerPower.dd` — binary exponentiation via `DD.multiply()` |
 | `FloatingPointRemainder<T>` | — | No `DD` remainder operation is exposed by Commons Numbers |
