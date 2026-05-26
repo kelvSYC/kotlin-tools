@@ -33,6 +33,14 @@ private val doubleDoubleInstance: FloatingPointRounding<DoubleDouble> =
             ddFloorOrCeil(high, low) { kotlin.math.floor(it) }
         override fun DoubleDouble.ceil(): DoubleDouble =
             ddFloorOrCeil(high, low) { kotlin.math.ceil(it) }
+        override fun DoubleDouble.trunc(): DoubleDouble =
+            if (high >= 0.0) ddFloorOrCeil(high, low) { kotlin.math.floor(it) }
+            else ddFloorOrCeil(high, low) { kotlin.math.ceil(it) }
+        override fun DoubleDouble.roundUp(): DoubleDouble = when {
+            high > 0.0 -> ddFloorOrCeil(high, low) { kotlin.math.ceil(it) }
+            high < 0.0 -> ddFloorOrCeil(high, low) { kotlin.math.floor(it) }
+            else -> this
+        }
     }
 
 /**
