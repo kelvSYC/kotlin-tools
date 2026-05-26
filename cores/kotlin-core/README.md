@@ -68,6 +68,7 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointTrigonometry<T>` — circular and hyperbolic trigonometric functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` instances widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExpLog<T>` — exponential and logarithmic functions (`exp`, `expm1`, `ln`, `ln1p`, `log2`, `log10`, `pow`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExp2<T>` — 2^x with Cody-Waite range reduction; instances for `BFloat16`, `Float16`, `Float`, `Double`. On macOS arm64 and Windows x64 delegates to `platform.posix.exp2`/`exp2f` (≤ 1 ULP); on JVM, JS, and Linux x64 uses Cody-Waite emulation (≤ 2 ULP). No `DoubleDouble` instance.
+- `FloatingPointSinhCosh<T>` — combined hyperbolic sine and cosine: `sinhcosh` returns `SinhCoshResult<T>(sinh, cosh)` computed from a single `exp` evaluation (or `exp(x)` + `exp(-x)` for `Double`), saving work compared to calling `sinh` and `cosh` separately. Universal commonMain implementation (no platform split required, unlike `FloatingPointSinCos`); instances for `BFloat16`, `Float16`, `Float`, and `Double`. No `DoubleDouble` instance.
 - `FloatingPointSinCos<T>` — atomic joint sine/cosine: `sincos` returns `SinCosResult<T>(sin, cos)` without a redundant argument reduction pass. Modelled after `FusedMultiplyAdd`: instances only where the platform provides a native joint operation. Instances for `Float` and `Double` on macOS arm64 and Linux x64, via a custom cinterop targeting `<math.h>`; absent on JVM, JS, and Windows.
 - `FusedMultiplyAdd<T>` — fused multiply-add with accurate rounding
 - Sub-interfaces: `Binary16<T>`, `Binary32<T>`, `Binary64<T>` — format-specific specializations (e.g. `Float16` implements `Binary16<Float16>` via its companion object)
@@ -134,6 +135,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointTrigonometry<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExpLog<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExp2<T>` | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | — |
+| `FloatingPointSinhCosh<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointSinCos<T>` | — | — | ✓ ¹² | ✓ ¹² | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointScalb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
