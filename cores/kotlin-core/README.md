@@ -62,6 +62,8 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `FloatingPointClassification<T>` — NaN / infinity detection
 - `FloatingPointRounding<T>` — floor and ceiling (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
 - `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
+- `FloatingPointCubeRoot<T>` — cube root (`cbrt`); defined for negative inputs; instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP). No `DoubleDouble` instance.
+- `FloatingPointHypot<T>` — hypotenuse (`sqrt(x² + y²)`) without intermediate overflow or underflow; instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP). No `DoubleDouble` instance.
 - `FloatingPointTrigonometry<T>` — circular and hyperbolic trigonometric functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` instances widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExpLog<T>` — exponential and logarithmic functions (`exp`, `expm1`, `ln`, `ln1p`, `log2`, `log10`, `pow`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExp2<T>` — 2^x with Cody-Waite range reduction; instances for `BFloat16`, `Float16`, `Float`, `Double`. On macOS arm64 and Windows x64 delegates to `platform.posix.exp2`/`exp2f` (≤ 1 ULP); on JVM, JS, and Linux x64 uses Cody-Waite emulation (≤ 2 ULP). No `DoubleDouble` instance.
@@ -125,6 +127,8 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | ✓ ¹ |
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointCubeRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointHypot<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointTrigonometry<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExpLog<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExp2<T>` | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | — |
