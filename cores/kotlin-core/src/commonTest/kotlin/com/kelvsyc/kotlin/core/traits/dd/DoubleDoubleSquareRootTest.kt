@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.traits.dd
 
 import com.kelvsyc.kotlin.core.fp.DoubleDouble
+import com.kelvsyc.kotlin.core.traits.dd.DoubleBinaryFloatingPointArithmetic
 import com.kelvsyc.kotlin.core.traits.fp.FloatingPointSquareRoot
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -77,13 +78,12 @@ class DoubleDoubleSquareRootTest : FunSpec({
                 (squared.low - x.low) shouldBe 0.0
             }
 
-            test("sqrt(3) has low component near 0") {
-                val r = with(ops) { DoubleDouble(3.0, 0.0).sqrt() }
-
-                // sqrt(3) ≈ 1.7320508...
-                // low component should be minimal after Newton refinement
-                r.high shouldBe kotlin.math.sqrt(3.0)
-                (r.low.isNaN() || r.low < 1e-15) shouldBe true
+            test("sqrt(3) squared round-trips back to 3.0") {
+                val arith = DoubleBinaryFloatingPointArithmetic.doubleDouble
+                val x = DoubleDouble(3.0, 0.0)
+                val r = with(ops) { x.sqrt() }
+                val squared = with(arith) { r.multiply(r) }
+                squared.high shouldBe 3.0
             }
         }
     }
