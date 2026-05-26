@@ -14,9 +14,11 @@ import com.kelvsyc.kotlin.core.Float16
  * Special values: `nextUp(+∞) = +∞`, `nextDown(-∞) = -∞`, `nextUp(NaN) = NaN`.
  * Both ±0 map to `MIN_VALUE` under `nextUp`. The identity `nextDown(x) = -nextUp(-x)` holds.
  *
- * [Float16] and [BFloat16] delegate to their built-in member functions. [Float] and [Double]
- * use direct bit-pattern arithmetic (`toRawBits`/`fromBits`) for platform portability, since
- * `Float.nextUp()` is absent from the Kotlin/JS stdlib.
+ * [Float16] and [BFloat16] delegate to their built-in member functions. [Float] delegates to
+ * platform-specific implementations via `FloatingPointNextValuePlatform` (JVM: `Math.nextUp`;
+ * macOS/Windows: POSIX `nextafterf`; JS/Linux: bit-pattern arithmetic). [Double] uses direct
+ * bit-pattern arithmetic (`toRawBits`/`fromBits`) for platform portability, since
+ * `Double.nextUp()` is absent from the Kotlin/JS stdlib for the same reasons as `Float.nextUp()`.
  *
  * Standard implementations for [Float16], [BFloat16], [Float], and [Double] are available as
  * [Companion.float16], [Companion.bfloat16], [Companion.float], and [Companion.double] respectively.
@@ -38,19 +40,10 @@ private val float16Instance: FloatingPointNextValue<Float16> = object : Floating
     override fun Float16.nextDown(): Float16 = nextDown()
 }
 
-// Float.nextUp() is absent from Kotlin/JS, so bit-pattern arithmetic is used instead.
-private fun floatNextUp(x: Float): Float {
-    if (x.isNaN()) return x
-    val bits = x.toRawBits()
-    return when {
-        bits == 0x7F800000 -> x                              // +∞ has no successor
-        bits == 0 || bits == Int.MIN_VALUE -> Float.fromBits(1)  // ±0 → MIN_VALUE
-        bits > 0 -> Float.fromBits(bits + 1)                // positive finite: increment bits
-        else -> Float.fromBits(bits - 1)                    // negative (incl. -∞): toward zero
-    }
+private val floatInstance: FloatingPointNextValue<Float> = object : FloatingPointNextValue<Float> {
+    override fun Float.nextUp(): Float = nextUpFloat(this)
+    override fun Float.nextDown(): Float = nextDownFloat(this)
 }
-
-private fun floatNextDown(x: Float): Float = -floatNextUp(-x)
 
 private fun doubleNextUp(x: Double): Double {
     if (x.isNaN()) return x
@@ -64,11 +57,6 @@ private fun doubleNextUp(x: Double): Double {
 }
 
 private fun doubleNextDown(x: Double): Double = -doubleNextUp(-x)
-
-private val floatInstance: FloatingPointNextValue<Float> = object : FloatingPointNextValue<Float> {
-    override fun Float.nextUp(): Float = floatNextUp(this)
-    override fun Float.nextDown(): Float = floatNextDown(this)
-}
 
 private val doubleInstance: FloatingPointNextValue<Double> = object : FloatingPointNextValue<Double> {
     override fun Double.nextUp(): Double = doubleNextUp(this)
