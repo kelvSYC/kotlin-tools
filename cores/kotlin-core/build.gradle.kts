@@ -26,10 +26,5 @@ kotlin {
                 defFile(project.file("src/nativeInterop/cinterop/gnumath.def"))
             }
         }
-        if (name == "macosArm64") {
-            compilations.getByName("main").cinterops.create("macmath") {
-                defFile(project.file("src/nativeInterop/cinterop/macmath.def"))
-            }
-        }
     }
 }
