@@ -150,7 +150,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointNearestRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointScalb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `FloatingPointRemainder<T>` | ✓ ² | ✓ ² | ✓ ² | ✓ ² | — |
+| `FloatingPointRemainder<T>` | ✓ ² | ✓ ² | ✓ ² | ✓ ² | ✓ ²¹⁶ |
 | `FusedMultiplyAdd<T>` | ✓ ³ | ✓ ³ | ✓ ³ | ✓ ³ | — |
 | `IntegerPower<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 
@@ -186,6 +186,13 @@ other platforms uses Cody-Waite with a Dekker-split `log10(2)` constant: split i
 high part and a low correction so that `n × log10(2)_hi` is exact, eliminating catastrophic
 cancellation (≤ 2 ULP). `Float` uses the same Cody-Waite step widened to `Double` (sufficient
 for 24-bit precision). `Float16`/`BFloat16` widen to `Float` and narrow back.
+
+¹⁶ Two variants: `FloatingPointRemainder.doubleDoubleTruncating` (`x − trunc(x/y) × y`, same sign
+as `x`, matching Kotlin's `%`) and `FloatingPointRemainder.doubleDoubleIeee754` (`x − roundEven(x/y) × y`,
+result in `[−|y|/2, +|y|/2]`). Precision degrades when `|x/y|` exceeds approximately 2^106 — the
+representable precision of a DoubleDouble — and the fractional part of the quotient can no longer
+be recovered. This is the same structural limitation as Kotlin's `%` operator on `Double` (threshold
+≈ 2^53).
 
 ¹⁵ On macOS ARM64, delegates to `sinpi`/`cospi`/`tanpi`/`asinpi`/`acospi`/`atanpi`/`atan2pi`
 and their `f` float variants from the Darwin `<math.h>` extension via a `macmath` cinterop
