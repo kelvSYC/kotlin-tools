@@ -60,13 +60,14 @@ Type-level abstractions defining operations for numeric types. All concrete type
 - `IeeeBinaryFloatingPoint<T>` — IEEE 754-specific metadata (sign bits, exponent/significand widths)
 - `FloatingPointArithmetic<T>` — standard math operations (+, −, ×, ÷, sqrt, remainder, etc.)
 - `FloatingPointClassification<T>` — NaN / infinity detection
+- `FloatingPointSquareRoot<T>` — square root operation; correctly rounded following IEEE 754; instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`.
 - `FloatingPointRounding<T>` — directed rounding: `floor` (toward −∞), `ceil` (toward +∞), `trunc` (toward 0), `roundUp` (away from 0); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. JVM-only `BigDecimal` instance via `FloatingPointRounding.bigDecimal`.
-- `FloatingPointNearestRounding<T>` — nearest-integer rounding with tie-breaking: `roundHalfUp` (ties away from zero, C99 `round` / `RoundingMode.HALF_UP`), `roundHalfDown` (ties toward zero / `RoundingMode.HALF_DOWN`), `roundEven` (banker's rounding, `RoundingMode.HALF_EVEN`); instances for `BFloat16`, `Float16`, `Float`, `Double`. All commonMain, no platform split.
+- `FloatingPointNearestRounding<T>` — nearest-integer rounding with tie-breaking: `roundHalfUp` (ties away from zero, C99 `round` / `RoundingMode.HALF_UP`), `roundHalfDown` (ties toward zero / `RoundingMode.HALF_DOWN`), `roundEven` (banker's rounding, `RoundingMode.HALF_EVEN`); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. All commonMain, no platform split.
 - `FloatingPointScalb<T>` — binary scaling × 2^n (instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`)
-- `FloatingPointLogb<T>` — `logb` (IEEE 754 §5.3.3, returns exponent as `T`: `logb(0)=−∞`, `logb(±∞)=+∞`, sign ignored) and `ilogb` (returns exponent as `Int`: `ilogb(0)=Int.MIN_VALUE`, `ilogb(±∞/NaN)=Int.MAX_VALUE`); instances for `BFloat16`, `Float16`, `Float`, `Double`. Pure commonMain bit-pattern arithmetic, no platform split. No `DoubleDouble` instance.
+- `FloatingPointLogb<T>` — `logb` (IEEE 754 §5.3.3, returns exponent as `T`: `logb(0)=−∞`, `logb(±∞)=+∞`, sign ignored) and `ilogb` (returns exponent as `Int`: `ilogb(0)=Int.MIN_VALUE`, `ilogb(±∞/NaN)=Int.MAX_VALUE`); instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. Pure commonMain bit-pattern arithmetic, no platform split.
 - `FloatingPointNextValue<T>` — `nextUp` and `nextDown` (IEEE 754 §5.3.1 required operations); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` delegate to their member functions; `Float`/`Double` use bit-pattern arithmetic (`toRawBits`/`fromBits`) since `Float.nextUp()` is absent from the Kotlin/JS stdlib. No `DoubleDouble` instance.
-- `FloatingPointCubeRoot<T>` — cube root (`cbrt`); defined for negative inputs; instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP). No `DoubleDouble` instance.
-- `FloatingPointHypot<T>` — hypotenuse (`sqrt(x² + y²)`) without intermediate overflow or underflow; instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP). No `DoubleDouble` instance.
+- `FloatingPointCubeRoot<T>` — cube root (`cbrt`); defined for negative inputs; instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP).
+- `FloatingPointHypot<T>` — hypotenuse (`sqrt(x² + y²)`) without intermediate overflow or underflow; instances for `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`. `Float` and `Float16`/`BFloat16` instances widen to `Double` for computation and narrow back (≤ 1 ULP).
 - `FloatingPointTrigonometry<T>` — circular and hyperbolic trigonometric functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` instances widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExpLog<T>` — exponential and logarithmic functions (`exp`, `expm1`, `ln`, `ln1p`, `log2`, `log10`, `pow`); instances for `BFloat16`, `Float16`, `Float`, `Double`. `Float16`/`BFloat16` widen to `Float` for computation and narrow back. No `DoubleDouble` instance.
 - `FloatingPointExp2<T>` — 2^x with Cody-Waite range reduction; instances for `BFloat16`, `Float16`, `Float`, `Double`. On macOS arm64 and Windows x64 delegates to `platform.posix.exp2`/`exp2f` (≤ 1 ULP); on JVM, JS, and Linux x64 uses Cody-Waite emulation (≤ 2 ULP). No `DoubleDouble` instance.
@@ -133,11 +134,11 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 |---|:---:|:---:|:---:|:---:|:---:|
 | `FloatingPointArithmetic<T>` | ✓ | ✓ | ✓ | ✓ | ✓ ¹ |
 | `FloatingPointSquare<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
-| `FloatingPointLogb<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointSquareRoot<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `FloatingPointLogb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointNextValue<T>` | ✓ | ✓ | ✓ | ✓ | — |
-| `FloatingPointCubeRoot<T>` | ✓ | ✓ | ✓ | ✓ | — |
-| `FloatingPointHypot<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointCubeRoot<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `FloatingPointHypot<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointTrigonometry<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExpLog<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointExp2<T>` | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | ✓ ¹³ | — |
@@ -147,7 +148,7 @@ Types: `BFloat16`, `Float16`, `Float`, `Double`, `DoubleDouble`
 | `FloatingPointSinhCosh<T>` | ✓ | ✓ | ✓ | ✓ | — |
 | `FloatingPointSinCos<T>` | — | — | ✓ ¹² | ✓ ¹² | — |
 | `FloatingPointRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `FloatingPointNearestRounding<T>` | ✓ | ✓ | ✓ | ✓ | — |
+| `FloatingPointNearestRounding<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointScalb<T>` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `FloatingPointRemainder<T>` | ✓ ² | ✓ ² | ✓ ² | ✓ ² | — |
 | `FusedMultiplyAdd<T>` | ✓ ³ | ✓ ³ | ✓ ³ | ✓ ³ | — |
