@@ -111,7 +111,9 @@ fires in generic dispatch contexts where the extension cannot be shadowed.
 - `times(Double)`, `times(Complex)`.
 - `div(Double)`, `div(Complex)`.
 
-**kotlin-core trait instances** (`CommonsComplexArithmetic.kt`, `CommonsComplexModulus.kt`):
+**kotlin-core trait instances** (`CommonsComplexArithmetic.kt`, `CommonsComplexModulus.kt`,
+`CommonsComplexArg.kt`, `CommonsComplexExpLog.kt`, `CommonsComplexSquareRoot.kt`,
+`CommonsComplexTrigonometry.kt`, `CommonsComplexCubeRoot.kt`):
 - `ComplexArithmetic.Companion.commonsComplex: ComplexArithmetic<Complex, Double>` — full complex
   arithmetic. `multiply` and `divide` delegate to Commons Complex's own implementations (Smith's
   method, Annex G semantics). `add`, `subtract`, `negate`, and `conjugate` use the default
@@ -119,6 +121,20 @@ fires in generic dispatch contexts where the extension cannot be shadowed.
 - `ComplexModulus.Companion.commonsComplex: ComplexModulus<Complex, Double>` — `modulus()` delegates
   to `Complex.abs()` (uses `Math.hypot` internally, overflow-safe); `squaredModulus()` uses the
   naive formula `re² + im²`.
+- `ComplexArg.Companion.commonsComplex: ComplexArg<Complex, Double>` — `arg()` delegates to
+  `Complex.arg()`; `argPi()` uses `FloatingPointTrigPi.double.atan2Pi` for accuracy at rational
+  multiples of π.
+- `ComplexExpLog.Companion.commonsComplex: ComplexExpLog<Complex, Double>` — all four operations
+  (`exp`, `ln`, `pow(Double)`, `powComplex`) delegate to Commons Complex's own implementations
+  (Annex G semantics). `ln` maps to `Complex.log()`; `powComplex` maps to `Complex.pow(Complex)`.
+- `ComplexSquareRoot.Companion.commonsComplex: ComplexSquareRoot<Complex, Double>` — `sqrt()`
+  delegates to `Complex.sqrt()`.
+- `ComplexTrigonometry.Companion.commonsComplex: ComplexTrigonometry<Complex, Double>` — all 12
+  operations (`sin`, `cos`, `tan`, `sinh`, `cosh`, `tanh`, `asin`, `acos`, `atan`, `asinh`,
+  `acosh`, `atanh`) delegate to Commons Complex's native implementations.
+- `ComplexCubeRoot.Companion.commonsComplex: ComplexCubeRoot<Complex, Double>` — implemented via
+  polar form using `FloatingPointTrigPi` for accuracy at rational multiples of π (Commons has no
+  native `cbrt` on `Complex`).
 
 The kotlin-core cross-cutting traits `Addition<Complex>`, `Multiplication<Complex>`, and
 `Division<Complex>` are natural candidates for direct bridge instances here, since Commons `Complex`
