@@ -1,41 +1,22 @@
-headers = math.h
+headers = macmath-internal.h
 linkerOpts.osx = -lm
 ---
-// On macOS 15+ ARM64 (Xcode 16.4+), sinpi/cospi/tanpi/asinpi/acospi/atanpi/atan2pi
-// are inaccessible in the cinterop compilation environment — they are neither
-// exported library symbols nor header declarations visible without _DARWIN_C_SOURCE,
-// which cinterop does not propagate into the C-section temp file. Implemented here
-// using standard math (sin, cos, atan2, fmod, M_PI) which are always available.
-#include <math.h>
+// sinpi/cospi/etc. are Darwin extensions in <math.h> under _DARWIN_C_SOURCE.
+// macmath-internal.h defines _DARWIN_C_SOURCE before including <math.h> so that
+// the cinterop C-section compiler sees the declarations (static-inline or extern)
+// without requiring extern forward-declarations that shadow the SDK definitions.
 
-static inline double kotlin_sinpi(double x) {
-    double xr = fmod(x, 2.0);
-    if (xr != xr) return xr;           // NaN (also catches ±Inf via fmod→NaN)
-    if (xr < 0.0) xr += 2.0;          // fold to [0, 2)
-    if (xr == 0.0 || xr == 1.0) return  0.0;
-    if (xr == 0.5)               return  1.0;
-    if (xr == 1.5)               return -1.0;
-    if (xr > 1.0)                return -sin(M_PI * (xr - 1.0));
-    return                                sin(M_PI * xr);
-}
-static inline float  kotlin_sinpif(float x)  { return (float)kotlin_sinpi((double)x); }
-
-// cos(πx) = sin(π(x + 0.5)) — exact at all half-integer multiples
-static inline double kotlin_cospi(double x)  { return kotlin_sinpi(x + 0.5); }
-static inline float  kotlin_cospif(float x)  { return (float)kotlin_cospi((double)x); }
-
-// At half-integers cospi is exactly 0, so s/c = ±∞ correctly via IEEE 754
-static inline double kotlin_tanpi(double x)  { return kotlin_sinpi(x) / kotlin_cospi(x); }
-static inline float  kotlin_tanpif(float x)  { return (float)kotlin_tanpi((double)x); }
-
-static inline double kotlin_asinpi(double x)           { return asin(x)     * (1.0 / M_PI); }
-static inline float  kotlin_asinpif(float x)           { return (float)kotlin_asinpi((double)x); }
-
-static inline double kotlin_acospi(double x)           { return acos(x)     * (1.0 / M_PI); }
-static inline float  kotlin_acospif(float x)           { return (float)kotlin_acospi((double)x); }
-
-static inline double kotlin_atanpi(double x)           { return atan(x)     * (1.0 / M_PI); }
-static inline float  kotlin_atanpif(float x)           { return (float)kotlin_atanpi((double)x); }
-
-static inline double kotlin_atan2pi(double y, double x) { return atan2(y, x) * (1.0 / M_PI); }
-static inline float  kotlin_atan2pif(float y, float x)  { return (float)kotlin_atan2pi((double)y, (double)x); }
+static inline double kotlin_sinpi(double x)  { return sinpi(x);  }
+static inline float  kotlin_sinpif(float x)  { return sinpif(x); }
+static inline double kotlin_cospi(double x)  { return cospi(x);  }
+static inline float  kotlin_cospif(float x)  { return cospif(x); }
+static inline double kotlin_tanpi(double x)  { return tanpi(x);  }
+static inline float  kotlin_tanpif(float x)  { return tanpif(x); }
+static inline double kotlin_asinpi(double x) { return asinpi(x); }
+static inline float  kotlin_asinpif(float x) { return asinpif(x); }
+static inline double kotlin_acospi(double x) { return acospi(x); }
+static inline float  kotlin_acospif(float x) { return acospif(x); }
+static inline double kotlin_atanpi(double x) { return atanpi(x); }
+static inline float  kotlin_atanpif(float x) { return atanpif(x); }
+static inline double kotlin_atan2pi(double y, double x)  { return atan2pi(y, x);  }
+static inline float  kotlin_atan2pif(float y, float x)   { return atan2pif(y, x); }
