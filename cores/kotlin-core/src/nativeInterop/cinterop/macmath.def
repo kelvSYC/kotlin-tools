@@ -1,10 +1,12 @@
-headers = macmath-internal.h
+headers = math.h
 linkerOpts.osx = -lm
 ---
-// sinpi/cospi/etc. are Darwin extensions in <math.h> under _DARWIN_C_SOURCE.
-// macmath-internal.h defines _DARWIN_C_SOURCE before including <math.h> so that
-// the cinterop C-section compiler sees the declarations (static-inline or extern)
-// without requiring extern forward-declarations that shadow the SDK definitions.
+// _DARWIN_C_SOURCE must be defined before <math.h> is included to expose sinpi/cospi/etc.
+// as the static-inline SDK definitions they are in macOS 15+. The cinterop tool compiles
+// the C section without automatically including the 'headers' directive entries, so the
+// define and include must appear here explicitly.
+#define _DARWIN_C_SOURCE
+#include <math.h>
 
 static inline double kotlin_sinpi(double x)  { return sinpi(x);  }
 static inline float  kotlin_sinpif(float x)  { return sinpif(x); }

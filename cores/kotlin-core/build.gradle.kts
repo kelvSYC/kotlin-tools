@@ -29,10 +29,6 @@ kotlin {
         if (name == "macosArm64") {
             compilations.getByName("main").cinterops.create("macmath") {
                 defFile(project.file("src/nativeInterop/cinterop/macmath.def"))
-                // macmath-internal.h (in this directory) defines _DARWIN_C_SOURCE
-                // before including <math.h> so the cinterop C-section compiler sees
-                // sinpi/cospi/etc. without extern forward-declarations.
-                includeDirs("src/nativeInterop/cinterop")
             }
         }
     }
