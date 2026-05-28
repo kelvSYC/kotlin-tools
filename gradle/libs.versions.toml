@@ -10,7 +10,7 @@ kotlin-gradle-plugins-bom = { module = "org.jetbrains.kotlin:kotlin-gradle-plugi
 kotest-bom = "io.kotest:kotest-bom:6.1.11"
 
 # Internal
-dependency-analysis-plugin = "com.autonomousapps:dependency-analysis-gradle-plugin:3.13.0"
+dependency-analysis-plugin = "com.autonomousapps:dependency-analysis-gradle-plugin:3.14.0"
 dokka-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 foojay-resolver-plugin = "org.gradle.toolchains.foojay-resolver:org.gradle.toolchains.foojay-resolver.gradle.plugin:1.0.0"
 jgit = "org.eclipse.jgit:org.eclipse.jgit:7.6.0.202603022253-r"
