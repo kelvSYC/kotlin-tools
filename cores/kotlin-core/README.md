@@ -42,6 +42,25 @@ Extended collection types beyond the Kotlin standard library:
 - **EnumSortedBiMap** (`EnumSortedBiMap<K:Enum,V>`, `MutableEnumSortedBiMap<K:Enum,V>`) — enum-backed keys (ordinal order) and comparator-sorted values; `inverse` is a `SortedEnumBiMap<V,K>`; factory functions in `EnumSortedBiMaps.kt`
 - **SortedEnumBiMap** (`SortedEnumBiMap<K,V:Enum>`, `MutableSortedEnumBiMap<K,V:Enum>`) — comparator-sorted keys and enum-backed values; `inverse` is an `EnumSortedBiMap<V,K>` (mutual inverse pair with `EnumSortedBiMap`); factory functions in `EnumSortedBiMaps.kt`
 
+### Structures
+
+Algorithm-support data structures whose primary purpose is computation rather than general data
+storage. Unlike collections, these are typically built up over the course of an algorithm and
+queried at the end, rather than being general-purpose containers.
+
+- **DisjointSet** (`DisjointSet<E>`, `MutableDisjointSet<E>`) — a Union-Find structure
+  maintaining a partition of elements into mutually exclusive equivalence classes. Supports
+  near-O(1) connectivity queries (`connected`, `find`) and O(α(n)) amortized merges (`union`)
+  via union-by-rank and path halving. **Growth-only**: classes can be merged but never split;
+  this is intentional, as the semantics of splitting a merged class are undefined without full
+  merge history. Elements not passed to `union` are treated as implicit singletons — `find`
+  returns the element itself and `getPartition` returns a single-element set. Factory functions:
+  - `mutableDisjointSetOf()` — lazy/unknown universe, `HashMap`-backed
+  - `mutableDisjointSetOf(universe)` — pre-registers a known universe as singletons (soft
+    constraint: `union` with out-of-universe elements still registers them lazily)
+  - `mutableEnumDisjointSetOf<E>()` — enum universe, `IntArray`-backed via ordinal indexing
+  - `buildDisjointSet { }` / `buildEnumDisjointSet<E> { }` — builder returning a read-only view
+
 ### Floating-Point Representations (`fp`)
 
 Structural representations for floating-point values:
