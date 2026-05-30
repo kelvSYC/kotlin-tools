@@ -1,0 +1,251 @@
+package com.kelvsyc.internal.kotlin.core.structures
+
+import com.kelvsyc.kotlin.core.structures.IndexedPriorityDeque
+
+@PublishedApi
+internal class HashIndexedPriorityDeque<T, P>(
+    private val comparator: Comparator<in P>,
+) : IndexedPriorityDeque<T, P> {
+
+    private val elementToSlot = HashMap<T, Int>()
+    private val slotToElement = ArrayList<Any?>()
+    private val slotPriorities = ArrayList<Any?>()
+    private val heap = ArrayList<Int>()
+    private val positionOf = ArrayList<Int>()
+    private val freeSlots = ArrayDeque<Int>()
+    private var nextSlot = 0
+
+    override val size: Int get() = heap.size
+    override fun isEmpty(): Boolean = heap.isEmpty()
+
+    @Suppress("UNCHECKED_CAST")
+    private fun elementAt(slot: Int): T = slotToElement[slot] as T
+
+    @Suppress("UNCHECKED_CAST")
+    private fun priorityAt(slot: Int): P = slotPriorities[slot] as P
+
+    private fun cmp(posA: Int, posB: Int): Int =
+        comparator.compare(priorityAt(heap[posA]), priorityAt(heap[posB]))
+
+    private fun swap(a: Int, b: Int) {
+        val sa = heap[a]; val sb = heap[b]
+        heap[a] = sb; heap[b] = sa
+        positionOf[sa] = b; positionOf[sb] = a
+    }
+
+    // Level of heap position pos: floor(log2(pos+1)).
+    // Even level = min-level, odd level = max-level.
+    private fun isMinLevel(pos: Int): Boolean =
+        (31 - (pos + 1).countLeadingZeroBits()) % 2 == 0
+
+    override fun peekMin(): T? {
+        if (heap.isEmpty()) return null
+        return elementAt(heap[0])
+    }
+
+    override fun peekMax(): T? = when (heap.size) {
+        0 -> null
+        1 -> elementAt(heap[0])
+        2 -> elementAt(heap[1])
+        else -> elementAt(heap[if (cmp(1, 2) >= 0) 1 else 2])
+    }
+
+    override fun contains(element: T): Boolean = elementToSlot.containsKey(element)
+
+    override fun getPriority(element: T): P? {
+        val slot = elementToSlot[element] ?: return null
+        return priorityAt(slot)
+    }
+
+    override fun add(element: T, priority: P) {
+        require(!elementToSlot.containsKey(element)) { "Element already in queue: $element" }
+        val slot: Int
+        if (freeSlots.isNotEmpty()) {
+            slot = freeSlots.removeFirst()
+            slotToElement[slot] = element
+            slotPriorities[slot] = priority
+        } else {
+            slot = nextSlot++
+            slotToElement.add(element)
+            slotPriorities.add(priority)
+            positionOf.add(-1)
+        }
+        elementToSlot[element] = slot
+        val heapPos = heap.size
+        heap.add(slot)
+        positionOf[slot] = heapPos
+        siftUp(heapPos)
+    }
+
+    override fun pollMin(): T? {
+        if (heap.isEmpty()) return null
+        val minSlot = heap[0]
+        val element = elementAt(minSlot)
+        removeAtHeapPos(0)
+        return element
+    }
+
+    override fun pollMax(): T? = when (heap.size) {
+        0 -> null
+        1 -> pollMin()
+        2 -> {
+            val slot = heap[1]
+            val element = elementAt(slot)
+            removeAtHeapPos(1)
+            element
+        }
+        else -> {
+            val maxPos = if (cmp(1, 2) >= 0) 1 else 2
+            val element = elementAt(heap[maxPos])
+            removeAtHeapPos(maxPos)
+            element
+        }
+    }
+
+    override fun remove(element: T): Boolean {
+        val slot = elementToSlot[element] ?: return false
+        removeAtHeapPos(positionOf[slot])
+        return true
+    }
+
+    override fun decreaseKey(element: T, newPriority: P) {
+        val slot = elementToSlot[element]
+            ?: throw NoSuchElementException("Element not in queue: $element")
+        val current = priorityAt(slot)
+        require(comparator.compare(newPriority, current) < 0) {
+            "decreaseKey requires newPriority < currentPriority"
+        }
+        slotPriorities[slot] = newPriority
+        siftUp(positionOf[slot])
+    }
+
+    override fun increaseKey(element: T, newPriority: P) {
+        val slot = elementToSlot[element]
+            ?: throw NoSuchElementException("Element not in queue: $element")
+        val current = priorityAt(slot)
+        require(comparator.compare(newPriority, current) > 0) {
+            "increaseKey requires newPriority > currentPriority"
+        }
+        slotPriorities[slot] = newPriority
+        siftDown(positionOf[slot])
+    }
+
+    override fun updatePriority(element: T, newPriority: P) {
+        val slot = elementToSlot[element]
+            ?: throw NoSuchElementException("Element not in queue: $element")
+        val current = priorityAt(slot)
+        val c = comparator.compare(newPriority, current)
+        if (c == 0) return
+        slotPriorities[slot] = newPriority
+        if (c < 0) siftUp(positionOf[slot]) else siftDown(positionOf[slot])
+    }
+
+    private fun removeAtHeapPos(pos: Int) {
+        val slot = heap[pos]
+        @Suppress("UNCHECKED_CAST")
+        elementToSlot.remove(slotToElement[slot] as T)
+        slotToElement[slot] = null
+        slotPriorities[slot] = null
+        positionOf[slot] = -1
+        freeSlots.add(slot)
+
+        val lastPos = heap.size - 1
+        if (pos == lastPos) { heap.removeAt(lastPos); return }
+
+        val movedSlot = heap.removeAt(lastPos)
+        heap[pos] = movedSlot
+        positionOf[movedSlot] = pos
+        siftDown(pos)
+        if (heap[pos] == movedSlot) siftUp(pos)
+    }
+
+    private fun siftUp(startPos: Int) {
+        if (startPos == 0) return
+        val parentPos = (startPos - 1) ushr 1
+        if (isMinLevel(startPos)) {
+            if (cmp(startPos, parentPos) > 0) { swap(startPos, parentPos); siftUpMax(parentPos) }
+            else siftUpMin(startPos)
+        } else {
+            if (cmp(startPos, parentPos) < 0) { swap(startPos, parentPos); siftUpMin(parentPos) }
+            else siftUpMax(startPos)
+        }
+    }
+
+    private fun siftUpMin(pos: Int) {
+        if (pos < 3) return
+        val gp = (pos - 3) ushr 2
+        if (cmp(pos, gp) < 0) { swap(pos, gp); siftUpMin(gp) }
+    }
+
+    private fun siftUpMax(pos: Int) {
+        if (pos < 3) return
+        val gp = (pos - 3) ushr 2
+        if (cmp(pos, gp) > 0) { swap(pos, gp); siftUpMax(gp) }
+    }
+
+    private fun siftDown(pos: Int) {
+        if (isMinLevel(pos)) siftDownMin(pos) else siftDownMax(pos)
+    }
+
+    private fun smallestDescendant(pos: Int): Int? {
+        val left = 2 * pos + 1
+        if (left >= heap.size) return null
+        var best = left
+        val right = left + 1
+        if (right < heap.size && cmp(right, best) < 0) best = right
+        val ll = 2 * left + 1; val lr = ll + 1
+        if (ll < heap.size && cmp(ll, best) < 0) best = ll
+        if (lr < heap.size && cmp(lr, best) < 0) best = lr
+        if (right < heap.size) {
+            val rl = 2 * right + 1; val rr = rl + 1
+            if (rl < heap.size && cmp(rl, best) < 0) best = rl
+            if (rr < heap.size && cmp(rr, best) < 0) best = rr
+        }
+        return best
+    }
+
+    private fun largestDescendant(pos: Int): Int? {
+        val left = 2 * pos + 1
+        if (left >= heap.size) return null
+        var best = left
+        val right = left + 1
+        if (right < heap.size && cmp(right, best) > 0) best = right
+        val ll = 2 * left + 1; val lr = ll + 1
+        if (ll < heap.size && cmp(ll, best) > 0) best = ll
+        if (lr < heap.size && cmp(lr, best) > 0) best = lr
+        if (right < heap.size) {
+            val rl = 2 * right + 1; val rr = rl + 1
+            if (rl < heap.size && cmp(rl, best) > 0) best = rl
+            if (rr < heap.size && cmp(rr, best) > 0) best = rr
+        }
+        return best
+    }
+
+    private fun siftDownMin(pos: Int) {
+        val m = smallestDescendant(pos) ?: return
+        if (m >= 4 * pos + 3) { // grandchild
+            if (cmp(m, pos) < 0) {
+                swap(m, pos)
+                val parentM = (m - 1) ushr 1
+                if (cmp(m, parentM) > 0) swap(m, parentM)
+                siftDownMin(m)
+            }
+        } else {
+            if (cmp(m, pos) < 0) swap(m, pos)
+        }
+    }
+
+    private fun siftDownMax(pos: Int) {
+        val m = largestDescendant(pos) ?: return
+        if (m >= 4 * pos + 3) { // grandchild
+            if (cmp(m, pos) > 0) {
+                swap(m, pos)
+                val parentM = (m - 1) ushr 1
+                if (cmp(m, parentM) < 0) swap(m, parentM)
+                siftDownMax(m)
+            }
+        } else {
+            if (cmp(m, pos) > 0) swap(m, pos)
+        }
+    }
+}

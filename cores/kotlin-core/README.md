@@ -77,6 +77,21 @@ queried at the end, rather than being general-purpose containers.
   - `minIndexedPriorityQueueOf()` / `minIndexedPriorityQueueOf(universe)` /
     `minEnumIndexedPriorityQueueOf<E, P>()` — natural-order convenience variants for `P : Comparable<P>`
 
+- **IndexedPriorityDeque** (`IndexedPriorityDeque<T, P>`) — a double-ended indexed priority queue backed
+  by a min-max heap (Atkinson et al., 1986). Supports O(1) `peekMin`/`peekMax` and O(log n)
+  `pollMin`/`pollMax`, `add`, `remove`, `decreaseKey`, `increaseKey`, and `updatePriority`. Like
+  `IndexedPriorityQueue`, priority `P` is independent of element `T`. **`IndexedPriorityDeque` does
+  not extend `IndexedPriorityQueue`** and the two are not freely substitutable: unlike `Deque` vs.
+  `Queue` (where the deque imposes zero overhead), a min-max heap sift must determine the current
+  node's level (min-level vs. max-level) at every step, adding a constant-factor cost even when only
+  one end is used. Prefer `IndexedPriorityQueue` for single-ended algorithms (Dijkstra, Prim, A*).
+  Factory functions:
+  - `indexedPriorityDequeOf(comparator)` — dynamic universe, `HashMap`-backed
+  - `indexedPriorityDequeOf(comparator, universe)` — known universe, pre-allocated arrays
+  - `enumIndexedPriorityDequeOf<E, P>(comparator)` — enum universe, ordinal-indexed arrays
+  - `minMaxIndexedPriorityDequeOf()` / `minMaxIndexedPriorityDequeOf(universe)` /
+    `minMaxEnumIndexedPriorityDequeOf<E, P>()` — natural-order convenience variants
+
 ### Floating-Point Representations (`fp`)
 
 Structural representations for floating-point values:
