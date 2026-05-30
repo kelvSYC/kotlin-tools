@@ -2,11 +2,12 @@ package com.kelvsyc.kotlin.core.collections
 
 import com.kelvsyc.internal.kotlin.core.collections.FlexBiMap
 import com.kelvsyc.internal.kotlin.core.collections.HashMapStore
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableBiMap
 
 /**
  * Returns an empty read-only [BiMap].
  */
-fun <K, V> emptyBiMap(): BiMap<K, V> = FlexBiMap(HashMapStore(), HashMapStore())
+fun <K, V> emptyBiMap(): BiMap<K, V> = ImmutableBiMap(FlexBiMap(HashMapStore(), HashMapStore()))
 
 /**
  * Returns a new read-only [BiMap] with the specified contents.
@@ -14,13 +15,13 @@ fun <K, V> emptyBiMap(): BiMap<K, V> = FlexBiMap(HashMapStore(), HashMapStore())
  * @throws IllegalArgumentException if any value appears more than once.
  */
 fun <K, V> biMapOf(vararg pairs: Pair<K, V>): BiMap<K, V> =
-    FlexBiMap(HashMapStore<K, V>(), HashMapStore()).apply { pairs.forEach { (k, v) -> put(k, v) } }
+    ImmutableBiMap(FlexBiMap(HashMapStore<K, V>(), HashMapStore()).apply { pairs.forEach { (k, v) -> put(k, v) } })
 
 /**
  * Builds a read-only [BiMap] by populating a [MutableBiMap] using [builderAction].
  */
 fun <K, V> buildBiMap(builderAction: MutableBiMap<K, V>.() -> Unit): BiMap<K, V> =
-    FlexBiMap(HashMapStore<K, V>(), HashMapStore()).apply(builderAction)
+    ImmutableBiMap(FlexBiMap(HashMapStore<K, V>(), HashMapStore()).apply(builderAction))
 
 /**
  * Returns a new read-only [BiMap] containing all entries from this [Map].
@@ -28,7 +29,7 @@ fun <K, V> buildBiMap(builderAction: MutableBiMap<K, V>.() -> Unit): BiMap<K, V>
  * @throws IllegalArgumentException if any value appears more than once.
  */
 fun <K, V> Map<K, V>.toBiMap(): BiMap<K, V> =
-    FlexBiMap(HashMapStore<K, V>(), HashMapStore()).apply { putAll(this@toBiMap) }
+    ImmutableBiMap(FlexBiMap(HashMapStore<K, V>(), HashMapStore()).apply { putAll(this@toBiMap) })
 
 /**
  * Returns a new empty [MutableBiMap].

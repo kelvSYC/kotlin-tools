@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.collections
 
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableSortedBiMap
 import com.kelvsyc.internal.kotlin.core.collections.SortedBiMapImpl
 
 /**
@@ -8,7 +9,7 @@ import com.kelvsyc.internal.kotlin.core.collections.SortedBiMapImpl
  * @throws IllegalArgumentException if any value appears more than once.
  */
 fun <K, V> sortedBiMapOf(comparator: Comparator<in K>, vararg pairs: Pair<K, V>): SortedBiMap<K, V> =
-    SortedBiMapImpl<K, V>(comparator).apply { pairs.forEach { (k, v) -> put(k, v) } }
+    ImmutableSortedBiMap(SortedBiMapImpl<K, V>(comparator).apply { pairs.forEach { (k, v) -> put(k, v) } })
 
 /**
  * Builds a read-only [SortedBiMap] by populating a [MutableSortedBiMap] using [builderAction].
@@ -16,7 +17,7 @@ fun <K, V> sortedBiMapOf(comparator: Comparator<in K>, vararg pairs: Pair<K, V>)
 fun <K, V> buildSortedBiMap(
     comparator: Comparator<in K>,
     builderAction: MutableSortedBiMap<K, V>.() -> Unit,
-): SortedBiMap<K, V> = SortedBiMapImpl<K, V>(comparator).apply(builderAction)
+): SortedBiMap<K, V> = ImmutableSortedBiMap(SortedBiMapImpl<K, V>(comparator).apply(builderAction))
 
 /**
  * Returns a new read-only [SortedBiMap] containing all entries from this [Map], with keys ordered by [comparator].
@@ -24,7 +25,7 @@ fun <K, V> buildSortedBiMap(
  * @throws IllegalArgumentException if any value appears more than once.
  */
 fun <K, V> Map<K, V>.toSortedBiMap(comparator: Comparator<in K>): SortedBiMap<K, V> =
-    SortedBiMapImpl<K, V>(comparator).apply { putAll(this@toSortedBiMap) }
+    ImmutableSortedBiMap(SortedBiMapImpl<K, V>(comparator).apply { putAll(this@toSortedBiMap) })
 
 /**
  * Returns a new empty [MutableSortedBiMap] with keys ordered by [comparator].

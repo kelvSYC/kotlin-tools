@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.collections
 
 import com.kelvsyc.internal.kotlin.core.collections.BiTreeSetMultimap
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableBiSortedSetMultimap
 
 /**
  * Returns an empty read-only [BiSortedSetMultimap] with keys ordered by [keyComparator] and values per key ordered
@@ -9,7 +10,7 @@ import com.kelvsyc.internal.kotlin.core.collections.BiTreeSetMultimap
 fun <K, V> emptyBiSortedSetMultimap(
     keyComparator: Comparator<in K>,
     valueComparator: Comparator<in V>,
-): BiSortedSetMultimap<K, V> = BiTreeSetMultimap(keyComparator, valueComparator)
+): BiSortedSetMultimap<K, V> = ImmutableBiSortedSetMultimap(BiTreeSetMultimap(keyComparator, valueComparator))
 
 /**
  * Returns a read-only [BiSortedSetMultimap] containing [pairs], with keys ordered by [keyComparator] and values
@@ -20,7 +21,7 @@ fun <K, V> biSortedSetMultimapOf(
     valueComparator: Comparator<in V>,
     vararg pairs: Pair<K, V>,
 ): BiSortedSetMultimap<K, V> =
-    BiTreeSetMultimap<K, V>(keyComparator, valueComparator).also { pairs.forEach { (k, v) -> it.put(k, v) } }
+    ImmutableBiSortedSetMultimap(BiTreeSetMultimap<K, V>(keyComparator, valueComparator).also { pairs.forEach { (k, v) -> it.put(k, v) } })
 
 /**
  * Returns a read-only [BiSortedSetMultimap] containing [pairs] with keys and values in their natural order.
@@ -53,7 +54,7 @@ fun <K, V> Iterable<Pair<K, V>>.toBiSortedSetMultimap(
     keyComparator: Comparator<in K>,
     valueComparator: Comparator<in V>,
 ): BiSortedSetMultimap<K, V> =
-    BiTreeSetMultimap<K, V>(keyComparator, valueComparator).also { m -> forEach { (k, v) -> m.put(k, v) } }
+    ImmutableBiSortedSetMultimap(BiTreeSetMultimap<K, V>(keyComparator, valueComparator).also { m -> forEach { (k, v) -> m.put(k, v) } })
 
 /**
  * Returns a read-only [BiSortedSetMultimap] containing all pairs from this [Iterable] with keys and values in
@@ -70,4 +71,4 @@ fun <K, V> buildBiSortedSetMultimap(
     keyComparator: Comparator<in K>,
     valueComparator: Comparator<in V>,
     builderAction: MutableBiSortedSetMultimap<K, V>.() -> Unit,
-): BiSortedSetMultimap<K, V> = BiTreeSetMultimap<K, V>(keyComparator, valueComparator).apply(builderAction)
+): BiSortedSetMultimap<K, V> = ImmutableBiSortedSetMultimap(BiTreeSetMultimap<K, V>(keyComparator, valueComparator).apply(builderAction))

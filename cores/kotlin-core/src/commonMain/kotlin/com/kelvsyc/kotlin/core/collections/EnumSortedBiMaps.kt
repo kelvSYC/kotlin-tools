@@ -1,6 +1,8 @@
 package com.kelvsyc.kotlin.core.collections
 
 import com.kelvsyc.internal.kotlin.core.collections.EnumSortedBiMapImpl
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableEnumSortedBiMap
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableSortedEnumBiMap
 import com.kelvsyc.internal.kotlin.core.collections.SortedEnumBiMapImpl
 import kotlin.enums.enumEntries
 
@@ -15,7 +17,7 @@ inline fun <reified K : Enum<K>, V> enumSortedBiMapOf(
     valueComparator: Comparator<in V>,
     vararg pairs: Pair<K, V>,
 ): EnumSortedBiMap<K, V> =
-    EnumSortedBiMapImpl(enumEntries<K>(), valueComparator).apply { pairs.forEach { (k, v) -> put(k, v) } }
+    ImmutableEnumSortedBiMap(EnumSortedBiMapImpl(enumEntries<K>(), valueComparator).apply { pairs.forEach { (k, v) -> put(k, v) } })
 
 /**
  * Builds a read-only [EnumSortedBiMap] by populating a [MutableEnumSortedBiMap] using [builderAction].
@@ -23,7 +25,7 @@ inline fun <reified K : Enum<K>, V> enumSortedBiMapOf(
 inline fun <reified K : Enum<K>, V> buildEnumSortedBiMap(
     valueComparator: Comparator<in V>,
     builderAction: MutableEnumSortedBiMap<K, V>.() -> Unit,
-): EnumSortedBiMap<K, V> = EnumSortedBiMapImpl(enumEntries<K>(), valueComparator).apply(builderAction)
+): EnumSortedBiMap<K, V> = ImmutableEnumSortedBiMap(EnumSortedBiMapImpl(enumEntries<K>(), valueComparator).apply(builderAction))
 
 /**
  * Returns a new read-only [EnumSortedBiMap] containing all entries from this [Map].
@@ -33,7 +35,7 @@ inline fun <reified K : Enum<K>, V> buildEnumSortedBiMap(
 inline fun <reified K : Enum<K>, V> Map<K, V>.toEnumSortedBiMap(
     valueComparator: Comparator<in V>,
 ): EnumSortedBiMap<K, V> =
-    EnumSortedBiMapImpl(enumEntries<K>(), valueComparator).apply { putAll(this@toEnumSortedBiMap) }
+    ImmutableEnumSortedBiMap(EnumSortedBiMapImpl(enumEntries<K>(), valueComparator).apply { putAll(this@toEnumSortedBiMap) })
 
 /**
  * Returns a new empty [MutableEnumSortedBiMap].
@@ -82,7 +84,7 @@ inline fun <K, reified V : Enum<V>> sortedEnumBiMapOf(
     comparator: Comparator<in K>,
     vararg pairs: Pair<K, V>,
 ): SortedEnumBiMap<K, V> =
-    SortedEnumBiMapImpl(comparator, enumEntries<V>()).apply { pairs.forEach { (k, v) -> put(k, v) } }
+    ImmutableSortedEnumBiMap(SortedEnumBiMapImpl(comparator, enumEntries<V>()).apply { pairs.forEach { (k, v) -> put(k, v) } })
 
 /**
  * Builds a read-only [SortedEnumBiMap] by populating a [MutableSortedEnumBiMap] using [builderAction].
@@ -90,7 +92,7 @@ inline fun <K, reified V : Enum<V>> sortedEnumBiMapOf(
 inline fun <K, reified V : Enum<V>> buildSortedEnumBiMap(
     comparator: Comparator<in K>,
     builderAction: MutableSortedEnumBiMap<K, V>.() -> Unit,
-): SortedEnumBiMap<K, V> = SortedEnumBiMapImpl(comparator, enumEntries<V>()).apply(builderAction)
+): SortedEnumBiMap<K, V> = ImmutableSortedEnumBiMap(SortedEnumBiMapImpl(comparator, enumEntries<V>()).apply(builderAction))
 
 /**
  * Returns a new read-only [SortedEnumBiMap] containing all entries from this [Map].
@@ -100,7 +102,7 @@ inline fun <K, reified V : Enum<V>> buildSortedEnumBiMap(
 inline fun <K, reified V : Enum<V>> Map<K, V>.toSortedEnumBiMap(
     comparator: Comparator<in K>,
 ): SortedEnumBiMap<K, V> =
-    SortedEnumBiMapImpl(comparator, enumEntries<V>()).apply { putAll(this@toSortedEnumBiMap) }
+    ImmutableSortedEnumBiMap(SortedEnumBiMapImpl(comparator, enumEntries<V>()).apply { putAll(this@toSortedEnumBiMap) })
 
 /**
  * Returns a new empty [MutableSortedEnumBiMap].

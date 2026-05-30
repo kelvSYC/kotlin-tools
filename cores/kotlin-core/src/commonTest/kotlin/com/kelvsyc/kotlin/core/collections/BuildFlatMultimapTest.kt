@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.collections
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
@@ -38,6 +39,13 @@ class BuildFlatMultimapTest : FunSpec({
                 put("a", 3)
             }
             m.entries.toList() shouldBe listOf("a" to 1, "b" to 2, "a" to 3)
+        }
+    }
+
+    context("immutability") {
+        test("buildFlatMultimap result cannot be cast to MutableFlatMultimap") {
+            shouldThrow<ClassCastException> { buildFlatMultimap<String, Int> { put("a", 1) } as MutableFlatMultimap<String, Int> }
+            shouldThrow<ClassCastException> { buildFlatMultimap<String, Int>(4) { put("a", 1) } as MutableFlatMultimap<String, Int> }
         }
     }
 })

@@ -213,4 +213,15 @@ class EnumSortedBiMapTest : FunSpec({
             bm shouldBe rm
         }
     }
+
+    context("immutability") {
+        test("EnumSortedBiMap read-only factory results cannot be cast to mutable interface") {
+            shouldThrow<ClassCastException> { enumSortedBiMapOf<Grade, Int>(numeric, Grade.A to 1) as MutableEnumSortedBiMap<Grade, Int> }
+            shouldThrow<ClassCastException> { buildEnumSortedBiMap<Grade, Int>(numeric) { put(Grade.A, 1) } as MutableEnumSortedBiMap<Grade, Int> }
+        }
+        test("SortedEnumBiMap read-only factory results cannot be cast to mutable interface") {
+            shouldThrow<ClassCastException> { sortedEnumBiMapOf<Int, Level>(numeric, 1 to Level.LOW) as MutableSortedEnumBiMap<Int, Level> }
+            shouldThrow<ClassCastException> { buildSortedEnumBiMap<Int, Level>(numeric) { put(1, Level.LOW) } as MutableSortedEnumBiMap<Int, Level> }
+        }
+    }
 })

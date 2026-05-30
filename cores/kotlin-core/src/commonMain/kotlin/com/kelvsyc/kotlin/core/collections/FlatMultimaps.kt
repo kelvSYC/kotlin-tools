@@ -31,11 +31,11 @@ fun <K, V> Sequence<Pair<K, V>>.toFlatMultimap(): FlatMultimap<K, V> = Immutable
  * returning a read-only snapshot of its contents.
  */
 fun <K, V> buildFlatMultimap(builderAction: MutableFlatMultimap<K, V>.() -> Unit): FlatMultimap<K, V> =
-    LinkedHashFlatMultimap<K, V>().apply(builderAction)
+    ImmutableFlatMultimap(LinkedHashFlatMultimap<K, V>().apply(builderAction).entries.toList())
 
 /**
  * Builds a read-only [FlatMultimap] by populating a [MutableFlatMultimap] with the given initial key [capacity] and
  * using the given [builderAction], returning a read-only snapshot of its contents.
  */
 fun <K, V> buildFlatMultimap(capacity: Int, builderAction: MutableFlatMultimap<K, V>.() -> Unit): FlatMultimap<K, V> =
-    LinkedHashFlatMultimap<K, V>(capacity).apply(builderAction)
+    ImmutableFlatMultimap(LinkedHashFlatMultimap<K, V>(capacity).apply(builderAction).entries.toList())

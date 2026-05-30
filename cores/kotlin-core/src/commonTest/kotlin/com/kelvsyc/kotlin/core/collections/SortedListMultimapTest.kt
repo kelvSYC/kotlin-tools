@@ -263,4 +263,12 @@ class SortedListMultimapTest : FunSpec({
             (a == b).shouldBeFalse()
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableSortedListMultimap") {
+            shouldThrow<ClassCastException> { emptySortedListMultimap<Int, String>(naturalOrder()) as MutableSortedListMultimap<Int, String> }
+            shouldThrow<ClassCastException> { sortedListMultimapOf(naturalOrder(), 1 to "a") as MutableSortedListMultimap<Int, String> }
+            shouldThrow<ClassCastException> { buildSortedListMultimap<Int, String>(naturalOrder()) { put(1, "a") } as MutableSortedListMultimap<Int, String> }
+        }
+    }
 })

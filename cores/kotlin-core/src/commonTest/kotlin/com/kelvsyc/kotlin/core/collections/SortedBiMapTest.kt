@@ -315,4 +315,11 @@ class SortedBiMapTest : FunSpec({
             h.inverse.shouldBeInstanceOf<BiMap<Int, String>>()
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableSortedBiMap") {
+            shouldThrow<ClassCastException> { sortedBiMapOf(naturalOrder<Int>(), 1 to "a") as MutableSortedBiMap<Int, String> }
+            shouldThrow<ClassCastException> { buildSortedBiMap<Int, String>(naturalOrder()) { put(1, "a") } as MutableSortedBiMap<Int, String> }
+        }
+    }
 })

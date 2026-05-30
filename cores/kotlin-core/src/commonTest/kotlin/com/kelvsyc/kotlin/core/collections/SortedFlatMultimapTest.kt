@@ -315,4 +315,13 @@ class SortedFlatMultimapTest : FunSpec({
             (a == b).shouldBeTrue()
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableSortedFlatMultimap") {
+            val cmp = compareBy<Pair<Int, String>> { it.first }.thenBy { it.second }
+            shouldThrow<ClassCastException> { emptySortedFlatMultimap<Int, String>(cmp) as MutableSortedFlatMultimap<Int, String> }
+            shouldThrow<ClassCastException> { sortedFlatMultimapOf(cmp, 1 to "a") as MutableSortedFlatMultimap<Int, String> }
+            shouldThrow<ClassCastException> { buildSortedFlatMultimap<Int, String>(cmp) { put(1, "a") } as MutableSortedFlatMultimap<Int, String> }
+        }
+    }
 })

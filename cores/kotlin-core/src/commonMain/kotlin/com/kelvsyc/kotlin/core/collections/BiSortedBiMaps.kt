@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.core.collections
 
 import com.kelvsyc.internal.kotlin.core.collections.BiSortedBiMapImpl
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableBiSortedBiMap
 
 /**
  * Returns a new read-only [BiSortedBiMap] with the specified contents.
@@ -12,7 +13,7 @@ fun <K, V> biSortedBiMapOf(
     valueComparator: Comparator<in V>,
     vararg pairs: Pair<K, V>,
 ): BiSortedBiMap<K, V> =
-    BiSortedBiMapImpl(comparator, valueComparator).apply { pairs.forEach { (k, v) -> put(k, v) } }
+    ImmutableBiSortedBiMap(BiSortedBiMapImpl(comparator, valueComparator).apply { pairs.forEach { (k, v) -> put(k, v) } })
 
 /**
  * Builds a read-only [BiSortedBiMap] by populating a [MutableBiSortedBiMap] using [builderAction].
@@ -21,7 +22,7 @@ fun <K, V> buildBiSortedBiMap(
     comparator: Comparator<in K>,
     valueComparator: Comparator<in V>,
     builderAction: MutableBiSortedBiMap<K, V>.() -> Unit,
-): BiSortedBiMap<K, V> = BiSortedBiMapImpl(comparator, valueComparator).apply(builderAction)
+): BiSortedBiMap<K, V> = ImmutableBiSortedBiMap(BiSortedBiMapImpl(comparator, valueComparator).apply(builderAction))
 
 /**
  * Returns a new read-only [BiSortedBiMap] containing all entries from this [Map].
@@ -32,7 +33,7 @@ fun <K, V> Map<K, V>.toBiSortedBiMap(
     comparator: Comparator<in K>,
     valueComparator: Comparator<in V>,
 ): BiSortedBiMap<K, V> =
-    BiSortedBiMapImpl(comparator, valueComparator).apply { putAll(this@toBiSortedBiMap) }
+    ImmutableBiSortedBiMap(BiSortedBiMapImpl(comparator, valueComparator).apply { putAll(this@toBiSortedBiMap) })
 
 /**
  * Returns a new empty [MutableBiSortedBiMap].
