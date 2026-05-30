@@ -61,6 +61,22 @@ queried at the end, rather than being general-purpose containers.
   - `mutableEnumDisjointSetOf<E>()` — enum universe, `IntArray`-backed via ordinal indexing
   - `buildDisjointSet { }` / `buildEnumDisjointSet<E> { }` — builder returning a read-only view
 
+- **IndexedPriorityQueue** (`IndexedPriorityQueue<T, P>`) — a min-heap priority queue that supports
+  O(log n) priority updates via an inverse-position map from elements to their current heap
+  positions. Unlike `PriorityQueue<T>`, where priority is implicitly derived from the element via a
+  comparator, an `IndexedPriorityQueue` stores priority `P` as explicit, mutable, caller-supplied
+  state independent of `T` — there is no `(T) -> P` transformer. The `Comparator<in P>` operates
+  purely on `P` values. Supports `add`, `pollMin`, `peekMin`, `contains`, `getPriority`, `remove`,
+  `decreaseKey`, `increaseKey`, and `updatePriority`. The known-universe and enum variants pre-allocate
+  fixed arrays and are more memory-efficient when the element set is bounded. Factory functions:
+  - `indexedPriorityQueueOf(comparator)` — dynamic universe, `HashMap`-backed
+  - `indexedPriorityQueueOf(comparator, universe)` — known universe, pre-allocated arrays; `add`
+    for an element outside `universe` throws `IllegalArgumentException`
+  - `enumIndexedPriorityQueueOf<E, P>(comparator)` — enum universe, ordinal-indexed arrays with no
+    T→Int map
+  - `minIndexedPriorityQueueOf()` / `minIndexedPriorityQueueOf(universe)` /
+    `minEnumIndexedPriorityQueueOf<E, P>()` — natural-order convenience variants for `P : Comparable<P>`
+
 ### Floating-Point Representations (`fp`)
 
 Structural representations for floating-point values:
