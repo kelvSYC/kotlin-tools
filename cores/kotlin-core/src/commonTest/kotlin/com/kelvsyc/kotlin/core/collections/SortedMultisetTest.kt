@@ -275,4 +275,12 @@ class SortedMultisetTest : FunSpec({
             expected.forEach { (e, c) -> m.count(e) shouldBe c }
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableSortedMultiset") {
+            shouldThrow<ClassCastException> { emptySortedMultiset(naturalOrder<Int>()) as MutableSortedMultiset<Int> }
+            shouldThrow<ClassCastException> { sortedMultisetOf(naturalOrder(), 1, 2, 3) as MutableSortedMultiset<Int> }
+            shouldThrow<ClassCastException> { buildSortedMultiset(naturalOrder<Int>()) { add(1) } as MutableSortedMultiset<Int> }
+        }
+    }
 })

@@ -1,12 +1,13 @@
 package com.kelvsyc.kotlin.core.collections
 
 import com.kelvsyc.internal.kotlin.core.collections.ArrayEnumBiMap
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableEnumBiMap
 import kotlin.enums.enumEntries
 
 /**
  * Returns an empty read-only [EnumBiMap] for enum type [K].
  */
-inline fun <reified K : Enum<K>, V> emptyEnumBiMap(): EnumBiMap<K, V> = ArrayEnumBiMap(enumEntries<K>())
+inline fun <reified K : Enum<K>, V> emptyEnumBiMap(): EnumBiMap<K, V> = ImmutableEnumBiMap(ArrayEnumBiMap(enumEntries<K>()))
 
 /**
  * Returns a new read-only [EnumBiMap] with the specified contents.
@@ -14,13 +15,13 @@ inline fun <reified K : Enum<K>, V> emptyEnumBiMap(): EnumBiMap<K, V> = ArrayEnu
  * @throws IllegalArgumentException if any value appears more than once.
  */
 inline fun <reified K : Enum<K>, V> enumBiMapOf(vararg pairs: Pair<K, V>): EnumBiMap<K, V> =
-    ArrayEnumBiMap<K, V>(enumEntries<K>()).apply { pairs.forEach { (k, v) -> put(k, v) } }
+    ImmutableEnumBiMap(ArrayEnumBiMap<K, V>(enumEntries<K>()).apply { pairs.forEach { (k, v) -> put(k, v) } })
 
 /**
  * Builds a read-only [EnumBiMap] by populating a [MutableEnumBiMap] using [builderAction].
  */
 inline fun <reified K : Enum<K>, V> buildEnumBiMap(builderAction: MutableEnumBiMap<K, V>.() -> Unit): EnumBiMap<K, V> =
-    ArrayEnumBiMap<K, V>(enumEntries<K>()).apply(builderAction)
+    ImmutableEnumBiMap(ArrayEnumBiMap<K, V>(enumEntries<K>()).apply(builderAction))
 
 /**
  * Returns a new read-only [EnumBiMap] containing all entries from this [Map].
@@ -28,7 +29,7 @@ inline fun <reified K : Enum<K>, V> buildEnumBiMap(builderAction: MutableEnumBiM
  * @throws IllegalArgumentException if any value appears more than once.
  */
 inline fun <reified K : Enum<K>, V> Map<K, V>.toEnumBiMap(): EnumBiMap<K, V> =
-    ArrayEnumBiMap<K, V>(enumEntries<K>()).apply { putAll(this@toEnumBiMap) }
+    ImmutableEnumBiMap(ArrayEnumBiMap<K, V>(enumEntries<K>()).apply { putAll(this@toEnumBiMap) })
 
 /**
  * Returns a new empty [MutableEnumBiMap] for enum type [K].

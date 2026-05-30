@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.collections
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -179,6 +180,14 @@ class EnumSetTest : FunSpec({
             iter.remove()
             s.size shouldBe 2
             s.contains(Hue.RED).shouldBeFalse()
+        }
+    }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableEnumSet") {
+            shouldThrow<ClassCastException> { emptyEnumSet<Hue>() as MutableEnumSet<Hue> }
+            shouldThrow<ClassCastException> { enumSetOf(Hue.RED) as MutableEnumSet<Hue> }
+            shouldThrow<ClassCastException> { buildEnumSet<Hue> { add(Hue.RED) } as MutableEnumSet<Hue> }
         }
     }
 })

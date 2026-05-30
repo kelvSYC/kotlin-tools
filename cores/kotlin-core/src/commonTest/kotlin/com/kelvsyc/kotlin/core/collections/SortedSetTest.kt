@@ -205,4 +205,12 @@ class SortedSetTest : FunSpec({
             s.toList() shouldContainExactly (1..1000).toList()
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableSortedSet") {
+            shouldThrow<ClassCastException> { emptySortedSet(naturalOrder<Int>()) as MutableSortedSet<Int> }
+            shouldThrow<ClassCastException> { sortedSetOf(naturalOrder(), 1, 2, 3) as MutableSortedSet<Int> }
+            shouldThrow<ClassCastException> { buildSortedSet(naturalOrder<Int>()) { add(1) } as MutableSortedSet<Int> }
+        }
+    }
 })

@@ -218,4 +218,18 @@ class BiSortedSetMultimapTest : FunSpec({
             (a == b).shouldBeFalse()
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableBiSortedSetMultimap") {
+            shouldThrow<ClassCastException> {
+                emptyBiSortedSetMultimap<Int, String>(naturalOrder(), naturalOrder()) as MutableBiSortedSetMultimap<Int, String>
+            }
+            shouldThrow<ClassCastException> {
+                biSortedSetMultimapOf(naturalOrder<Int>(), naturalOrder<String>(), 1 to "a") as MutableBiSortedSetMultimap<Int, String>
+            }
+            shouldThrow<ClassCastException> {
+                buildBiSortedSetMultimap<Int, String>(naturalOrder(), naturalOrder()) { put(1, "a") } as MutableBiSortedSetMultimap<Int, String>
+            }
+        }
+    }
 })

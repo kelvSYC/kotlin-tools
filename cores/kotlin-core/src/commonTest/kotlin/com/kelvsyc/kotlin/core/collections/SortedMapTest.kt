@@ -221,4 +221,12 @@ class SortedMapTest : FunSpec({
             m.keys.toList() shouldContainExactly (1..1000).toList()
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableSortedMap") {
+            shouldThrow<ClassCastException> { emptySortedMap<Int, String>(naturalOrder()) as MutableSortedMap<Int, String> }
+            shouldThrow<ClassCastException> { sortedMapOf(naturalOrder(), 1 to "a") as MutableSortedMap<Int, String> }
+            shouldThrow<ClassCastException> { buildSortedMap<Int, String>(naturalOrder()) { put(1, "a") } as MutableSortedMap<Int, String> }
+        }
+    }
 })

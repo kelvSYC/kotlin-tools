@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.collections
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -265,6 +266,14 @@ class EnumMapTest : FunSpec({
             iter.next()
             iter.remove()
             m.size shouldBe 1
+        }
+    }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableEnumMap") {
+            shouldThrow<ClassCastException> { emptyEnumMap<Color, Int>() as MutableEnumMap<Color, Int> }
+            shouldThrow<ClassCastException> { enumMapOf(Color.RED to 1) as MutableEnumMap<Color, Int> }
+            shouldThrow<ClassCastException> { buildEnumMap<Color, Int> { put(Color.RED, 1) } as MutableEnumMap<Color, Int> }
         }
     }
 })

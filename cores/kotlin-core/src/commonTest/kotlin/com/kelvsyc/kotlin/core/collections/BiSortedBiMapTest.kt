@@ -174,4 +174,15 @@ class BiSortedBiMapTest : FunSpec({
             h.inverse[20] shouldBe "b"
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableBiSortedBiMap") {
+            shouldThrow<ClassCastException> {
+                biSortedBiMapOf(naturalOrder<Int>(), naturalOrder<String>(), 1 to "a") as MutableBiSortedBiMap<Int, String>
+            }
+            shouldThrow<ClassCastException> {
+                buildBiSortedBiMap<Int, String>(naturalOrder(), naturalOrder()) { put(1, "a") } as MutableBiSortedBiMap<Int, String>
+            }
+        }
+    }
 })

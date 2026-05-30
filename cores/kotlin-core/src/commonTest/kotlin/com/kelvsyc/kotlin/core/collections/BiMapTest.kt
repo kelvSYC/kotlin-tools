@@ -268,4 +268,12 @@ class BiMapTest : FunSpec({
             bm.hashCode() shouldBe rm.hashCode()
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableBiMap") {
+            shouldThrow<ClassCastException> { emptyBiMap<String, Int>() as MutableBiMap<String, Int> }
+            shouldThrow<ClassCastException> { biMapOf("a" to 1) as MutableBiMap<String, Int> }
+            shouldThrow<ClassCastException> { buildBiMap<String, Int> { put("a", 1) } as MutableBiMap<String, Int> }
+        }
+    }
 })

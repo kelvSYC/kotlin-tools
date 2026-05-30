@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.collections
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -362,6 +363,14 @@ class EnumSetMultimapTest : FunSpec({
             val m = mutableEnumSetMultimapOf(Direction.NORTH to 1, Direction.EAST to 2)
             m.clear()
             m.size shouldBe 0
+        }
+    }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableEnumSetMultimap") {
+            shouldThrow<ClassCastException> { emptyEnumSetMultimap<Direction, Int>() as MutableEnumSetMultimap<Direction, Int> }
+            shouldThrow<ClassCastException> { enumSetMultimapOf(Direction.NORTH to 1) as MutableEnumSetMultimap<Direction, Int> }
+            shouldThrow<ClassCastException> { buildEnumSetMultimap<Direction, Int> { put(Direction.NORTH, 1) } as MutableEnumSetMultimap<Direction, Int> }
         }
     }
 })

@@ -258,4 +258,12 @@ class EnumBiMapTest : FunSpec({
             m.values.shouldContainExactlyInAnyOrder(1, 2)
         }
     }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableEnumBiMap") {
+            shouldThrow<ClassCastException> { emptyEnumBiMap<Planet, Int>() as MutableEnumBiMap<Planet, Int> }
+            shouldThrow<ClassCastException> { enumBiMapOf(Planet.EARTH to 1) as MutableEnumBiMap<Planet, Int> }
+            shouldThrow<ClassCastException> { buildEnumBiMap<Planet, Int> { put(Planet.EARTH, 1) } as MutableEnumBiMap<Planet, Int> }
+        }
+    }
 })

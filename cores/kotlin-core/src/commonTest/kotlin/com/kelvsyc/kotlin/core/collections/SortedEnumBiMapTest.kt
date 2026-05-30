@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.collections
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -106,6 +107,17 @@ class SortedEnumBiMapTest : FunSpec({
             val m = sortedEnumBiMapOf(alpha, "a" to SortedEnumBiMapTestDirection.NORTH, "b" to SortedEnumBiMapTestDirection.SOUTH)
             m.inverse[SortedEnumBiMapTestDirection.NORTH] shouldBe "a"
             m.inverse.enumEntries shouldBe enumEntries<SortedEnumBiMapTestDirection>()
+        }
+    }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableSortedEnumBiMap") {
+            shouldThrow<ClassCastException> {
+                sortedEnumBiMapOf<String, SortedEnumBiMapTestDirection>(alpha, "a" to SortedEnumBiMapTestDirection.NORTH) as MutableSortedEnumBiMap<String, SortedEnumBiMapTestDirection>
+            }
+            shouldThrow<ClassCastException> {
+                buildSortedEnumBiMap<String, SortedEnumBiMapTestDirection>(alpha) { put("a", SortedEnumBiMapTestDirection.NORTH) } as MutableSortedEnumBiMap<String, SortedEnumBiMapTestDirection>
+            }
         }
     }
 })

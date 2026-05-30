@@ -1,12 +1,13 @@
 package com.kelvsyc.kotlin.core.collections
 
+import com.kelvsyc.internal.kotlin.core.collections.ImmutableSortedFlatMultimap
 import com.kelvsyc.internal.kotlin.core.collections.TreeFlatMultimap
 
 /**
  * Returns an empty read-only [SortedFlatMultimap] with entries ordered by [comparator] over pairs.
  */
 fun <K, V> emptySortedFlatMultimap(comparator: Comparator<in Pair<K, V>>): SortedFlatMultimap<K, V> =
-    TreeFlatMultimap(comparator)
+    ImmutableSortedFlatMultimap(TreeFlatMultimap(comparator))
 
 /**
  * Returns a read-only [SortedFlatMultimap] containing [pairs], ordered by [comparator] over whole
@@ -16,7 +17,7 @@ fun <K, V> sortedFlatMultimapOf(
     comparator: Comparator<in Pair<K, V>>,
     vararg pairs: Pair<K, V>,
 ): SortedFlatMultimap<K, V> =
-    TreeFlatMultimap<K, V>(comparator).also { m -> pairs.forEach { (k, v) -> m.put(k, v) } }
+    ImmutableSortedFlatMultimap(TreeFlatMultimap<K, V>(comparator).also { m -> pairs.forEach { (k, v) -> m.put(k, v) } })
 
 /**
  * Returns a read-only [SortedFlatMultimap] containing [pairs] with entries ordered
@@ -57,7 +58,7 @@ fun <K : Comparable<K>, V : Comparable<V>> mutableSortedFlatMultimapOf(
 fun <K, V> Iterable<Pair<K, V>>.toSortedFlatMultimap(
     comparator: Comparator<in Pair<K, V>>,
 ): SortedFlatMultimap<K, V> =
-    TreeFlatMultimap<K, V>(comparator).also { m -> forEach { (k, v) -> m.put(k, v) } }
+    ImmutableSortedFlatMultimap(TreeFlatMultimap<K, V>(comparator).also { m -> forEach { (k, v) -> m.put(k, v) } })
 
 /**
  * Returns a read-only [SortedFlatMultimap] containing all pairs from this [Iterable] with entries
@@ -73,4 +74,4 @@ fun <K : Comparable<K>, V : Comparable<V>> Iterable<Pair<K, V>>.toSortedFlatMult
 fun <K, V> buildSortedFlatMultimap(
     comparator: Comparator<in Pair<K, V>>,
     builderAction: MutableSortedFlatMultimap<K, V>.() -> Unit,
-): SortedFlatMultimap<K, V> = TreeFlatMultimap<K, V>(comparator).apply(builderAction)
+): SortedFlatMultimap<K, V> = ImmutableSortedFlatMultimap(TreeFlatMultimap<K, V>(comparator).apply(builderAction))

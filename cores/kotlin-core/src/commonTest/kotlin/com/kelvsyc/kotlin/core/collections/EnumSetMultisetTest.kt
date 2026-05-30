@@ -1,5 +1,6 @@
 package com.kelvsyc.kotlin.core.collections
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -415,6 +416,14 @@ class EnumSetMultisetTest : FunSpec({
             val m = mutableEnumSetMultisetOf(Season.SPRING, Season.SUMMER)
             m.clear()
             m.size shouldBe 0
+        }
+    }
+
+    context("immutability") {
+        test("read-only factory results cannot be cast to MutableEnumSetMultiset") {
+            shouldThrow<ClassCastException> { emptyEnumSetMultiset<Season>() as MutableEnumSetMultiset<Season> }
+            shouldThrow<ClassCastException> { enumSetMultisetOf(Season.SPRING) as MutableEnumSetMultiset<Season> }
+            shouldThrow<ClassCastException> { buildEnumSetMultiset<Season> { add(Season.SPRING) } as MutableEnumSetMultiset<Season> }
         }
     }
 })
