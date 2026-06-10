@@ -13,7 +13,7 @@ kotest-bom = "io.kotest:kotest-bom:6.1.11"
 dependency-analysis-plugin = "com.autonomousapps:dependency-analysis-gradle-plugin:3.14.1"
 dokka-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 foojay-resolver-plugin = "org.gradle.toolchains.foojay-resolver:org.gradle.toolchains.foojay-resolver.gradle.plugin:1.0.0"
-jgit = "org.eclipse.jgit:org.eclipse.jgit:7.6.0.202603022253-r"
+jgit = "org.eclipse.jgit:org.eclipse.jgit:7.7.0.202606012155-r"
 kotest-plugin = "io.kotest:io.kotest.gradle.plugin:6.1.11"
 ksp-plugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 kotlin-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin" } # version from BOM 'kotlin-gradle-plugins-bom'
