@@ -7,14 +7,14 @@ moshi = "1.15.2"
 [libraries]
 # BOMs
 kotlin-gradle-plugins-bom = { module = "org.jetbrains.kotlin:kotlin-gradle-plugins-bom", version.ref = "kotlin" }
-kotest-bom = "io.kotest:kotest-bom:6.1.11"
+kotest-bom = "io.kotest:kotest-bom:6.2.2"
 
 # Internal
 dependency-analysis-plugin = "com.autonomousapps:dependency-analysis-gradle-plugin:3.16.1"
 dokka-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 foojay-resolver-plugin = "org.gradle.toolchains.foojay-resolver:org.gradle.toolchains.foojay-resolver.gradle.plugin:1.0.0"
 jgit = "org.eclipse.jgit:org.eclipse.jgit:7.7.0.202606012155-r"
-kotest-plugin = "io.kotest:io.kotest.gradle.plugin:6.1.11"
+kotest-plugin = "io.kotest:io.kotest.gradle.plugin:6.2.2"
 ksp-plugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 kotlin-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin" } # version from BOM 'kotlin-gradle-plugins-bom'
 
