@@ -4,6 +4,32 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
+// Extension properties can't be declared locally inside a test body, so the fixtures for
+// extensionBitFlag/mutableExtensionBitFlag/extensionBitRange/mutableExtensionBitRange — which
+// exist specifically to back extension properties over varying receiver instances — live here at
+// file scope instead.
+
+private data class ExtensionFixture(val raw: Int)
+
+private val ExtensionFixture.bit0: Boolean by BitCollection.int.extensionBitFlag({ raw }, 0)
+private val ExtensionFixture.bit3ViaRef: Boolean by BitCollection.int.extensionBitFlag(ExtensionFixture::raw, 3)
+
+private class MutableExtensionFixture(var raw: Int)
+
+private var MutableExtensionFixture.mutBit0: Boolean
+        by BitCollection.int.mutableExtensionBitFlag({ raw }, { raw = it }, 0)
+private var MutableExtensionFixture.mutBit3: Boolean
+        by BitCollection.int.mutableExtensionBitFlag({ raw }, { raw = it }, 3)
+
+private data class RangeExtensionFixture(val raw: Int)
+
+private val RangeExtensionFixture.nibble: Int by BitCollection.int.extensionBitRange({ raw }, start = 4, count = 4)
+
+private class MutableRangeExtensionFixture(var raw: Int)
+
+private var MutableRangeExtensionFixture.nibble: Int
+        by BitCollection.int.mutableExtensionBitRange({ raw }, { raw = it }, start = 4, count = 4)
+
 class BitCollectionDelegatesTest : FunSpec({
 
     // ── bitFlag(value, bit) ───────────────────────────────────────────────────
@@ -260,6 +286,82 @@ class BitCollectionDelegatesTest : FunSpec({
         test("clear via flag, read via range") {
             viaFlag = false
             viaRange shouldBe 0uL
+        }
+    }
+
+    // ── extensionBitFlag / mutableExtensionBitFlag ────────────────────────────
+
+    context("extensionBitFlag — receiver-bound extractor for extension properties") {
+        test("bare-lambda extractor re-reads the correct bit per receiver instance") {
+            ExtensionFixture(raw = 0b0001).bit0 shouldBe true
+            ExtensionFixture(raw = 0b0000).bit0 shouldBe false
+        }
+        test("bound member-reference extractor re-reads the correct bit per receiver instance") {
+            ExtensionFixture(raw = 0b1000).bit3ViaRef shouldBe true
+            ExtensionFixture(raw = 0b0000).bit3ViaRef shouldBe false
+        }
+        test("different instances of the same extension property don't interfere") {
+            val a = ExtensionFixture(raw = 0b0001)
+            val b = ExtensionFixture(raw = 0b0000)
+            a.bit0 shouldBe true
+            b.bit0 shouldBe false
+        }
+        test("bit out of range throws") {
+            shouldThrow<IllegalArgumentException> {
+                BitCollection.int.extensionBitFlag<ExtensionFixture, Int>({ raw }, 32)
+            }
+        }
+    }
+
+    context("mutableExtensionBitFlag — receiver-bound extractor/setter for extension properties") {
+        test("get/set round-trips through the receiver's own backing field") {
+            val fixture = MutableExtensionFixture(raw = 0)
+            fixture.mutBit0 = true
+            fixture.raw shouldBe 0b0001
+            fixture.mutBit0 shouldBe true
+            fixture.mutBit3 shouldBe false
+        }
+        test("mutations on one instance don't affect another") {
+            val a = MutableExtensionFixture(raw = 0)
+            val b = MutableExtensionFixture(raw = 0)
+            a.mutBit3 = true
+            a.raw shouldBe 0b1000
+            b.raw shouldBe 0
+        }
+        test("bit out of range throws") {
+            shouldThrow<IllegalArgumentException> {
+                BitCollection.int.mutableExtensionBitFlag<MutableExtensionFixture, Int>({ raw }, { raw = it }, 32)
+            }
+        }
+    }
+
+    // ── extensionBitRange / mutableExtensionBitRange ──────────────────────────
+
+    context("extensionBitRange — receiver-bound extractor for extension properties") {
+        test("extracts the range from varying receiver instances") {
+            RangeExtensionFixture(raw = 0b10110101).nibble shouldBe 0b1011
+            RangeExtensionFixture(raw = 0b00000101).nibble shouldBe 0b0000
+        }
+        test("invalid range throws") {
+            shouldThrow<IllegalArgumentException> {
+                BitCollection.int.extensionBitRange<RangeExtensionFixture, Int>({ raw }, start = 30, count = 4)
+            }
+        }
+    }
+
+    context("mutableExtensionBitRange — receiver-bound extractor/setter for extension properties") {
+        test("writes the range into the receiver's own backing field, leaving other bits untouched") {
+            val fixture = MutableRangeExtensionFixture(raw = 0b11110000_00001111)
+            fixture.nibble = 0b1010
+            fixture.raw shouldBe 0b11110000_10101111
+            fixture.nibble shouldBe 0b1010
+        }
+        test("mutations on one instance don't affect another") {
+            val a = MutableRangeExtensionFixture(raw = 0)
+            val b = MutableRangeExtensionFixture(raw = 0)
+            a.nibble = 0b1111
+            a.raw shouldBe 0b11110000
+            b.raw shouldBe 0
         }
     }
 })

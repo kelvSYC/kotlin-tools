@@ -144,3 +144,112 @@ fun <T> BitCollection<T>.mutableBitRange(
         }
     }
 }
+
+/**
+ * Returns a read-only property delegate for an **extension property** whose receiver [R] varies
+ * from one call site to the next — e.g. `val SomeType.flagName: Boolean by
+ * ops.extensionBitFlag({ someField }, 0)`.
+ *
+ * [bitFlag]'s `getter: () -> T` closure is captured once, when the delegate expression itself is
+ * evaluated. For a top-level extension property that expression runs exactly once (like a
+ * top-level `val`'s initializer), with no receiver bound yet — so a getter referencing a member of
+ * [R] fails to resolve. [extractor] sidesteps this: it is an `R.() -> T` function, invoked with the
+ * actual receiver instance on every access via the delegate's `thisRef` parameter, so [T] is read
+ * fresh from whichever instance the property is being accessed on. [extractor] may be a bare lambda
+ * (`{ someField }`) or a bound member reference (`SomeType::someField`); both resolve against the
+ * receiver rather than the enclosing lexical scope.
+ *
+ * [bit] must be in `[0, sizeBits)`; see [bitFlag] for why out-of-range values throw eagerly.
+ *
+ * @see bitFlag
+ * @see mutableExtensionBitFlag
+ */
+fun <R, T> BitCollection<T>.extensionBitFlag(extractor: R.() -> T, bit: Int): ReadOnlyProperty<R, Boolean> {
+    require(bit in 0 until sizeBits) { "bit $bit is out of range [0, $sizeBits)" }
+    val mask = lsb.leftRotate(bit)
+    return ReadOnlyProperty { thisRef: R, _ -> thisRef.extractor().bitwiseAnd(mask) != allClear }
+}
+
+/**
+ * Returns a read-write property delegate for an **extension property** whose receiver [R] varies
+ * from one call site to the next, mirroring [mutableBitFlag] but threading the receiver through
+ * [extractor] and [setter] on every access instead of capturing a fixed closure — see
+ * [extensionBitFlag] for why this matters for top-level extension properties.
+ *
+ * [bit] must be in `[0, sizeBits)`; see [bitFlag] for why out-of-range values throw eagerly.
+ *
+ * @see mutableBitFlag
+ * @see extensionBitFlag
+ */
+fun <R, T> BitCollection<T>.mutableExtensionBitFlag(
+    extractor: R.() -> T,
+    setter: R.(T) -> Unit,
+    bit: Int,
+): ReadWriteProperty<R, Boolean> {
+    require(bit in 0 until sizeBits) { "bit $bit is out of range [0, $sizeBits)" }
+    val mask = lsb.leftRotate(bit)
+    return object : ReadWriteProperty<R, Boolean> {
+        override fun getValue(thisRef: R, property: KProperty<*>): Boolean =
+            thisRef.extractor().bitwiseAnd(mask) != allClear
+
+        override fun setValue(thisRef: R, property: KProperty<*>, value: Boolean) {
+            val current = thisRef.extractor()
+            thisRef.setter(if (value) current.bitwiseOr(mask) else current.bitwiseAnd(mask.invert()))
+        }
+    }
+}
+
+/**
+ * Returns a read-only property delegate for an **extension property** whose receiver [R] varies
+ * from one call site to the next, mirroring [bitRange] but reading [T] via [extractor] on every
+ * access instead of a closure captured once — see [extensionBitFlag] for why this matters for
+ * top-level extension properties.
+ *
+ * [start] must be ≥ 0, [count] must be > 0, and `start + count` must be ≤ `sizeBits`; see [bitRange]
+ * for the mask-and-rotate mechanism and why out-of-range values throw eagerly.
+ *
+ * @see bitRange
+ * @see mutableExtensionBitRange
+ */
+fun <R, T> BitCollection<T>.extensionBitRange(extractor: R.() -> T, start: Int, count: Int): ReadOnlyProperty<R, T> {
+    require(start >= 0) { "start must be non-negative, was $start" }
+    require(count > 0) { "count must be positive, was $count" }
+    require(start + count <= sizeBits) { "bit range [$start, ${start + count}) exceeds sizeBits=$sizeBits" }
+    val loMask = (0 until count).fold(allClear) { acc, i -> acc.bitwiseOr(lsb.leftRotate(i)) }
+    val hiMask = loMask.leftRotate(start)
+    return ReadOnlyProperty { thisRef: R, _ -> thisRef.extractor().bitwiseAnd(hiMask).rightRotate(start) }
+}
+
+/**
+ * Returns a read-write property delegate for an **extension property** whose receiver [R] varies
+ * from one call site to the next, mirroring [mutableBitRange] but threading the receiver through
+ * [extractor] and [setter] on every access instead of capturing a fixed closure — see
+ * [extensionBitFlag] for why this matters for top-level extension properties.
+ *
+ * [start] must be ≥ 0, [count] must be > 0, and `start + count` must be ≤ `sizeBits`.
+ *
+ * @see mutableBitRange
+ * @see extensionBitRange
+ */
+fun <R, T> BitCollection<T>.mutableExtensionBitRange(
+    extractor: R.() -> T,
+    setter: R.(T) -> Unit,
+    start: Int,
+    count: Int,
+): ReadWriteProperty<R, T> {
+    require(start >= 0) { "start must be non-negative, was $start" }
+    require(count > 0) { "count must be positive, was $count" }
+    require(start + count <= sizeBits) { "bit range [$start, ${start + count}) exceeds sizeBits=$sizeBits" }
+    val loMask = (0 until count).fold(allClear) { acc, i -> acc.bitwiseOr(lsb.leftRotate(i)) }
+    val hiMask = loMask.leftRotate(start)
+    return object : ReadWriteProperty<R, T> {
+        override fun getValue(thisRef: R, property: KProperty<*>): T =
+            thisRef.extractor().bitwiseAnd(hiMask).rightRotate(start)
+
+        override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
+            val current = thisRef.extractor()
+            val newBits = value.bitwiseAnd(loMask).leftRotate(start)
+            thisRef.setter(current.bitwiseAnd(hiMask.invert()).bitwiseOr(newBits))
+        }
+    }
+}
