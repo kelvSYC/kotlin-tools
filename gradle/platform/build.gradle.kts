@@ -9,6 +9,8 @@ javaPlatform {
 }
 
 dependencies {
+    // Overrides the vulnerable Jackson versions bundled transitively by dokka-core.
+    api(platform(libs.jackson.bom))
     api(platform(libs.kotest.bom))
     api(platform(libs.kotlin.gradle.plugins.bom))
     api(platform(libs.commons.numbers.bom))

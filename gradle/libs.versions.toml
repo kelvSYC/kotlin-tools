@@ -6,6 +6,7 @@ moshi = "1.15.2"
 
 [libraries]
 # BOMs
+jackson-bom = "com.fasterxml.jackson:jackson-bom:2.22.1"
 kotlin-gradle-plugins-bom = { module = "org.jetbrains.kotlin:kotlin-gradle-plugins-bom", version.ref = "kotlin" }
 kotest-bom = "io.kotest:kotest-bom:6.2.3"
 
