@@ -17,6 +17,36 @@ val guavaVersion: Provider<String> = libs
     .get()
     .map { it.versionConstraint.requiredVersion }
 
+val jacksonVersion: Provider<String> = libs
+    .findLibrary("jackson-bom")
+    .get()
+    .map { it.versionConstraint.requiredVersion }
+
+val jsoupVersion: Provider<String> = libs
+    .findLibrary("jsoup")
+    .get()
+    .map { it.versionConstraint.requiredVersion }
+
+// dokka-core resolves its own generator/plugin classpaths (the "dokka*" configurations
+// created per publication format) independently of this project's dependency graph, so
+// the platform's Jackson BOM override (gradle/platform/build.gradle.kts) never reaches
+// the vulnerable Jackson and jsoup versions it bundles transitively. These configurations
+// are resolver-role-locked (dependencies can't be declared against them directly), so the
+// versions must be forced via resolution strategy instead of importing a BOM.
+configurations.matching { it.name.startsWith("dokka") }.configureEach {
+    resolutionStrategy.eachDependency {
+        // jackson-annotations dropped its patch version segment in the 2.20 line, so it
+        // never matches the rest of the family's version string; leave it to resolve
+        // against the other forced modules' own (correct) dependency metadata instead.
+        if (requested.group.startsWith("com.fasterxml.jackson") && requested.name != "jackson-annotations") {
+            useVersion(jacksonVersion.get())
+        }
+        if (requested.group == "org.jsoup" && requested.name == "jsoup") {
+            useVersion(jsoupVersion.get())
+        }
+    }
+}
+
 configure<DokkaExtension> {
     val rootGradle = generateSequence(gradle, Gradle::getParent).last()
     val relativePath = layout.projectDirectory.asFile
