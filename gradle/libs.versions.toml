@@ -27,7 +27,7 @@ commons-numbers-bom = "org.apache.commons:commons-numbers-bom:1.3"
 commons-numbers-complex = { module = "org.apache.commons:commons-numbers-complex" } # version from BOM 'commons-numbers-bom'
 commons-numbers-core = { module = "org.apache.commons:commons-numbers-core" } # version from BOM 'commons-numbers-bom'
 commons-numbers-fraction = { module = "org.apache.commons:commons-numbers-fraction" } # version from BOM 'commons-numbers-bom'
-guava = "com.google.guava:guava:33.6.0-jre"
+guava = "com.google.guava:guava:33.7.1-jre"
 kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.8.0"
 moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
