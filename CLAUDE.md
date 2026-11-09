@@ -54,7 +54,7 @@ plugins { id("com.kelvsyc.internal.kotlin-tools.settings") }
 
 - `kotlin-multiplatform-base` — Applies `kotlin("multiplatform")`, Kotlin 2.3 compiler options, platform BOM in `commonMain`, Kotest engine/assertions in `commonTest`, `commonMain` platform-import check
 - `kotlin-multiplatform-library` — Applies base; enables sources JAR for publication
-- `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 25 toolchain, `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
+- `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 21 toolchain, `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
 - `kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js
 - `dokka` — Configures Dokka HTML generation with GitHub source links resolved from git HEAD; wires `assemble` → `dokkaGeneratePublicationHtml`
 - `github-publishing` — Applies `maven-publish`; configures GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; strips the internal platform BOM (`com.kelvsyc.internal.kotlin-tools:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution — the stripping happens at publication time via `pom.withXml` and a `GenerateModuleMetadata` post-processing action (`StripInternalPlatform`).
@@ -69,4 +69,4 @@ Driven by git tags via `com.javiersc.semver`, applied through the settings plugi
 
 ### JDK Constraints
 
-The `kotlin-multiplatform-jvm` convention plugin pins the JVM toolchain to JDK 25. The `gradle/settings` and convention plugin builds use JDK 21 for the Gradle daemon.
+Published JVM artifacts target JDK 21: the `kotlin-jvm-library` and `kotlin-multiplatform-jvm` convention plugins pin the JVM toolchain to it. Use LTS JDKs only, and go newer only if a library needs it. The convention plugins themselves still compile for JDK 25, so the build must run on JDK 25.
