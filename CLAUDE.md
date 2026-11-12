@@ -52,16 +52,26 @@ plugins { id("com.kelvsyc.internal.kotlin-tools.settings") }
 
 ### Convention Plugins
 
-- `kotlin-multiplatform-base` — Applies `kotlin("multiplatform")`, Kotlin 2.3 compiler options, platform BOM in `commonMain`, Kotest engine/assertions in `commonTest`, `commonMain` platform-import check
+- `kotlin-multiplatform-base` — Applies `kotlin("multiplatform")`, Kotlin consumer-compatibility settings (see below), Kotlin Gradle plugin version check, platform BOM in `commonMain`, Kotest engine/assertions in `commonTest`, `commonMain` platform-import check
 - `kotlin-multiplatform-library` — Applies base; enables sources JAR for publication
 - `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 21 toolchain, `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
-- `kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js
+- `kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js; raises the JS stdlib back to the compiler version (Kotlin/JS rejects an older stdlib klib ABI)
 - `dokka` — Configures Dokka HTML generation with GitHub source links resolved from git HEAD; wires `assemble` → `dokkaGeneratePublicationHtml`
 - `github-publishing` — Applies `maven-publish`; configures GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; strips the internal platform BOM (`com.kelvsyc.internal.kotlin-tools:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution — the stripping happens at publication time via `pom.withXml` and a `GenerateModuleMetadata` post-processing action (`StripInternalPlatform`).
 
 ### Testing
 
 Tests use [Kotest](https://kotest.io/) with JUnit Platform (JVM target only).
+
+### Kotlin Consumer Compatibility
+
+The Kotlin Gradle plugin version (catalog `kotlin`) only selects the compiler. What consumers need is set by `KotlinCompatibility` in `gradle/plugins/kotlin-convention` (deliberately outside the version catalog so Dependabot leaves it alone):
+
+- `apiVersion`/`languageVersion` = 2.2, and `coreLibrariesVersion` = 2.2.x, so the `kotlin-stdlib` declared in published metadata is 2.2.x. JVM consumers can use Kotlin 2.1+ (compilers read metadata one version ahead).
+- Klibs (JS, native) carry the compiler's ABI version, so JS/native consumers need a compiler at least as new as the Kotlin Gradle plugin, whatever the language version is.
+- Cores needing newer APIs override per core (e.g. `luxon-extensions` uses 2.3 for stable `kotlin.time.Instant`).
+
+The applied Kotlin Gradle plugin can be silently raised above the catalog version by Gradle's embedded Kotlin (via `kotlin-dsl`) or another build plugin's stdlib requirement. The convention plugins fail the build when the applied plugin version differs from the catalog `kotlin` version, so a Gradle bump that raises embedded Kotlin requires bumping the catalog in the same change.
 
 ### Versioning
 
