@@ -42,6 +42,10 @@ The root `settings.gradle.kts` composes:
 
 2. **`cores/`** — Published Kotlin Multiplatform libraries (group `com.kelvsyc.kotlin`). Each is an independent included build.
 
+### Dependencies Between Cores
+
+All cores share one version, derived from the same repository git tag, so a core's own `version` is always the version of every sibling core it depends on. Declare sibling dependencies with it explicitly — `api("com.kelvsyc.kotlin:kotlin-core:$version")` — and the root composite build substitutes the included build regardless of the version. A versionless declaration would be published versionless (Kotlin Multiplatform target publications ignore `versionMapping`); the `github-publishing` convention fails module metadata generation if any published dependency lacks a version (`RequireDependencyVersions`).
+
 ### Component Settings Pattern
 
 Every core's `settings.gradle.kts`:
@@ -57,7 +61,7 @@ plugins { id("com.kelvsyc.internal.kotlin-tools.settings") }
 - `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 21 toolchain, `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
 - `kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js; raises the JS stdlib back to the compiler version (Kotlin/JS rejects an older stdlib klib ABI)
 - `dokka` — Configures Dokka HTML generation with GitHub source links resolved from git HEAD; wires `assemble` → `dokkaGeneratePublicationHtml`
-- `github-publishing` — Applies `maven-publish`; configures GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; publishes resolved dependency versions (`versionMapping { fromResolutionResult() }`) so versionless declarations don't publish versionless (not honoured by Kotlin Multiplatform target publications); strips the internal platform BOM (`com.kelvsyc.internal.kotlin-tools:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution — the stripping happens at publication time via `pom.withXml` and a `GenerateModuleMetadata` post-processing action (`StripInternalPlatform`).
+- `github-publishing` — Applies `maven-publish`; configures GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; publishes resolved dependency versions (`versionMapping { fromResolutionResult() }`) so versionless declarations don't publish versionless (not honoured by Kotlin Multiplatform target publications), and fails module metadata generation if a published dependency still lacks a version; strips the internal platform BOM (`com.kelvsyc.internal.kotlin-tools:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution — the stripping happens at publication time via `pom.withXml` and a `GenerateModuleMetadata` post-processing action (`StripInternalPlatform`).
 
 ### Testing
 

@@ -18,7 +18,7 @@ kotlin {
     sourceSets {
         jsMain {
             dependencies {
-                api("com.kelvsyc.kotlin:kotlin-core")
+                api("com.kelvsyc.kotlin:kotlin-core:$version")
                 api(libs.kotlinx.datetime)
                 api(npm("luxon", "3.4.4"))
             }
