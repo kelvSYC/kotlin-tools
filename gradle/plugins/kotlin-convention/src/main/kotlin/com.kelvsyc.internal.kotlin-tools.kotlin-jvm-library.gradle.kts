@@ -1,5 +1,4 @@
 import kotlin.jvm.optionals.getOrNull
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     `java-library`
@@ -9,11 +8,10 @@ plugins {
 
 val libs = versionCatalogs.named("libs")
 
+checkKotlinPluginVersion(libs)
+
 kotlin {
-    compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_2_3)
-        languageVersion.set(KotlinVersion.KOTLIN_2_3)
-    }
+    configureKotlinCompatibility(this, compilerOptions)
 
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
