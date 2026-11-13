@@ -9,6 +9,7 @@ plugins {
 val libs = versionCatalogs.named("libs")
 
 checkKotlinPluginVersion(libs)
+checkKotlinToolchainAlignment()
 
 kotlin {
     configureKotlinCompatibility(this, compilerOptions)
