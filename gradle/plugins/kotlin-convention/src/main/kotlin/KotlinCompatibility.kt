@@ -47,3 +47,29 @@ fun Project.checkKotlinPluginVersion(libs: VersionCatalog) {
             "update the catalog to match."
     }
 }
+
+/**
+ * Kotlin artifacts exempt from [checkKotlinToolchainAlignment]: a BOM, and stdlib shims that have been empty since their
+ * contents were merged into kotlin-stdlib.
+ */
+private val ALIGNMENT_EXEMPT_MODULES = setOf("kotlin-bom", "kotlin-stdlib-jdk7", "kotlin-stdlib-jdk8")
+
+/**
+ * Fails if any Kotlin artifact on the build script classpath differs from the applied Kotlin Gradle plugin version.
+ *
+ * Kotlin's version alignment does not cover every toolchain artifact, so a build plugin depending on a newer
+ * `kotlin-bom` can raise one alone (e.g. `kotlin-daemon-client`). A daemon client newer than the compiler cannot
+ * connect to the compile daemon, and the in-process fallback then fails with Metaspace exhaustion rather than a
+ * version error.
+ */
+fun Project.checkKotlinToolchainAlignment() {
+    val expected = getKotlinPluginVersion()
+    val mismatched = buildscript.configurations.getByName("classpath").incoming.resolutionResult.allComponents
+        .mapNotNull { it.moduleVersion }
+        .filter { it.group == "org.jetbrains.kotlin" && it.name !in ALIGNMENT_EXEMPT_MODULES && it.version != expected }
+    check(mismatched.isEmpty()) {
+        "Kotlin artifacts on the build script classpath differ from Kotlin Gradle plugin $expected: " +
+            mismatched.joinToString { "${it.name}:${it.version}" } +
+            ". A build plugin dependency is likely raising them; align it with the catalog `kotlin` version."
+    }
+}
