@@ -10,7 +10,7 @@ kotlin {
     sourceSets {
         jsMain {
             dependencies {
-                api("com.kelvsyc.kotlin:kotlin-core")
+                api("com.kelvsyc.kotlin:kotlin-core:$version")
                 api(npm("immutable", "4.3.7"))
             }
         }

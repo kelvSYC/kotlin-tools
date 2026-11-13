@@ -10,7 +10,7 @@ kotlin {
     sourceSets {
         jsMain {
             dependencies {
-                api("com.kelvsyc.kotlin:kotlin-core")
+                api("com.kelvsyc.kotlin:kotlin-core:$version")
                 api(npm("decimal.js", "10.4.3"))
             }
         }

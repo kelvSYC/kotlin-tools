@@ -7,7 +7,7 @@ plugins {
 group = "com.kelvsyc.kotlin"
 
 dependencies {
-    api("com.kelvsyc.kotlin:kotlin-core")
+    api("com.kelvsyc.kotlin:kotlin-core:$version")
     api(libs.commons.numbers.complex)
     api(libs.commons.numbers.core)
     api(libs.commons.numbers.fraction)
