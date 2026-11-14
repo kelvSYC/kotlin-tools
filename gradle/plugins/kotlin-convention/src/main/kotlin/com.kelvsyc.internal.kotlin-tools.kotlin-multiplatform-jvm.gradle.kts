@@ -9,10 +9,12 @@ plugins {
 val libs = versionCatalogs.named("libs")
 
 kotlin {
-    jvm()
+    jvm {
+        project.configureJvmCompatibility(compilerOptions)
+    }
 
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(JvmCompatibility.TOOLCHAIN))
     }
 
     sourceSets.jvmTest.dependencies {

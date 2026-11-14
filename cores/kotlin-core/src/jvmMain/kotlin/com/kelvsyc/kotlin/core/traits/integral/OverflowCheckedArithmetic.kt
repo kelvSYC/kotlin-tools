@@ -2,10 +2,16 @@ package com.kelvsyc.kotlin.core.traits.integral
 
 // ── OverflowCheckedArithmetic instances ───────────────────────────────────────
 //
-// All arithmetic delegates to Math.addExact / subtractExact / multiplyExact / divideExact,
-// which throw ArithmeticException on overflow. Math.divideExact requires Java 18+;
-// Math.addExact / subtractExact / multiplyExact / negateExact require Java 8+;
-// Math.absExact requires Java 15+. All are available on the JDK 25 toolchain.
+// All arithmetic delegates to Math.addExact / subtractExact / multiplyExact / negateExact (Java 8+)
+// and Math.absExact (Java 15+), which throw ArithmeticException on overflow. Division uses
+// checkedDivide rather than Math.divideExact, which requires Java 18+ and so is unavailable to
+// the Java 17 release the cores are compiled for.
+
+private fun checkedDivide(a: Int, b: Int): Int =
+    if (a == Int.MIN_VALUE && b == -1) throw ArithmeticException("integer overflow") else a / b
+
+private fun checkedDivide(a: Long, b: Long): Long =
+    if (a == Long.MIN_VALUE && b == -1L) throw ArithmeticException("long overflow") else a / b
 
 private val checkedIntInstance: OverflowCheckedArithmetic<Int> = object : OverflowCheckedArithmetic<Int> {
     override val zero: Int get() = 0
@@ -14,7 +20,7 @@ private val checkedIntInstance: OverflowCheckedArithmetic<Int> = object : Overfl
     override fun Int.add(other: Int): Int = Math.addExact(this, other)
     override fun Int.subtract(other: Int): Int = Math.subtractExact(this, other)
     override fun Int.multiply(other: Int): Int = Math.multiplyExact(this, other)
-    override fun Int.divide(other: Int): Int = Math.divideExact(this, other)
+    override fun Int.divide(other: Int): Int = checkedDivide(this, other)
     override fun Int.rem(other: Int): Int = this % other
     override fun Int.compareTo(other: Int): Int = this.compareTo(other)
 }
@@ -26,7 +32,7 @@ private val checkedLongInstance: OverflowCheckedArithmetic<Long> = object : Over
     override fun Long.add(other: Long): Long = Math.addExact(this, other)
     override fun Long.subtract(other: Long): Long = Math.subtractExact(this, other)
     override fun Long.multiply(other: Long): Long = Math.multiplyExact(this, other)
-    override fun Long.divide(other: Long): Long = Math.divideExact(this, other)
+    override fun Long.divide(other: Long): Long = checkedDivide(this, other)
     override fun Long.rem(other: Long): Long = this % other
     override fun Long.compareTo(other: Long): Int = this.compareTo(other)
 }
@@ -47,7 +53,7 @@ private val checkedSignedIntInstance: OverflowCheckedSignedArithmetic<Int> =
         override fun Int.add(other: Int): Int = Math.addExact(this, other)
         override fun Int.subtract(other: Int): Int = Math.subtractExact(this, other)
         override fun Int.multiply(other: Int): Int = Math.multiplyExact(this, other)
-        override fun Int.divide(other: Int): Int = Math.divideExact(this, other)
+        override fun Int.divide(other: Int): Int = checkedDivide(this, other)
         override fun Int.rem(other: Int): Int = this % other
         override fun Int.compareTo(other: Int): Int = this.compareTo(other)
 
@@ -63,7 +69,7 @@ private val checkedSignedLongInstance: OverflowCheckedSignedArithmetic<Long> =
         override fun Long.add(other: Long): Long = Math.addExact(this, other)
         override fun Long.subtract(other: Long): Long = Math.subtractExact(this, other)
         override fun Long.multiply(other: Long): Long = Math.multiplyExact(this, other)
-        override fun Long.divide(other: Long): Long = Math.divideExact(this, other)
+        override fun Long.divide(other: Long): Long = checkedDivide(this, other)
         override fun Long.rem(other: Long): Long = this % other
         override fun Long.compareTo(other: Long): Int = this.compareTo(other)
 
