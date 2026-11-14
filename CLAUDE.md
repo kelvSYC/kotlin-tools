@@ -58,7 +58,7 @@ plugins { id("com.kelvsyc.internal.kotlin-tools.settings") }
 
 - `kotlin-multiplatform-base` — Applies `kotlin("multiplatform")`, Kotlin consumer-compatibility settings (see below), Kotlin Gradle plugin version check, platform BOM in `commonMain`, Kotest engine/assertions in `commonTest`, `commonMain` platform-import check
 - `kotlin-multiplatform-library` — Applies base; enables sources JAR for publication
-- `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 21 toolchain, `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
+- `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 25 toolchain with a Java 17 release (`JvmCompatibility`), `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
 - `kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js; raises the JS stdlib back to the compiler version (Kotlin/JS rejects an older stdlib klib ABI)
 - `dokka` — Configures Dokka HTML generation with GitHub source links resolved from git HEAD; wires `assemble` → `dokkaGeneratePublicationHtml`
 - `github-publishing` — Applies `maven-publish`; configures GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; publishes resolved dependency versions (`versionMapping { fromResolutionResult() }`) so versionless declarations don't publish versionless (not honoured by Kotlin Multiplatform target publications), and fails module metadata generation if a published dependency still lacks a version; strips the internal platform BOM (`com.kelvsyc.internal.kotlin-tools:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution — the stripping happens at publication time via `pom.withXml` and a `GenerateModuleMetadata` post-processing action (`StripInternalPlatform`).
@@ -83,4 +83,10 @@ Driven by git tags via `com.javiersc.semver`, applied through the settings plugi
 
 ### JDK Constraints
 
-Published JVM artifacts target JDK 21: the `kotlin-jvm-library` and `kotlin-multiplatform-jvm` convention plugins pin the JVM toolchain to it. Use LTS JDKs only, and go newer only if a library needs it. The convention plugins themselves still compile for JDK 25, so the build must run on JDK 25.
+Published JVM artifacts require Java 17, and the cores are compiled with JDK 25. `JvmCompatibility` in `gradle/plugins/kotlin-convention` sets both. The `kotlin-jvm-library` and `kotlin-multiplatform-jvm` convention plugins apply it, and it does three things:
+
+- Compiles with `jvmTarget = 17` and `-Xjdk-release=17`, so only the Java 17 API is available. Lowering `jvmTarget` alone is not enough: against a JDK 21+ class library, `MutableList.removeFirst()` compiles to `java.util.List.removeFirst`, which fails with `NoSuchMethodError` on Java 17.
+- Sets `options.release = 17` on Java compilation, which makes the published `org.gradle.jvm.version` 17.
+- Runs tests on JDK 17, which Gradle provisions automatically.
+
+Use LTS JDKs only. Raise the release only if a library needs it. The convention plugins themselves compile for JDK 25, so the build must run on JDK 25.

@@ -85,8 +85,9 @@ pluginManager.withPlugin("java") {
         apply(plugin = "org.jetbrains.dokka-javadoc")
         configure<DokkaExtension> {
             dokkaSourceSets.configureEach {
-                jdkVersion.convention(
-                    project.the<JavaPluginExtension>().toolchain.languageVersion.map { it.asInt() }.orElse(25)
+                // Link the API docs of the JDK the cores are released for, not the one they are compiled with.
+                jdkVersion.set(
+                    project.tasks.named<JavaCompile>("compileJava").flatMap { it.options.release }.orElse(25)
                 )
             }
         }
