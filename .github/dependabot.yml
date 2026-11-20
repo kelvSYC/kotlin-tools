@@ -11,6 +11,9 @@ updates:
     directory: /
     registries:
       - gradle-build-conventions
+    # The Gradle wrapper follows the gradle-build-conventions release (.github/workflows/conventions-bump.yml).
+    ignore:
+      - dependency-name: "gradle-wrapper"
     schedule:
       interval: daily
   - package-ecosystem: github-actions

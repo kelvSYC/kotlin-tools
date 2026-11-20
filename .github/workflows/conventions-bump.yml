@@ -7,7 +7,9 @@ on:
 # built for (.github/scripts/follow-conventions-gradle.sh), then enables GitHub auto-merge, so the PR merges once the
 # required checks pass. Pushing and enabling auto-merge use the CONVENTIONS_TOKEN personal access token: a push or
 # merge made with GITHUB_TOKEN triggers no workflows, so CI would not run on the wrapper change and nothing would be
-# published after the merge. Workflows run for Dependabot see only Dependabot secrets, so the token is stored there.
+# published after the merge. A run started by Dependabot sees only Dependabot secrets, and one started by the token's
+# own push only Actions secrets, so the token is stored in both. Only the push and auto-merge steps get the token: the
+# Gradle build that refreshes the wrapper runs the build's plugins, which must not see it.
 jobs:
   follow-and-auto-merge:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
@@ -33,7 +35,7 @@ jobs:
             exit 0
           fi
           if [ "$HAS_TOKEN" != "true" ]; then
-            echo "::error::CONVENTIONS_TOKEN is not set in this repository's Dependabot secrets."
+            echo "::error::CONVENTIONS_TOKEN is not set in this repository's Dependabot and Actions secrets."
             exit 1
           fi
           echo "conventions=true" >> "$GITHUB_OUTPUT"
@@ -42,7 +44,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
-          token: ${{ secrets.CONVENTIONS_TOKEN }}
+          persist-credentials: false
           fetch-depth: 0
           filter: tree:0
       - name: Set up JDK 25
@@ -62,12 +64,15 @@ jobs:
         if: steps.follow.outputs.changed == 'true'
         env:
           GRADLE_VERSION: ${{ steps.follow.outputs.gradle }}
+          CONVENTIONS_TOKEN: ${{ secrets.CONVENTIONS_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add gradle/wrapper gradlew gradlew.bat
           git commit -m "Follow gradle-build-conventions to Gradle ${GRADLE_VERSION}"
-          git push
+          git push "https://x-access-token:${CONVENTIONS_TOKEN}@github.com/${REPOSITORY}.git" "HEAD:${BRANCH}"
       - name: Enable auto-merge
         if: steps.bump.outputs.conventions == 'true'
         env:
