@@ -18,7 +18,7 @@ Guidance for coding agents (and humans) working in this Gradle composite build: 
 ```bash
 ./gradlew :build          # Build all cores
 ./gradlew :check          # Run tests across all cores
-./gradlew :publish        # Publish to GitHub Packages (requires GITHUB_ACTOR, GITHUB_TOKEN)
+./gradlew :publish        # Publish to GitHub Packages (requires `gpr.user`/`gpr.key` Gradle properties or `GITHUB_ACTOR`/`GITHUB_TOKEN`)
 ./gradlew dokkaGenerate   # Generate HTML API docs for all cores
 ```
 
@@ -62,13 +62,13 @@ The catalog, platform BOM, semver versioning, repositories, toolchain resolver a
 - the foojay toolchain resolver and the repositories (Maven Central, GitHub Packages for gradle-build-conventions and kotlin-tools, Gradle `libs-releases` for `org.gradle.experimental`)
 - the `libs` version catalog (`com.kelvsyc.internal:catalog`) and the platform BOM (`libs.conventions.platform`), whose dependency versions are therefore not declared in this repository
 - project versions from git tags (`com.kelvsyc.internal.semver`) and default group handling
-- versionless resolution of `com.kelvsyc.internal.*` plugin IDs, e.g. `com.kelvsyc.internal.github-publishing` (Maven publication to GitHub Packages; strips the internal platform BOM from published POM and Gradle module metadata, and fails module metadata generation if a published dependency lacks a version)
+- versionless resolution of plugin IDs in exactly the `com.kelvsyc.internal` namespace (not the local `com.kelvsyc.internal.kotlin-tools.*` IDs, which resolve from the included `gradle/plugins` build), e.g. `com.kelvsyc.internal.github-publishing` (Maven publication to GitHub Packages; strips the internal platform BOM from published POM and Gradle module metadata, and fails module metadata generation if a published dependency lacks a version)
 
 `gradle/settings` applies it with `apply(plugin = "com.kelvsyc.internal.settings")` rather than a `plugins {}` block, because the shared plugin declares the foojay resolver as a runtime-only dependency, which is missing from the classpath a `plugins {}` block is compiled against.
 
 The shared version is pinned once, as `gradle-build-conventions` in `gradle/libs.versions.toml`; the thin settings plugin depends on `com.kelvsyc.internal:settings-plugin` at that version, which in turn selects the catalog and platform versions. To bump it, edit that one line. The shared catalog's `gradle` and `kotlin` versions apply here: keep the wrapper and the Kotlin Gradle plugin in step with them.
 
-Resolving the shared plugin requires GitHub Packages credentials even to configure the build (see Publishing Requires Env Vars). The Kotlin and Dokka convention plugins are local, in `gradle/plugins`.
+Resolving the shared plugin requires GitHub Packages credentials even to configure the build (see Building Requires GitHub Packages Credentials). The Kotlin and Dokka convention plugins are local, in `gradle/plugins`.
 
 ### Dependencies Between Cores
 
@@ -104,7 +104,7 @@ The `repositories` block is needed because the included settings plugin depends 
 - `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 25 toolchain with a Java 17 release (`JvmCompatibility`), `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
 - `kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js; raises the JS stdlib back to the compiler version (Kotlin/JS rejects an older stdlib klib ABI)
 - `dokka` — Configures Dokka HTML generation with GitHub source links resolved from git HEAD; wires `assemble` → `dokkaGeneratePublicationHtml`
-- `com.kelvsyc.internal.github-publishing` (shared) — Applies `maven-publish`; configures the GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; strips the internal platform BOM (`com.kelvsyc.internal:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution.
+- `com.kelvsyc.internal.github-publishing` (shared) — Applies `maven-publish`; configures the GitHub Packages repository, deriving its URL from the `origin` git remote and taking credentials from the `gpr.user`/`gpr.key` Gradle properties, else `GITHUB_ACTOR`/`GITHUB_TOKEN`; strips the internal platform BOM (`com.kelvsyc.internal:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution.
 
 ### Testing
 
@@ -118,7 +118,7 @@ The Kotlin Gradle plugin version (catalog `kotlin`) only selects the compiler. W
 - Klibs (JS, native) carry the compiler's ABI version, so JS/native consumers need a compiler at least as new as the Kotlin Gradle plugin, whatever the language version is.
 - Cores needing newer APIs override per core (e.g. `luxon-extensions` uses 2.3 for stable `kotlin.time.Instant`).
 
-The applied Kotlin Gradle plugin can be silently raised above the catalog version by Gradle's embedded Kotlin (via `kotlin-dsl`) or another build plugin's stdlib requirement. The convention plugins fail the build when the applied plugin version differs from the catalog `kotlin` version, so a Gradle bump that raises embedded Kotlin requires bumping the catalog in the same change. They also fail when any other `org.jetbrains.kotlin` artifact on the build script classpath differs from the plugin version (`checkKotlinToolchainAlignment`): a build plugin depending on a newer `kotlin-bom` can raise e.g. `kotlin-daemon-client` alone, which surfaces as "Could not connect to Kotlin compile daemon" followed by `OutOfMemoryError: Metaspace`.
+The applied Kotlin Gradle plugin can be silently raised above the catalog version by Gradle's embedded Kotlin (via `kotlin-dsl`) or another build plugin's stdlib requirement. The convention plugins fail the build when the applied plugin version differs from the catalog `kotlin` version, so a Gradle bump that raises embedded Kotlin requires bumping the catalog in the same change. The compiler `kotlin` version comes from the shared catalog: bump it with a gradle-build-conventions release, then update the single `gradle-build-conventions` pin in `gradle/libs.versions.toml`. They also fail when any other `org.jetbrains.kotlin` artifact on the build script classpath differs from the plugin version (`checkKotlinToolchainAlignment`): a build plugin depending on a newer `kotlin-bom` can raise e.g. `kotlin-daemon-client` alone, which surfaces as "Could not connect to Kotlin compile daemon" followed by `OutOfMemoryError: Metaspace`.
 
 ### Versioning
 
@@ -142,9 +142,9 @@ Use LTS JDKs only. Raise the release only if a library needs it. The convention 
 
 This is a composite build. All Gradle commands must run from the repository root using the root wrapper (`./gradlew`). Do **not** `cd cores/kotlin-core && ./gradlew build` — the components do not have their own Gradle wrapper and rely on the root build for resolution of included builds, convention plugins, and the version catalog.
 
-### Publishing Requires Env Vars ⚠️
+### Publishing Requires Credentials ⚠️
 
-`./gradlew :publish` requires `GITHUB_ACTOR` and `GITHUB_TOKEN`. Without them, it fails.
+`./gradlew :publish` requires credentials: the `gpr.user`/`gpr.key` Gradle properties, else `GITHUB_ACTOR` and `GITHUB_TOKEN`. Without them, it fails. The publish repository URL is derived from the `origin` git remote, so `origin` must point at the GitHub repository.
 
 ### Building Requires GitHub Packages Credentials ⚠️
 
