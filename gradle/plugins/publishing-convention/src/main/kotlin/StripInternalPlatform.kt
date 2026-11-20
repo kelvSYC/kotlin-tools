@@ -5,7 +5,7 @@ import org.gradle.api.Task
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 
 object StripInternalPlatform {
-    private const val INTERNAL_GROUP = "com.kelvsyc.internal.kotlin-tools"
+    private const val INTERNAL_GROUP = "com.kelvsyc.internal"
 
     fun fromPom(root: groovy.util.Node) {
         root.children().removeAll { child ->

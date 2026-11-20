@@ -1,42 +1,8 @@
+# Everything else (libraries, plugins, the platform) comes from the shared catalog that the
+# com.kelvsyc.internal.settings plugin registers as `libs`. This pins the shared build conventions
+# version once: the settings plugin's version determines the catalog and platform versions.
 [versions]
-dokka = "2.3.0"
-kotlin = "2.4.21"
-ksp = "2.3.14"
-moshi = "1.15.2"
+gradle-build-conventions = "0.1.4"
 
 [libraries]
-# BOMs
-jackson-bom = "com.fasterxml.jackson:jackson-bom:2.23.0"
-kotlin-gradle-plugins-bom = { module = "org.jetbrains.kotlin:kotlin-gradle-plugins-bom", version.ref = "kotlin" }
-kotest-bom = "io.kotest:kotest-bom:6.2.7"
-
-# Internal
-dependency-analysis-plugin = "com.autonomousapps:dependency-analysis-gradle-plugin:3.20.3"
-dokka-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
-foojay-resolver-plugin = "org.gradle.toolchains.foojay-resolver:org.gradle.toolchains.foojay-resolver.gradle.plugin:1.0.0"
-jgit = "org.eclipse.jgit:org.eclipse.jgit:7.8.1.202611041320-r"
-jsoup = "org.jsoup:jsoup:1.24.1"
-kotest-plugin = "io.kotest:io.kotest.gradle.plugin:6.2.6"
-ksp-plugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
-kotlin-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin" } # version from BOM 'kotlin-gradle-plugins-bom'
-
-# API Dependencies
-commons-lang = "org.apache.commons:commons-lang3:3.22.0"
-commons-collections4 = "org.apache.commons:commons-collections4:4.6.0"
-commons-numbers-bom = "org.apache.commons:commons-numbers-bom:1.3"
-commons-numbers-complex = { module = "org.apache.commons:commons-numbers-complex" } # version from BOM 'commons-numbers-bom'
-commons-numbers-core = { module = "org.apache.commons:commons-numbers-core" } # version from BOM 'commons-numbers-bom'
-commons-numbers-fraction = { module = "org.apache.commons:commons-numbers-fraction" } # version from BOM 'commons-numbers-bom'
-guava = "com.google.guava:guava:33.8.0-jre"
-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.8.0"
-moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
-moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
-snakeyaml-engine = "org.snakeyaml:snakeyaml-engine:3.2"
-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core" } # version from BOM 'kotest-bom'
-kotest-assertions-shared = { module = "io.kotest:kotest-assertions-shared" } # version from BOM 'kotest-bom'
-kotest-framework-engine = { module = "io.kotest:kotest-framework-engine" } # version from BOM 'kotest-bom'
-kotest-property = { module = "io.kotest:kotest-property" } # version from BOM 'kotest-bom'
-kotest-runner = { module = "io.kotest:kotest-runner-junit5" } # version from BOM 'kotest-bom'
-
-[plugins]
-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+conventions-settings-plugin = { module = "com.kelvsyc.internal:settings-plugin", version.ref = "gradle-build-conventions" }

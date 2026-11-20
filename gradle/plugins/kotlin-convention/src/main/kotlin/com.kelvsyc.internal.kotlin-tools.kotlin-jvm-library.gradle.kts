@@ -25,9 +25,9 @@ java {
 }
 
 dependencies {
-    implementation(platform("com.kelvsyc.internal.kotlin-tools:platform"))
+    implementation(platform(libs.findLibrary("conventions-platform").get()))
 
-    testImplementation(dependencies.platform("com.kelvsyc.internal.kotlin-tools:platform"))
+    testImplementation(dependencies.platform(libs.findLibrary("conventions-platform").get()))
     libs.findLibrary("kotest-assertions-core").getOrNull()?.let { testImplementation(it) }
     libs.findLibrary("kotest-assertions-shared").getOrNull()?.let { testImplementation(it) }
     libs.findLibrary("kotest-framework-engine").getOrNull()?.let { testImplementation(it) }
