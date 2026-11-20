@@ -1,7 +1,16 @@
 version: 2
+# The gradle-build-conventions pin (gradle/libs.versions.toml) resolves from GitHub Packages, which needs credentials.
+registries:
+  gradle-build-conventions:
+    type: maven-repository
+    url: https://maven.pkg.github.com/kelvSYC/gradle-build-conventions
+    username: kelvSYC
+    password: ${{ secrets.DEPENDABOT_PACKAGES_TOKEN }}
 updates:
   - package-ecosystem: gradle
     directory: /
+    registries:
+      - gradle-build-conventions
     schedule:
       interval: daily
   - package-ecosystem: github-actions
