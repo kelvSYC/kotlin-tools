@@ -48,26 +48,54 @@ This is a **composite build** of Kotlin Multiplatform libraries, published to Gi
 The root `settings.gradle.kts` composes:
 
 1. **`gradle/`** — Internal build infrastructure (not published):
-   - `gradle/platform` — BOM centralizing all dependency versions (group `com.kelvsyc.internal.kotlin-tools`)
-   - `gradle/settings` — Settings plugin (`com.kelvsyc.internal.kotlin-tools.settings`) wiring platform/catalog and semver into every core build
+   - `gradle/libs.versions.toml` — Pins the shared build conventions version (see Shared Build Conventions)
+   - `gradle/settings` — Thin local settings plugin (`com.kelvsyc.internal.kotlin-tools.settings`): applies the shared settings plugin and includes `gradle/plugins` into every core build
    - `gradle/plugins/dokka-convention` — Convention plugin: `dokka` (Dokka HTML docs, GitHub source links resolved from git HEAD)
    - `gradle/plugins/kotlin-convention` — Convention plugins: `kotlin-multiplatform-base`, `kotlin-multiplatform-library`, `kotlin-multiplatform-jvm`, `kotlin-multiplatform-js`
-   - `gradle/plugins/publishing-convention` — Convention plugin: `github-publishing` (Maven publication to GitHub Packages)
-   - `gradle/plugins/semver-convention` — Settings plugin `com.kelvsyc.internal.semver`: project version from git tags
 
 2. **`cores/`** — Published Kotlin Multiplatform libraries (group `com.kelvsyc.kotlin`). Each is an independent included build.
 
+### Shared Build Conventions
+
+The catalog, platform BOM, semver versioning, repositories, toolchain resolver and publishing convention come from [gradle-build-conventions](https://github.com/kelvSYC/gradle-build-conventions) (group `com.kelvsyc.internal`, published to GitHub Packages). The settings plugin `com.kelvsyc.internal.settings` provides:
+
+- the foojay toolchain resolver and the repositories (Maven Central, GitHub Packages for gradle-build-conventions and kotlin-tools, Gradle `libs-releases` for `org.gradle.experimental`)
+- the `libs` version catalog (`com.kelvsyc.internal:catalog`) and the platform BOM (`libs.conventions.platform`), whose dependency versions are therefore not declared in this repository
+- project versions from git tags (`com.kelvsyc.internal.semver`) and default group handling
+- versionless resolution of `com.kelvsyc.internal.*` plugin IDs, e.g. `com.kelvsyc.internal.github-publishing` (Maven publication to GitHub Packages; strips the internal platform BOM from published POM and Gradle module metadata, and fails module metadata generation if a published dependency lacks a version)
+
+`gradle/settings` applies it with `apply(plugin = "com.kelvsyc.internal.settings")` rather than a `plugins {}` block, until the shared plugin exposes the foojay resolver as an `api` dependency.
+
+The shared version is pinned once, as `gradle-build-conventions` in `gradle/libs.versions.toml`; the thin settings plugin depends on `com.kelvsyc.internal:settings-plugin` at that version, which in turn selects the catalog and platform versions. To bump it, edit that one line. The shared catalog's `gradle` and `kotlin` versions apply here: keep the wrapper and the Kotlin Gradle plugin in step with them.
+
+Resolving the shared plugin requires GitHub Packages credentials even to configure the build (see Publishing Requires Env Vars). The Kotlin and Dokka convention plugins stay local in `gradle/plugins`.
+
 ### Dependencies Between Cores
 
-All cores share one version, derived from the same repository git tag, so a core's own `version` is always the version of every sibling core it depends on. Declare sibling dependencies with it explicitly — `api("com.kelvsyc.kotlin:kotlin-core:$version")` — and the root composite build substitutes the included build regardless of the version. A versionless declaration would be published versionless (Kotlin Multiplatform target publications ignore `versionMapping`); the `github-publishing` convention fails module metadata generation if any published dependency lacks a version (`RequireDependencyVersions`).
+All cores share one version, derived from the same repository git tag, so a core's own `version` is always the version of every sibling core it depends on. Declare sibling dependencies with it explicitly — `api("com.kelvsyc.kotlin:kotlin-core:$version")` — and the root composite build substitutes the included build regardless of the version. A versionless declaration would be published versionless (Kotlin Multiplatform target publications ignore `versionMapping`); the shared `github-publishing` convention fails module metadata generation if any published dependency lacks a version (`RequireDependencyVersions`).
 
 ### Component Settings Pattern
 
-Every core's `settings.gradle.kts`:
+Every core's `settings.gradle.kts` (as do `metadata`, `aggregation` and `gradle/plugins`, with the matching relative path) starts with:
 ```kotlin
-pluginManagement { includeBuild("../../gradle/settings") }
+pluginManagement {
+    includeBuild("../../gradle/settings")
+    // Gradle resolves the included settings plugin's external dependencies with this build's plugin repositories.
+    repositories {
+        gradlePluginPortal()
+        maven("https://maven.pkg.github.com/kelvSYC/gradle-build-conventions") {
+            name = "GitHubPackagesBuildConventions"
+            credentials {
+                username = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_ACTOR")
+                password = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
 plugins { id("com.kelvsyc.internal.kotlin-tools.settings") }
 ```
+The `repositories` block is needed because the included settings plugin depends on the shared settings plugin from GitHub Packages, and Gradle resolves those dependencies with the applying build's plugin repositories. Keep the block byte-identical in every settings file.
 
 ### Convention Plugins
 
@@ -76,7 +104,7 @@ plugins { id("com.kelvsyc.internal.kotlin-tools.settings") }
 - `kotlin-multiplatform-jvm` — Applies base; adds JVM target, JDK 25 toolchain with a Java 17 release (`JvmCompatibility`), `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task
 - `kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js; raises the JS stdlib back to the compiler version (Kotlin/JS rejects an older stdlib klib ABI)
 - `dokka` — Configures Dokka HTML generation with GitHub source links resolved from git HEAD; wires `assemble` → `dokkaGeneratePublicationHtml`
-- `github-publishing` — Applies `maven-publish`; configures GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; publishes resolved dependency versions (`versionMapping { fromResolutionResult() }`) so versionless declarations don't publish versionless (not honoured by Kotlin Multiplatform target publications), and fails module metadata generation if a published dependency still lacks a version; strips the internal platform BOM (`com.kelvsyc.internal.kotlin-tools:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution — the stripping happens at publication time via `pom.withXml` and a `GenerateModuleMetadata` post-processing action (`StripInternalPlatform`).
+- `com.kelvsyc.internal.github-publishing` (shared) — Applies `maven-publish`; configures the GitHub Packages repository using `GITHUB_ACTOR`/`GITHUB_TOKEN`; strips the internal platform BOM (`com.kelvsyc.internal:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare `implementation(platform(...))` for local resolution.
 
 ### Testing
 
@@ -94,7 +122,7 @@ The applied Kotlin Gradle plugin can be silently raised above the catalog versio
 
 ### Versioning
 
-Driven by git tags via the internal semver settings plugin (`com.kelvsyc.internal.semver`, in `gradle/plugins/semver-convention`), applied through the settings plugin.
+Driven by git tags via the shared semver settings plugin (`com.kelvsyc.internal.semver`), applied through the shared settings plugin.
 
 ### JDK Constraints
 
@@ -118,14 +146,18 @@ This is a composite build. All Gradle commands must run from the repository root
 
 `./gradlew :publish` requires `GITHUB_ACTOR` and `GITHUB_TOKEN`. Without them, it fails.
 
+### Building Requires GitHub Packages Credentials ⚠️
+
+The shared build conventions are resolved from GitHub Packages when the build is configured, so every Gradle invocation needs credentials with `read:packages`: the `gpr.user`/`gpr.key` Gradle properties (e.g. in `~/.gradle/gradle.properties`), else the `GITHUB_ACTOR`/`GITHUB_TOKEN` environment variables. CI jobs that run Gradle need `packages: read` permission and both variables set.
+
 ### Core Settings Pattern ⚠️
 
-Do not modify the `pluginManagement`/`plugins` lines in each core's `settings.gradle.kts` (see Component Settings Pattern under Architecture) — they wire up the composite build.
+Do not modify the `pluginManagement`/`plugins` blocks in each core's `settings.gradle.kts` (see Component Settings Pattern under Architecture) — they wire up the composite build and must stay identical across settings files.
 
 ## Quick Navigation
 
 - **Architecture & build hierarchy**: see Architecture above
-- **Version catalog**: `gradle/libs.versions.toml`
+- **Shared conventions pin**: `gradle/libs.versions.toml` (the catalog itself comes from gradle-build-conventions)
 - **Convention plugins**: `gradle/plugins/*/src/main/kotlin/`
 - **Source code**: `cores/*/src/commonMain/kotlin/`
 - **Tests**: `cores/*/src/commonTest/kotlin/` and `cores/*/src/jvmTest/kotlin/`
