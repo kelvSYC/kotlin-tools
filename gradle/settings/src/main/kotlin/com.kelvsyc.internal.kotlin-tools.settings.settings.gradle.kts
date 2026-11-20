@@ -1,10 +1,9 @@
 // Settings plugin to be applied to all builds of kotlin-tools. The shared settings plugin provides the
 // repositories, the `libs` catalog (with the shared platform), semver versioning and the foojay toolchain resolver.
 
-// Applied imperatively rather than in a `plugins {}` block: generating this script's accessors applies the
-// `plugins {}` block against the compile classpath, which lacks the foojay resolver the shared plugin applies
-// (com.kelvsyc.internal:settings-plugin declares it as a runtime-only dependency). The fix belongs upstream: the shared
-// settings plugin should expose the foojay resolver as an `api` dependency, after which this can become `plugins {}`.
+// Applied imperatively rather than in a `plugins {}` block: generating a precompiled settings plugin's accessors applies
+// the `plugins {}` block to a stand-in Settings after settings evaluation, where Gradle rejects the repositories the
+// shared plugin declares.
 apply(plugin = "com.kelvsyc.internal.settings")
 
 // kotlin-tools-only: the convention plugins in gradle/plugins at the repository root. Found by walking up from the
