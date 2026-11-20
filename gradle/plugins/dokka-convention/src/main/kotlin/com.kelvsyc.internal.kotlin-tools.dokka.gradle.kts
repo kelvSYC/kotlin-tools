@@ -29,7 +29,7 @@ val jsoupVersion: Provider<String> = libs
 
 // dokka-core resolves its own generator/plugin classpaths (the "dokka*" configurations
 // created per publication format) independently of this project's dependency graph, so
-// the platform's Jackson BOM override (gradle/platform/build.gradle.kts) never reaches
+// the shared platform's Jackson BOM override (com.kelvsyc.internal:platform) never reaches
 // the vulnerable Jackson and jsoup versions it bundles transitively. These configurations
 // are resolver-role-locked (dependencies can't be declared against them directly), so the
 // versions must be forced via resolution strategy instead of importing a BOM.

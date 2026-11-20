@@ -9,7 +9,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(platform("com.kelvsyc.internal.kotlin-tools:platform"))
+    implementation(platform(libs.conventions.platform))
     implementation(libs.dependency.analysis.plugin)
     implementation(libs.kotest.plugin)
     implementation(libs.ksp.plugin)

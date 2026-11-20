@@ -87,3 +87,12 @@ dependencies {
     GITHUB_ACTOR: ${{ github.actor }}
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+## Contributing
+
+Building this repository requires GitHub Packages credentials, because the shared build
+conventions ([gradle-build-conventions](https://github.com/kelvSYC/gradle-build-conventions))
+are resolved from GitHub Packages when Gradle configures the build. Use a PAT with the
+`read:packages` scope, supplied as the `gpr.user`/`gpr.key` Gradle properties (see
+[Authentication](#authentication)) or the `GITHUB_ACTOR`/`GITHUB_TOKEN` environment variables.
+Run Gradle from the repository root with JDK 25: `./gradlew :check`.

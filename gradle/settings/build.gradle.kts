@@ -9,7 +9,5 @@ kotlin {
 }
 
 dependencies {
-    implementation(platform("com.kelvsyc.internal.kotlin-tools:platform"))
-    implementation(libs.foojay.resolver.plugin)
-    implementation("com.kelvsyc.internal.kotlin-tools:semver-convention")
+    implementation(libs.conventions.settings.plugin)
 }
