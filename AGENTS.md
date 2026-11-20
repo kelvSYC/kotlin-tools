@@ -64,11 +64,11 @@ The catalog, platform BOM, semver versioning, repositories, toolchain resolver a
 - project versions from git tags (`com.kelvsyc.internal.semver`) and default group handling
 - versionless resolution of `com.kelvsyc.internal.*` plugin IDs, e.g. `com.kelvsyc.internal.github-publishing` (Maven publication to GitHub Packages; strips the internal platform BOM from published POM and Gradle module metadata, and fails module metadata generation if a published dependency lacks a version)
 
-`gradle/settings` applies it with `apply(plugin = "com.kelvsyc.internal.settings")` rather than a `plugins {}` block, until the shared plugin exposes the foojay resolver as an `api` dependency.
+`gradle/settings` applies it with `apply(plugin = "com.kelvsyc.internal.settings")` rather than a `plugins {}` block, because the shared plugin declares the foojay resolver as a runtime-only dependency, which is missing from the classpath a `plugins {}` block is compiled against.
 
 The shared version is pinned once, as `gradle-build-conventions` in `gradle/libs.versions.toml`; the thin settings plugin depends on `com.kelvsyc.internal:settings-plugin` at that version, which in turn selects the catalog and platform versions. To bump it, edit that one line. The shared catalog's `gradle` and `kotlin` versions apply here: keep the wrapper and the Kotlin Gradle plugin in step with them.
 
-Resolving the shared plugin requires GitHub Packages credentials even to configure the build (see Publishing Requires Env Vars). The Kotlin and Dokka convention plugins stay local in `gradle/plugins`.
+Resolving the shared plugin requires GitHub Packages credentials even to configure the build (see Publishing Requires Env Vars). The Kotlin and Dokka convention plugins are local, in `gradle/plugins`.
 
 ### Dependencies Between Cores
 
