@@ -1,7 +1,7 @@
 plugins {
-    id("com.kelvsyc.internal.kotlin-tools.dokka")
+    id("com.kelvsyc.internal.dokka")
     id("com.kelvsyc.internal.github-publishing")
-    id("com.kelvsyc.internal.kotlin-tools.kotlin-jvm-library")
+    id("com.kelvsyc.internal.kotlin-jvm-library")
 }
 
 group = "com.kelvsyc.kotlin"
@@ -13,4 +13,13 @@ dependencies {
     api(libs.commons.numbers.fraction)
 
     testImplementation(libs.kotest.property)
+}
+
+dokka {
+    dokkaSourceSets.configureEach {
+        externalDocumentationLinks.register("commons-numbers") {
+            url("https://commons.apache.org/proper/commons-numbers/apidocs/")
+            packageListUrl("https://commons.apache.org/proper/commons-numbers/apidocs/element-list")
+        }
+    }
 }

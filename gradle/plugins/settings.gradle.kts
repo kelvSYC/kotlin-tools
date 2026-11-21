@@ -30,5 +30,4 @@ dependencyResolutionManagement {
     }
 }
 
-include("dokka-convention")
 include("kotlin-convention")

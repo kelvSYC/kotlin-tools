@@ -1,7 +1,7 @@
 import org.jetbrains.dokka.gradle.DokkaExtension
 
 plugins {
-    id("com.kelvsyc.internal.kotlin-tools.dokka")
+    id("com.kelvsyc.internal.dokka")
 }
 
 group = "com.kelvsyc.kotlin"

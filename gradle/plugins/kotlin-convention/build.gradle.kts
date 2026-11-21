@@ -10,8 +10,7 @@ kotlin {
 
 dependencies {
     implementation(platform(libs.conventions.platform))
-    implementation(libs.dependency.analysis.plugin)
+    implementation(libs.conventions.kotlin.plugin)
     implementation(libs.kotest.plugin)
-    implementation(libs.ksp.plugin)
     implementation(libs.kotlin.plugin)
 }
