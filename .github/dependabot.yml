@@ -16,7 +16,10 @@ updates:
       - dependency-name: "gradle-wrapper"
     schedule:
       interval: daily
+      # A fixed time (UTC), so it is predictable when a gradle-build-conventions release gets its bump PR.
+      time: "15:00"
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily
+      time: "15:00"
