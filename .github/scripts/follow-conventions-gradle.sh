@@ -17,7 +17,8 @@ fi
 
 catalog_url="https://maven.pkg.github.com/kelvSYC/gradle-build-conventions/com/kelvsyc/internal/catalog/${pin}/catalog-${pin}.toml"
 catalog=$(curl -fsSL --retry 3 --retry-all-errors -u "${GITHUB_ACTOR}:${GITHUB_TOKEN}" "$catalog_url")
-target=$(sed -nE 's/^gradle *= *"([^"]+)".*/\1/p' <<< "$catalog")
+# Only the [versions] table: a `gradle = "…"` line elsewhere would be some other entry.
+target=$(awk -F'"' '/^\[/ { table = $0 } table == "[versions]" && /^gradle *=/ { print $2; exit }' <<< "$catalog")
 if [ -z "$target" ]; then
     echo "No gradle version in the gradle-build-conventions ${pin} catalog" >&2
     exit 1
