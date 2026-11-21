@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     id("io.kotest")
-    id("com.kelvsyc.internal.kotlin-tools.kotlin-multiplatform-base")
+    id("com.kelvsyc.internal.kotlin-multiplatform-base")
 }
 
 kotlin {

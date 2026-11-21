@@ -1,20 +1,20 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
-    id("com.kelvsyc.internal.kotlin-tools.dokka")
+    id("com.kelvsyc.internal.dokka")
     id("com.kelvsyc.internal.github-publishing")
-    id("com.kelvsyc.internal.kotlin-tools.kotlin-multiplatform-js-library")
+    id("com.kelvsyc.internal.kotlin-multiplatform-library")
+    id("com.kelvsyc.internal.kotlin-multiplatform-js")
 }
 
 group = "com.kelvsyc.kotlin"
 
-kotlin {
-    // kotlin.time.Instant, used throughout the public API, is experimental before Kotlin 2.3.
-    compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_2_3)
-        languageVersion.set(KotlinVersion.KOTLIN_2_3)
-    }
+// kotlin.time.Instant, used throughout the public API, is experimental before Kotlin 2.3.
+kelvsycKotlin {
+    languageVersion = KotlinVersion.KOTLIN_2_3
+}
 
+kotlin {
     sourceSets {
         jsMain {
             dependencies {
