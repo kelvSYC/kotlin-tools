@@ -14,6 +14,12 @@ updates:
     # The Gradle wrapper follows the gradle-build-conventions release (.github/workflows/conventions-bump.yml).
     ignore:
       - dependency-name: "gradle-wrapper"
+    # Dependabot holds back releases younger than a few days by default, and drops versions with no release date.
+    # gradle-build-conventions releases are ours and gated by its canary and this repository's CI, so they come at once.
+    cooldown:
+      default-days: 3
+      exclude:
+        - "com.kelvsyc.internal:*"
     schedule:
       interval: daily
       # A fixed time (UTC), so it is predictable when a gradle-build-conventions release gets its bump PR.
