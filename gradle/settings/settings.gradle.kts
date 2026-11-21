@@ -23,6 +23,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
-    // FIXME See if this can be specified from the version catalog
+    // Provisions this build's JDK toolchain. A literal version: a settings `plugins {}` block is evaluated before any
+    // version catalog exists. Keep it in step with the shared catalog's `foojay-resolver-plugin`.
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
