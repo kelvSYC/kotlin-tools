@@ -144,7 +144,7 @@ Published JVM artifacts require Java 17, and the cores are compiled with JDK 25.
 
 The Kotlin Gradle plugin does not set `org.gradle.jvm.version` on Kotlin Multiplatform JVM targets, so `kotlin-multiplatform-jvm` sets it itself. That covers both the published variants and the JVM classpaths, so a dependency whose Gradle metadata declares a newer JVM fails resolution.
 
-Use LTS JDKs only. Raise the release only if a library needs it. The shared convention plugins are built for JDK 25, so the build must run on JDK 25.
+Use LTS JDKs only. Raise the release only if a library needs it. The shared convention plugins and `gradle/settings` are built for Java 21, so Gradle itself runs on JDK 21 or later; the JDK 25 that compiles the cores is a toolchain, provisioned on demand. CI runs Gradle on JDK 25.
 
 ## Critical Gotchas
 
