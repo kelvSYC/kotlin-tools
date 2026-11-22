@@ -49,8 +49,9 @@ The root `settings.gradle.kts` composes:
 
 1. **`gradle/`** — Internal build infrastructure (not published):
    - `gradle/libs.versions.toml` — Pins the shared build conventions version (see Shared Build Conventions)
-   - `gradle/settings` — Thin local settings plugin (`com.kelvsyc.internal.kotlin-tools.settings`): applies the shared settings plugin and includes `gradle/plugins` into every core build
-   - `gradle/plugins/kotlin-convention` — Convention plugin: `kotlin-multiplatform-native` (the only local convention; the Kotlin and Dokka conventions are shared)
+   - `gradle/settings` — Thin local settings plugin (`com.kelvsyc.internal.kotlin-tools.settings`): applies the shared settings plugin to every build
+
+   The Kotlin and Dokka convention plugins are shared; this repository has no convention plugins of its own.
 
 2. **`cores/`** — Published Kotlin Multiplatform libraries (group `com.kelvsyc.kotlin`). Each is an independent included build.
 
@@ -61,7 +62,7 @@ The catalog, platform BOM, semver versioning, repositories, toolchain resolver a
 - the foojay toolchain resolver and the repositories (Maven Central, GitHub Packages for gradle-build-conventions and kotlin-tools, Gradle `libs-releases` for `org.gradle.experimental`)
 - the `libs` version catalog (`com.kelvsyc.internal:catalog`) and the platform BOM (`libs.conventions.platform`), whose dependency versions are therefore not declared in this repository
 - project versions from git tags (`com.kelvsyc.internal.semver`) and default group handling
-- versionless resolution of plugin IDs in exactly the `com.kelvsyc.internal` namespace (not the local `com.kelvsyc.internal.kotlin-tools.*` IDs, which resolve from the included `gradle/plugins` build), e.g. `com.kelvsyc.internal.github-publishing` (Maven publication to GitHub Packages; strips the internal platform BOM from published POM and Gradle module metadata, and fails module metadata generation if a published dependency lacks a version)
+- versionless resolution of plugin IDs in exactly the `com.kelvsyc.internal` namespace (not the longer `com.kelvsyc.internal.kotlin-tools.*` IDs, such as the thin settings plugin, which resolve from the included `gradle/settings` build), e.g. `com.kelvsyc.internal.github-publishing` (Maven publication to GitHub Packages; strips the internal platform BOM from published POM and Gradle module metadata, and fails module metadata generation if a published dependency lacks a version)
 
 `gradle/settings` applies it with `apply(plugin = "com.kelvsyc.internal.settings")` rather than a `plugins {}` block: generating a precompiled settings plugin's accessors applies its `plugins {}` block to a stand-in `Settings` after settings evaluation, where Gradle rejects the repositories the shared plugin declares.
 
@@ -77,7 +78,7 @@ All cores share one version, derived from the same repository git tag, so a core
 
 ### Component Settings Pattern
 
-Every core's `settings.gradle.kts` (as do `metadata`, `aggregation` and `gradle/plugins`, with the matching relative path) starts with:
+Every core's `settings.gradle.kts` (as do `metadata` and `aggregation`, with the matching relative path) starts with:
 ```kotlin
 pluginManagement {
     includeBuild("../../gradle/settings")
@@ -105,14 +106,11 @@ Shared (from gradle-build-conventions; see its README for details):
 - `com.kelvsyc.internal.kotlin-multiplatform-base` — Applies `kotlin("multiplatform")`, the Kotlin consumer-compatibility floors, Kotlin Gradle plugin version and toolchain alignment checks, platform BOM in `commonMain`, Kotest engine/assertions in `commonTest`, `commonMain` platform-import check, Dependency Analysis
 - `com.kelvsyc.internal.kotlin-multiplatform-library` — Applies base; enables sources JAR for publication
 - `com.kelvsyc.internal.kotlin-multiplatform-jvm` — Applies base; adds JVM target released for Java 17 and compiled with JDK 25, `kotest-runner-junit5` in `jvmTest`, JUnit Platform test task; with `com.kelvsyc.internal.dokka` applied, a javadoc JAR on the `jvm` publication: Dokka Javadoc when every target of the core is JVM, Dokka HTML when it also has JS or native targets (so `kotlin-core` and `dice-core` publish HTML, and a JVM-only KMP core would publish Javadoc)
+- `com.kelvsyc.internal.kotlin-multiplatform-native` — Applies base, the KSP and Kotest Gradle plugins (Kotest needs both to run native tests); adds the native target of the build host (`linuxX64`, `macosArm64` or `mingwX64`) and opts native compilations into `ExperimentalForeignApi`. Each host builds and publishes only its own native target
 - `com.kelvsyc.internal.kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js (pinned, overridable with `kelvsycKotlin { nodeVersion }`), KSP and the Kotest Gradle plugin; raises the JS stdlib back to the compiler version. JS-only cores apply `-library` together with `-js`
 - `com.kelvsyc.internal.kotlin-jvm-library` — Kotlin JVM library with the same floors and checks, sources jar, Kotest and a `maven` publication; with `com.kelvsyc.internal.dokka` applied, a Dokka Javadoc JAR
 - `com.kelvsyc.internal.dokka` — Dokka HTML generation with GitHub source links resolved from git HEAD and JDK/Kotlin standard library links; wires `assemble` → `dokkaGeneratePublicationHtml`
 - `com.kelvsyc.internal.github-publishing` — Applies `maven-publish`; configures the GitHub Packages repository, deriving its URL from the `origin` git remote and taking credentials from the `gpr.user`/`gpr.key` Gradle properties, else `GITHUB_ACTOR`/`GITHUB_TOKEN`; strips the internal platform BOM (`com.kelvsyc.internal:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare the platform for local resolution.
-
-Local, in `gradle/plugins/kotlin-convention`:
-
-- `com.kelvsyc.internal.kotlin-tools.kotlin-multiplatform-native` — Applies the shared base and the Kotest Gradle plugin; adds the native target of the build host (`linuxX64`, `macosArm64` or `mingwX64`) and opts native compilations into `ExperimentalForeignApi`. Native targets are not part of the shared set. Its build depends on `libs.conventions.kotlin.plugin`.
 
 Per-core settings go through the shared conventions' extensions rather than raw compiler options, e.g. `luxon-extensions` sets `kelvsycKotlin { languageVersion = KotlinVersion.KOTLIN_2_3 }`.
 
@@ -130,7 +128,7 @@ The Kotlin Gradle plugin version (catalog `kotlin`) only selects the compiler. W
 - Klibs (JS, native) carry the compiler's ABI version, so JS/native consumers need a compiler at least as new as the Kotlin Gradle plugin, whatever the language version is.
 - Cores needing newer APIs override per core (e.g. `luxon-extensions` uses 2.3 for stable `kotlin.time.Instant`).
 
-The applied Kotlin Gradle plugin can be silently raised above the catalog version by Gradle's embedded Kotlin (via `kotlin-dsl`) or another build plugin's stdlib requirement. The shared conventions fail the build when the applied plugin version differs from the compiler version they were released for, and when any other `org.jetbrains.kotlin` artifact on the build script classpath differs from the plugin (`checkKotlinToolchainAlignment`): a build plugin depending on a newer `kotlin-bom` can raise e.g. `kotlin-daemon-client` alone, which surfaces as "Could not connect to Kotlin compile daemon" followed by `OutOfMemoryError: Metaspace`. A Metaspace error without that message is more likely the daemon's limit: every included build loads its own copy of the shared plugins, so metaspace grows with the number of cores (`org.gradle.jvmargs` in `gradle.properties` sets 1 GiB). A Gradle bump that raises embedded Kotlin is fixed by a gradle-build-conventions release, then bumping the single `gradle-build-conventions` pin.
+The applied Kotlin Gradle plugin can be silently raised above the catalog version by Gradle's embedded Kotlin (via `kotlin-dsl`) or another build plugin's stdlib requirement. The shared conventions fail the build when the applied plugin version differs from the compiler version they were released for, and when any other `org.jetbrains.kotlin` artifact on the build script classpath differs from the plugin (`checkKotlinToolchainAlignment`): a build plugin depending on a newer `kotlin-bom` can raise e.g. `kotlin-daemon-client` alone, which surfaces as "Could not connect to Kotlin compile daemon" followed by `OutOfMemoryError: Metaspace`. A Metaspace error without that message is more likely the daemon's limit (`org.gradle.jvmargs` in `gradle.properties` sets 1 GiB, as headroom). Gradle shares one plugin classloader between builds whose plugin classpaths are identical, whatever plugin IDs they apply, so the cores share one copy of the shared plugins; a build with a different classpath loads a second copy of the whole Kotlin/KSP/Dokka/Dependency Analysis/Kotest stack, about 70 MiB. Do not apply a repository-local convention plugin next to the shared ones in only some builds: that build's classpath differs. If a convention is needed, add it to gradle-build-conventions. A Gradle bump that raises embedded Kotlin is fixed by a gradle-build-conventions release, then bumping the single `gradle-build-conventions` pin.
 
 ### Versioning
 
@@ -146,7 +144,7 @@ Published JVM artifacts require Java 17, and the cores are compiled with JDK 25.
 
 The Kotlin Gradle plugin does not set `org.gradle.jvm.version` on Kotlin Multiplatform JVM targets, so `kotlin-multiplatform-jvm` sets it itself. That covers both the published variants and the JVM classpaths, so a dependency whose Gradle metadata declares a newer JVM fails resolution.
 
-Use LTS JDKs only. Raise the release only if a library needs it. The local native convention plugin compiles for JDK 25, so the build must run on JDK 25.
+Use LTS JDKs only. Raise the release only if a library needs it. The shared convention plugins are built for JDK 25, so the build must run on JDK 25.
 
 ## Critical Gotchas
 
@@ -170,6 +168,6 @@ Do not modify the `pluginManagement`/`plugins` blocks in each core's `settings.g
 
 - **Architecture & build hierarchy**: see Architecture above
 - **Shared conventions pin**: `gradle/libs.versions.toml` (the catalog itself comes from gradle-build-conventions)
-- **Local convention plugin**: `gradle/plugins/kotlin-convention/src/main/kotlin/` (shared ones live in gradle-build-conventions)
+- **Convention plugins**: shared, in gradle-build-conventions
 - **Source code**: `cores/*/src/commonMain/kotlin/`
 - **Tests**: `cores/*/src/commonTest/kotlin/` and `cores/*/src/jvmTest/kotlin/`
