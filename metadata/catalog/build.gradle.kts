@@ -30,8 +30,10 @@ publishing {
 }
 
 tasks.withType<PublishToMavenRepository>().configureEach {
+    // Read at configuration time and held in a local: a script-level val would capture the script object in the action.
+    val publishedVersion = version.toString()
     doFirst {
-        require(version != "unspecified") {
+        require(publishedVersion != "unspecified") {
             "Cannot publish: no git tag found. Tag the repo with a 'v' prefix before publishing."
         }
     }
