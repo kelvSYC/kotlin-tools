@@ -18,7 +18,7 @@ Guidance for coding agents (and humans) working in this Gradle composite build: 
 ```bash
 ./gradlew :build          # Build all cores
 ./gradlew :check          # Run tests across all cores
-./gradlew :publish        # Publish to GitHub Packages (requires `gpr.user`/`gpr.key` Gradle properties or `GITHUB_ACTOR`/`GITHUB_TOKEN`)
+./gradlew :publish        # Publish to GitHub Packages (requires `GitHubPackagesUsername`/`GitHubPackagesPassword` Gradle properties)
 ./gradlew dokkaGenerate   # Generate HTML API docs for all cores
 ```
 
@@ -112,7 +112,7 @@ Shared (from gradle-build-conventions; see its README for details):
 - `com.kelvsyc.internal.kotlin-multiplatform-js` — Applies base; adds JS IR target with Node.js (pinned, overridable with `kelvsycKotlin { nodeVersion }`), KSP and the Kotest Gradle plugin; raises the JS stdlib back to the compiler version. JS-only cores apply `-library` together with `-js`
 - `com.kelvsyc.internal.kotlin-jvm-library` — Kotlin JVM library with the same floors and checks, sources jar, Kotest and a `maven` publication; with `com.kelvsyc.internal.dokka` applied, a Dokka Javadoc JAR
 - `com.kelvsyc.internal.dokka` — Dokka HTML generation with GitHub source links resolved from git HEAD and JDK/Kotlin standard library links; wires `assemble` → `dokkaGeneratePublicationHtml`
-- `com.kelvsyc.internal.github-publishing` — Applies `maven-publish`; configures the GitHub Packages repository, deriving its URL from the `origin` git remote and taking credentials from the `gpr.user`/`gpr.key` Gradle properties, else `GITHUB_ACTOR`/`GITHUB_TOKEN`; strips the internal platform BOM (`com.kelvsyc.internal:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare the platform for local resolution.
+- `com.kelvsyc.internal.github-publishing` — Applies `maven-publish`; configures the GitHub Packages repository, deriving its URL from the `origin` git remote and taking its credentials lazily from the `GitHubPackagesUsername`/`GitHubPackagesPassword` Gradle properties; strips the internal platform BOM (`com.kelvsyc.internal:platform`) from published POM and Gradle module metadata so that consumers don't see an unresolvable dependency. The convention plugins still declare the platform for local resolution.
 
 Per-core settings go through the shared conventions' extensions rather than raw compiler options, e.g. `luxon-extensions` sets `kelvsycKotlin { languageVersion = KotlinVersion.KOTLIN_2_3 }`.
 
@@ -156,7 +156,7 @@ This is a composite build. All Gradle commands must run from the repository root
 
 ### Publishing Requires Credentials ⚠️
 
-`./gradlew :publish` requires credentials: the `gpr.user`/`gpr.key` Gradle properties, else `GITHUB_ACTOR` and `GITHUB_TOKEN`. Without them, it fails. The publish repository URL is derived from the `origin` git remote, so `origin` must point at the GitHub repository.
+`./gradlew :publish` requires credentials: the `GitHubPackagesUsername`/`GitHubPackagesPassword` Gradle properties (for example in `~/.gradle/gradle.properties`, or as `ORG_GRADLE_PROJECT_GitHubPackagesUsername`/`ORG_GRADLE_PROJECT_GitHubPackagesPassword` environment variables). The publishing repository reads them at execution, which keeps the publish tasks configuration-cache compatible. Without them, it fails. Resolving dependencies from GitHub Packages is separate and still uses the `gpr.user`/`gpr.key` Gradle properties, else `GITHUB_ACTOR`/`GITHUB_TOKEN` (see Building Requires GitHub Packages Credentials). The publish repository URL is derived from the `origin` git remote, so `origin` must point at the GitHub repository.
 
 ### Building Requires GitHub Packages Credentials ⚠️
 
