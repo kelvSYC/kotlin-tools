@@ -25,6 +25,11 @@ sealed interface SqlDatabase {
     /**
      * The underlying [Sql], for anything this database doesn't offer; inside a [transaction], the transaction's. For a
      * database made by [borrowing], closing it leaves the borrowed connection open.
+     *
+     * It has none of this database's protections. A Kotlin string template passed to it is plain text with its values
+     * pasted in, and `Sql` doesn't bind every value of a GString: it pastes quoted values (`'${x}'`) into the text
+     * before Groovy 6 and rewrites `= null` to `is null`. Use its placeholder methods, such as `rows(String, List)`,
+     * with constant text.
      */
     val groovy: Sql
 

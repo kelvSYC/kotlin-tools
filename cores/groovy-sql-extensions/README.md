@@ -60,13 +60,30 @@ db.rows(trustedSql("select * from $table"))
 - `param(null)` binds SQL `NULL`, so `= ${param(null)}` matches nothing, as in SQL.
 - Don't quote `param()`: it binds a value, so write `= ${param(x)}`, not `= '${param(x)}'`. A quoted `param()` throws
   `IllegalArgumentException`.
-- Queries always run through `Sql`'s placeholder methods, never its `GString` ones, which paste quoted values into the
-  text and rewrite `= null` to `is null`.
 - Values from `Sql.expand(…)`, which `Sql` pastes into the text instead of binding, are rejected by `param` and `sql`;
   use `trustedSql` for that. Typed parameters such as `Sql.VARCHAR(x)` are bound as usual.
-- A forgotten `param()` still interpolates: `trustedSql` is the only form meant to contain built text, which makes the
-  risky case stand out in review.
 - `query.text` (with `?` placeholders) and `query.parameters` show what will be run, for logging.
+
+## Writing safe queries
+
+The point of `SqlDatabase` is that the easy way to write a query is also the safe one. What it can't prevent:
+
+- **A forgotten `param()`.** Inside `db.rows { "… ${x}" }`, a value without `param()` is pasted into the text like any
+  Kotlin template. Kotlin can't tell the two apart, so review query templates for interpolations without `param()`.
+  `trustedSql` is the only form meant to contain built text, which makes deliberate cases stand out.
+- **Built text in `sql(…)`.** Its text should be a constant; values belong in its parameters.
+- **The escape hatch.** `db.groovy` is the plain `groovy.sql.Sql`, with none of these protections:
+  - A Kotlin string template passed to it (`db.groovy.rows("… where id = $id")`) is plain text with the value pasted in.
+  - A `GString` passed to it isn't fully bound either. `Sql` pastes a value written between quotes
+    (`'${x}'`) into the SQL text on Groovy before 6.0 (Groovy 6 rejects it unless `groovy.sql.injection.lenient` is
+    set), and rewrites `= ${x}` with a `null` value to `is null`, so it matches `NULL` rows. A Groovy GString query and
+    one built with `gstring { }` from groovy-extensions behave the same way.
+
+  If you do use `db.groovy`, use its placeholder methods (`rows(String, List)` and the like) with constant text.
+
+`SqlDatabase` itself never hands `Sql` a `GString`: every query runs as text with `?` placeholders through `Sql`'s
+placeholder methods, so every `param()` value is bound, and `= ${param(null)}` matches nothing, as in SQL. Code ported
+from Groovy that relied on `= ${null}` meaning `is null` must say `is null` explicitly.
 
 ## Reading
 
