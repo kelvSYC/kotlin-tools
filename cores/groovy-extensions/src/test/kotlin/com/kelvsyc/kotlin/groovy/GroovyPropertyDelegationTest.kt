@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.groovy
 
 import groovy.lang.GroovyObject
+import groovy.lang.GroovyObjectSupport
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
@@ -9,6 +10,8 @@ import io.kotest.matchers.shouldBe
 private val GroovyObject.name: String by groovyProperty()
 private val GroovyObject.personName: String by groovyProperty("name")
 private var GroovyObject.mutableName: String by groovyProperty("name")
+
+private class MapObject : GroovyObjectSupport(), Map<String, Any?> by mapOf("name" to "Ada")
 
 class GroovyPropertyDelegationTest : FunSpec({
     fun person(name: String? = "Ada") = evalGroovy(
@@ -55,5 +58,13 @@ class GroovyPropertyDelegationTest : FunSpec({
         val p = person()
         p.mutableName = "Grace"
         p["name"] shouldBe "Grace"
+    }
+
+    test("a GroovyObject that is also a Map delegates through Groovy property access") {
+        val row = MapObject()
+        val name: String by row
+        val missing: String? by row
+        name shouldBe "Ada"
+        missing.shouldBeNull()
     }
 })

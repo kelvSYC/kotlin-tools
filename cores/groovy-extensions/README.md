@@ -95,5 +95,7 @@ val GroovyRowResult.age: Int by groovyProperty()
 
 Values are cast to the property's type when read: a value of the wrong type fails with `ClassCastException`, and `null`
 read into a non-null property fails with `NullPointerException`. For types that also implement `Map`, such as
-`GroovyRowResult`, `val x by row` is ambiguous with the standard library's `Map` delegate; use `groovyProperty()`, or
-the `Map` delegate itself.
+`GroovyRowResult`, `val x by row` resolves to this delegate rather than the standard library's `Map` delegate whenever
+this library's `getValue` is imported (imports take precedence over Kotlin's default imports). Groovy reads a map's
+properties as its keys, so the result is the same, except that a missing key reads as `null` instead of throwing
+`NoSuchElementException`.
