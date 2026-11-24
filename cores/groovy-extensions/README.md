@@ -32,3 +32,18 @@ val entries = closureOf { key: String, value: Int -> println("$key=$value") }
 
 Declare parameters explicitly: `closureOf { 42 }` and `closureOf { it }` are ambiguous between the overloads. A lambda
 returning `Unit` returns `null` to Groovy, so `[1, 2].collect(closureOf { x: Int -> println(x) })` gives `[null, null]`.
+
+## Delegate closures
+
+`delegateClosureOf<T>` turns a Kotlin receiver lambda into a closure for configuration-style Groovy APIs: it resolves
+against its delegate first and runs the lambda with the delegate, which must be a `T`, as receiver. It works whether the
+API calls it with no arguments or passes the target, as Groovy's `with` does.
+
+```kotlin
+class Server { var port = 0 }
+
+val configure = delegateClosureOf<Server> { port = 8080 }
+// Groovy: server.with(configure)
+```
+
+A non-reified overload, `delegateClosureOf(Server::class.java) { … }`, takes the type explicitly.

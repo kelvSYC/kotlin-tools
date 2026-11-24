@@ -32,3 +32,24 @@ internal class KotlinClosure2<P1, P2, V>(private val function: (P1, P2) -> V) : 
 internal class KotlinClosure3<P1, P2, P3, V>(private val function: (P1, P2, P3) -> V) : Closure<V?>(null) {
     fun doCall(p1: P1, p2: P2, p3: P3): V? = unitToNull(function(p1, p2, p3)) as V?
 }
+
+/**
+ * Runs [action] on the closure's delegate, resolving names against the delegate first. Callers differ in whether they pass
+ * the target as an argument (`with` and configure-style helpers do), so both forms are accepted.
+ */
+internal class KotlinDelegateClosure<T : Any>(
+    private val type: Class<T>,
+    private val action: T.() -> Unit,
+) : Closure<Unit?>(null) {
+    init {
+        resolveStrategy = DELEGATE_FIRST
+    }
+
+    fun doCall(): Unit? {
+        type.cast(delegate).action()
+        return null
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun doCall(target: Any?): Unit? = doCall()
+}
