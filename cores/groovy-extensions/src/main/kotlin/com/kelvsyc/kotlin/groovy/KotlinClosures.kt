@@ -1,11 +1,12 @@
 package com.kelvsyc.kotlin.groovy
 
 import groovy.lang.Closure
+import groovy.lang.GroovyObject
 
 /*
  * Groovy dispatches a closure call to the public `doCall` methods of the closure's class, found by name, and derives the
- * closure's parameter count from them; `Closure` itself declares none. Hence one adapter per arity, each with exactly one
- * `doCall` of that arity.
+ * closure's parameter count from them; `Closure` itself declares none. Hence one lambda adapter per arity, each with
+ * exactly one `doCall` of that arity. The delegate-based closures declare two, so that callers may pass the target or not.
  */
 
 /**
@@ -54,5 +55,34 @@ internal class KotlinDelegateClosure<T : Any>(
     private fun run(receiver: Any): Unit? {
         type.cast(receiver).action()
         return null
+    }
+}
+
+/**
+ * A nested builder block: runs [block] in a [GroovyBuilderScope] over the delegate the builder sets; when it sets none,
+ * over the argument the builder passes if that is a [GroovyObject], else over [enclosing] (as a Groovy closure resolves
+ * through its owner). Returns the block's result to the builder.
+ */
+internal class KotlinBuilderClosure(
+    private val enclosing: GroovyObject,
+    private val block: GroovyBuilderScope.() -> Any?,
+) : Closure<Any?>(null) {
+    init {
+        resolveStrategy = DELEGATE_FIRST
+    }
+
+    fun doCall(): Any? = run(null)
+
+    fun doCall(argument: Any?): Any? = run(argument)
+
+    private fun run(argument: Any?): Any? {
+        val receiver = when (val target = delegate) {
+            null -> argument as? GroovyObject ?: enclosing
+            is GroovyObject -> target
+            else -> error(
+                "A Groovy builder block needs a GroovyObject delegate, but the builder set a ${target.javaClass.name}"
+            )
+        }
+        return unitToNull(GroovyBuilderScope.of(receiver).block())
     }
 }
