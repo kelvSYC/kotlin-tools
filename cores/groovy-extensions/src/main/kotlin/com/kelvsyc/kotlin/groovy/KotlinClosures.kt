@@ -35,7 +35,8 @@ internal class KotlinClosure3<P1, P2, P3, V>(private val function: (P1, P2, P3) 
 
 /**
  * Runs [action] on the closure's delegate, resolving names against the delegate first. Callers differ in whether they pass
- * the target as an argument (`with` and configure-style helpers do), so both forms are accepted.
+ * the target as an argument (`with` and configure-style helpers do), so both forms are accepted; when no delegate is set,
+ * the argument is the target (as in `[server].each(closure)`).
  */
 internal class KotlinDelegateClosure<T : Any>(
     private val type: Class<T>,
@@ -45,11 +46,13 @@ internal class KotlinDelegateClosure<T : Any>(
         resolveStrategy = DELEGATE_FIRST
     }
 
-    fun doCall(): Unit? {
-        type.cast(delegate).action()
+    fun doCall(): Unit? = run(delegate ?: error("delegateClosureOf: no delegate set and no target passed"))
+
+    fun doCall(target: Any?): Unit? =
+        run(delegate ?: target ?: error("delegateClosureOf: no delegate set and a null target"))
+
+    private fun run(receiver: Any): Unit? {
+        type.cast(receiver).action()
         return null
     }
-
-    @Suppress("UNUSED_PARAMETER")
-    fun doCall(target: Any?): Unit? = doCall()
 }

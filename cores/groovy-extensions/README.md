@@ -37,7 +37,8 @@ returning `Unit` returns `null` to Groovy, so `[1, 2].collect(closureOf { x: Int
 
 `delegateClosureOf<T>` turns a Kotlin receiver lambda into a closure for configuration-style Groovy APIs: it resolves
 against its delegate first and runs the lambda with the delegate, which must be a `T`, as receiver. It works whether the
-API calls it with no arguments or passes the target, as Groovy's `with` does.
+API calls it with no arguments or passes the target, as Groovy's `with` does. If the API passes the target without setting
+a delegate (`[server].each(configure)`), the target is the receiver.
 
 ```kotlin
 class Server { var port = 0 }

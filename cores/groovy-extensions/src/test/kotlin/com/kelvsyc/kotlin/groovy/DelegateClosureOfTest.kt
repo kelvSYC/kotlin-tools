@@ -36,6 +36,16 @@ class DelegateClosureOfTest : FunSpec({
         target.name shouldBe "with"
     }
 
+    test("uses the argument when no delegate is set") {
+        val target = Target()
+        evalGroovy("[t].each(c)", "t" to target, "c" to delegateClosureOf<Target> { name = "each" })
+        target.name shouldBe "each"
+    }
+
+    test("no delegate and no argument fails with IllegalStateException") {
+        shouldThrow<IllegalStateException> { delegateClosureOf<Target> { }.call() }
+    }
+
     test("a delegate of the wrong type fails with ClassCastException") {
         val c = delegateClosureOf<Target> { }
         c.delegate = "not a target"

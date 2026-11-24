@@ -29,7 +29,8 @@ fun <P1, P2, P3, V> closureOf(function: (P1, P2, P3) -> V): Closure<V?> = Kotlin
 /**
  * Adapts a Kotlin receiver lambda to a Groovy [Closure] that runs [action] on its delegate, resolving names against the
  * delegate first, for configuration-style Groovy APIs. The closure accepts being called with no arguments or with the
- * target as its argument. Calling it when the delegate is not a [T] throws [ClassCastException].
+ * target as its argument; with no delegate set, the argument is used. Calling it when the receiver is not a [T] throws
+ * [ClassCastException], and with neither a delegate nor an argument, [IllegalStateException].
  */
 fun <T : Any> delegateClosureOf(type: Class<T>, action: T.() -> Unit): Closure<Unit?> = KotlinDelegateClosure(type, action)
 
