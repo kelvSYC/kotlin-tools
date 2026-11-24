@@ -75,3 +75,25 @@ person.callMethod("greet", "hello")  // obj.greet("hello")
 The method call is `callMethod`, not `invoke`, because a `Closure` is itself a `GroovyObject` and `invoke` calls the
 closure. Types that also implement `Map`, such as `groovy.sql.GroovyRowResult`, resolve `obj["key"]` to their own
 `Map.get`, not to this extension.
+
+### Delegated properties
+
+A Kotlin property can be delegated to a Groovy object's property of the same name:
+
+```kotlin
+val name: String by person           // person.getProperty("name")
+var age: Int by person               // writes go to person.setProperty("age", …)
+```
+
+For extension properties, which can't refer to their receiver in the delegate expression, `groovyProperty()` reads and
+writes the receiver's property instead, optionally under another name. This gives typed facades over dynamic objects:
+
+```kotlin
+val GroovyRowResult.firstName: String by groovyProperty("first_name")
+val GroovyRowResult.age: Int by groovyProperty()
+```
+
+Values are cast to the property's type when read: a value of the wrong type fails with `ClassCastException`, and `null`
+read into a non-null property fails with `NullPointerException`. For types that also implement `Map`, such as
+`GroovyRowResult`, `val x by row` is ambiguous with the standard library's `Map` delegate; use `groovyProperty()`, or
+the `Map` delegate itself.
