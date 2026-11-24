@@ -2,46 +2,26 @@ package com.kelvsyc.kotlin.groovy.sql
 
 import com.kelvsyc.kotlin.groovy.GStringScope
 import com.kelvsyc.kotlin.groovy.gstring
-import groovy.lang.GString
 import groovy.sql.ExpandedVariable
 
+private const val QUOTES = "'\""
 private const val EXPANDED_VARIABLE_MESSAGE =
     "Sql.expand(…) values are pasted into the SQL text, not bound; " +
         "use trustedSql(…) for SQL text you build yourself"
 
 /**
- * A query for a [SqlDatabase]. There is deliberately no way to make one from a plain `String` other than [sql] (with
- * `?` placeholders) and [trustedSql] (explicitly trusted text), so values can't be pasted into SQL by accident. Build
- * one with [query].
+ * A query for a [SqlDatabase]: SQL [text] with a `?` placeholder for each of its [parameters], which are always bound,
+ * never pasted into the text. There is deliberately no way to make one from a plain `String` other than [sql] (with `?`
+ * placeholders) and [trustedSql] (explicitly trusted text), so values can't be pasted into SQL by accident. Build one
+ * with [query].
  */
-class SqlQuery internal constructor(internal val form: Form) {
-    /**
-     * The SQL text, with a `?` placeholder for each bound parameter; for logging and diagnostics.
-     */
-    val text: String
-        get() = when (form) {
-            is Form.Template -> form.gstring.strings.joinToString("?")
-            is Form.Text -> form.text
-        }
-
-    /**
-     * The bound parameters, in placeholder order.
-     */
-    val parameters: List<Any?>
-        get() = when (form) {
-            is Form.Template -> form.gstring.values.toList()
-            is Form.Text -> form.parameters
-        }
-
+class SqlQuery internal constructor(
+    /** The SQL text, with a `?` placeholder for each bound parameter. */
+    val text: String,
+    /** The bound parameters, in placeholder order. */
+    val parameters: List<Any?>,
+) {
     override fun toString(): String = "SqlQuery($text, $parameters)"
-
-    internal sealed interface Form {
-        /** A template whose values `Sql` binds as parameters. */
-        data class Template(val gstring: GString) : Form
-
-        /** Text with `?` placeholders and their parameters. */
-        data class Text(val text: String, val parameters: List<Any?>) : Form
-    }
 }
 
 /**
@@ -78,21 +58,30 @@ class SqlQueryScope internal constructor(private val scope: GStringScope) {
  * `query { "select * from books where author = ${param(author)}" }`. The values are bound as parameters, never pasted
  * into the SQL text.
  */
-fun query(block: SqlQueryScope.() -> String): SqlQuery =
-    SqlQuery(SqlQuery.Form.Template(gstring { SqlQueryScope(this).block() }))
+fun query(block: SqlQueryScope.() -> String): SqlQuery {
+    val template = gstring { SqlQueryScope(this).block() }
+    val strings = template.strings
+    for (i in template.values.indices) {
+        val before = strings[i].lastOrNull()
+        require(before == null || before !in QUOTES || strings[i + 1].firstOrNull() != before) {
+            "param() must not be quoted: it binds a value, so write `= \${param(x)}`, not `= '\${param(x)}'`"
+        }
+    }
+    return SqlQuery(strings.joinToString("?"), template.values.toList())
+}
 
 /**
  * A query from [text] with `?` placeholders and their [parameters], bound one per placeholder (collections are not
  * expanded). [text] should be a constant: never build it from untrusted input.
  */
 fun sql(text: String, vararg parameters: Any?): SqlQuery =
-    SqlQuery(SqlQuery.Form.Text(text, parameters.map(::checkBindable)))
+    SqlQuery(text, parameters.map(::checkBindable))
 
 /**
  * A query from [text] with no parameters, for SQL text you build yourself (table names, generated clauses). [text] must
  * never contain untrusted input: nothing in it is bound.
  */
-fun trustedSql(text: String): SqlQuery = SqlQuery(SqlQuery.Form.Text(text, emptyList()))
+fun trustedSql(text: String): SqlQuery = SqlQuery(text, emptyList())
 
 private fun checkBindable(value: Any?): Any? {
     require(value !is ExpandedVariable) { EXPANDED_VARIABLE_MESSAGE }

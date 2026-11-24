@@ -15,23 +15,23 @@ import javax.sql.DataSource
  * [OwnedSqlDatabase] to `use`), [borrowing] (the caller's connection, never closed here) and [wrapping] (an existing
  * [Sql], which the caller keeps owning).
  *
- * Like [Sql], one `SqlDatabase` isn't meant for concurrent transactions from several threads.
+ * Every operation takes a [SqlQuery], whose parameters are always bound, never pasted into the SQL text.
+ *
+ * A database over a [DataSource] may be shared between threads: each [transaction] runs on its own connection, and
+ * other threads' operations stay outside it. A database over a single connection ([connect], [open], [borrowing], or
+ * [wrapping] a connection-based [Sql]) shares that connection, and so any running transaction, between threads.
  */
 sealed interface SqlDatabase {
     /**
-     * The underlying [Sql], for anything this wrapper doesn't offer. For a database made by [borrowing], closing it
-     * leaves the borrowed connection open.
+     * The underlying [Sql], for anything this database doesn't offer; inside a [transaction], the transaction's. For a
+     * database made by [borrowing], closing it leaves the borrowed connection open.
      */
     val groovy: Sql
 
     /**
      * Runs [query] and returns all its rows.
      */
-    fun rows(query: SqlQuery): List<GroovyRowResult> = when (val form = query.form) {
-        is SqlQuery.Form.Template -> groovy.rows(form.gstring)
-        is SqlQuery.Form.Text ->
-            if (form.parameters.isEmpty()) groovy.rows(form.text) else groovy.rows(form.text, form.parameters)
-    }
+    fun rows(query: SqlQuery): List<GroovyRowResult>
 
     /**
      * Runs the query built by [block] (see [query]) and returns all its rows.
@@ -46,11 +46,7 @@ sealed interface SqlDatabase {
     /**
      * Runs [query] and returns its first row, or `null` when there is none.
      */
-    fun firstRow(query: SqlQuery): GroovyRowResult? = when (val form = query.form) {
-        is SqlQuery.Form.Template -> groovy.firstRow(form.gstring)
-        is SqlQuery.Form.Text ->
-            if (form.parameters.isEmpty()) groovy.firstRow(form.text) else groovy.firstRow(form.text, form.parameters)
-    }
+    fun firstRow(query: SqlQuery): GroovyRowResult?
 
     /**
      * Runs the query built by [block] (see [query]) and returns its first row, or `null` when there is none.
@@ -61,31 +57,12 @@ sealed interface SqlDatabase {
      * Runs [query] and passes each row to [action] while the result set is open, without loading all rows first. An
      * exception from [action] stops the iteration and propagates.
      */
-    fun forEachRow(query: SqlQuery, action: (GroovyResultSet) -> Unit) {
-        val closure = closureOf { row: GroovyResultSet -> action(row) }
-        when (val form = query.form) {
-            is SqlQuery.Form.Template -> groovy.eachRow(form.gstring, closure)
-            is SqlQuery.Form.Text ->
-                if (form.parameters.isEmpty()) {
-                    groovy.eachRow(form.text, closure)
-                } else {
-                    groovy.eachRow(form.text, form.parameters, closure)
-                }
-        }
-    }
+    fun forEachRow(query: SqlQuery, action: (GroovyResultSet) -> Unit)
 
     /**
      * Runs [query], an `insert`, `update` or `delete`, and returns the number of rows it changed.
      */
-    fun executeUpdate(query: SqlQuery): Int = when (val form = query.form) {
-        is SqlQuery.Form.Template -> groovy.executeUpdate(form.gstring)
-        is SqlQuery.Form.Text ->
-            if (form.parameters.isEmpty()) {
-                groovy.executeUpdate(form.text)
-            } else {
-                groovy.executeUpdate(form.text, form.parameters)
-            }
-    }
+    fun executeUpdate(query: SqlQuery): Int
 
     /**
      * Runs the statement built by [block] (see [query]); see the [SqlQuery] overload.
@@ -95,11 +72,7 @@ sealed interface SqlDatabase {
     /**
      * Runs [query], any statement; returns `true` when its first result is a result set, as `Sql.execute` does.
      */
-    fun execute(query: SqlQuery): Boolean = when (val form = query.form) {
-        is SqlQuery.Form.Template -> groovy.execute(form.gstring)
-        is SqlQuery.Form.Text ->
-            if (form.parameters.isEmpty()) groovy.execute(form.text) else groovy.execute(form.text, form.parameters)
-    }
+    fun execute(query: SqlQuery): Boolean
 
     /**
      * Runs the statement built by [block] (see [query]); see the [SqlQuery] overload.
@@ -109,15 +82,7 @@ sealed interface SqlDatabase {
     /**
      * Runs [query], an `insert`, and returns the keys it generated: one list of key columns per inserted row.
      */
-    fun executeInsert(query: SqlQuery): List<List<Any?>> = when (val form = query.form) {
-        is SqlQuery.Form.Template -> groovy.executeInsert(form.gstring)
-        is SqlQuery.Form.Text ->
-            if (form.parameters.isEmpty()) {
-                groovy.executeInsert(form.text)
-            } else {
-                groovy.executeInsert(form.text, form.parameters)
-            }
-    }
+    fun executeInsert(query: SqlQuery): List<List<Any?>>
 
     /**
      * Runs the insert built by [block] (see [query]); see the [SqlQuery] overload.
@@ -125,10 +90,15 @@ sealed interface SqlDatabase {
     fun executeInsert(block: SqlQueryScope.() -> String): List<List<Any?>> = executeInsert(query(block))
 
     /**
-     * Runs [block] in a transaction: committed when it returns, rolled back when it throws (the exception propagates).
-     * A `transaction` inside another joins it: it neither commits nor rolls back by itself, and only the outermost
-     * block does. If the outer block catches an inner block's exception and returns normally, everything done so far,
-     * including the inner block's work, is committed.
+     * Runs [block] in a transaction: committed when it returns, rolled back when it throws (the exception propagates
+     * unchanged). This database's operations on the calling thread run in the transaction, whether made through the
+     * block's argument or this database.
+     *
+     * A `transaction` inside another on the same thread joins it: it neither commits nor rolls back by itself, and
+     * only the outermost block does. If the outer block catches an inner block's exception and returns normally,
+     * everything done so far, including the inner block's work, is committed. Likewise, on a connection already in a
+     * transaction managed elsewhere (auto-commit off, for example a borrowed connection), `transaction` joins it and
+     * leaves committing and rolling back to its owner.
      */
     fun <T> transaction(block: (SqlDatabase) -> T): T
 
@@ -188,25 +158,96 @@ sealed interface SqlDatabase {
  */
 sealed interface OwnedSqlDatabase : SqlDatabase, AutoCloseable
 
-internal open class DefaultSqlDatabase(override val groovy: Sql) : SqlDatabase {
-    private var inTransaction = false
+/*
+ * Queries are always run through Sql's String overloads, never its GString ones: given a GString, Sql pastes values
+ * that are surrounded by quotes into the SQL text and rewrites `= null` to `is null`, so a bound parameter would not
+ * stay bound.
+ */
+internal open class DefaultSqlDatabase(private val base: Sql) : SqlDatabase {
+    private val transactionSql = ThreadLocal<Sql>()
+
+    override val groovy: Sql
+        get() = transactionSql.get() ?: base
+
+    override fun rows(query: SqlQuery): List<GroovyRowResult> =
+        if (query.parameters.isEmpty()) groovy.rows(query.text) else groovy.rows(query.text, query.parameters)
+
+    override fun firstRow(query: SqlQuery): GroovyRowResult? =
+        if (query.parameters.isEmpty()) groovy.firstRow(query.text) else groovy.firstRow(query.text, query.parameters)
+
+    override fun forEachRow(query: SqlQuery, action: (GroovyResultSet) -> Unit) {
+        val closure = closureOf { row: GroovyResultSet -> action(row) }
+        if (query.parameters.isEmpty()) {
+            groovy.eachRow(query.text, closure)
+        } else {
+            groovy.eachRow(query.text, query.parameters, closure)
+        }
+    }
+
+    override fun executeUpdate(query: SqlQuery): Int =
+        if (query.parameters.isEmpty()) {
+            groovy.executeUpdate(query.text)
+        } else {
+            groovy.executeUpdate(query.text, query.parameters)
+        }
+
+    override fun execute(query: SqlQuery): Boolean =
+        if (query.parameters.isEmpty()) groovy.execute(query.text) else groovy.execute(query.text, query.parameters)
+
+    override fun executeInsert(query: SqlQuery): List<List<Any?>> =
+        if (query.parameters.isEmpty()) {
+            groovy.executeInsert(query.text)
+        } else {
+            groovy.executeInsert(query.text, query.parameters)
+        }
 
     override fun <T> transaction(block: (SqlDatabase) -> T): T {
-        if (inTransaction) return block(this)
-        inTransaction = true
+        if (transactionSql.get() != null || inForeignTransaction()) return block(this)
+        // Over a DataSource, a copy of the Sql holds this transaction's connection, so other threads keep using
+        // connections of their own.
+        val sql = if (base.dataSource != null) Sql(base) else base
+        transactionSql.set(sql)
         try {
-            var result: Any? = null
-            groovy.withTransaction(closureOf { -> result = block(this) })
-            @Suppress("UNCHECKED_CAST")
-            return result as T
+            return runInTransaction(sql) { block(this) }
         } finally {
-            inTransaction = false
+            transactionSql.remove()
         }
+    }
+
+    private fun inForeignTransaction(): Boolean {
+        val connection = base.connection ?: return false
+        return base.dataSource == null && !connection.autoCommit
     }
 }
 
-internal class DefaultOwnedSqlDatabase(groovy: Sql) : DefaultSqlDatabase(groovy), OwnedSqlDatabase {
+internal class DefaultOwnedSqlDatabase(sql: Sql) : DefaultSqlDatabase(sql), OwnedSqlDatabase {
     override fun close() = groovy.close()
+}
+
+/**
+ * Runs [block] in a transaction on one connection of [sql], pinned with `cacheConnection`: committed when [block]
+ * returns, rolled back when it throws, the exception propagating unchanged. (`Sql.withTransaction` would wrap checked
+ * exceptions in an [java.sql.SQLException].) The connection's auto-commit setting is restored afterwards.
+ */
+private fun <T> runInTransaction(sql: Sql, block: () -> T): T {
+    var result: Any? = null
+    sql.cacheConnection(
+        closureOf { connection: Connection ->
+            val autoCommit = connection.autoCommit
+            connection.autoCommit = false
+            var committed = false
+            try {
+                result = block()
+                connection.commit()
+                committed = true
+            } finally {
+                if (!committed) connection.rollback()
+                connection.autoCommit = autoCommit
+            }
+        }
+    )
+    @Suppress("UNCHECKED_CAST")
+    return result as T
 }
 
 /**

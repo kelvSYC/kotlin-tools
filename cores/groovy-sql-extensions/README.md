@@ -58,6 +58,10 @@ db.rows(trustedSql("select * from $table"))
   `"… where id in (${param(ids)})"`. An empty collection throws `IllegalArgumentException`, since `in ()` isn't valid
   SQL. A `ByteArray` binds as one binary value. `sql(…)` doesn't expand: its parameters bind one per `?`.
 - `param(null)` binds SQL `NULL`, so `= ${param(null)}` matches nothing, as in SQL.
+- Don't quote `param()`: it binds a value, so write `= ${param(x)}`, not `= '${param(x)}'`. A quoted `param()` throws
+  `IllegalArgumentException`.
+- Queries always run through `Sql`'s placeholder methods, never its `GString` ones, which paste quoted values into the
+  text and rewrite `= null` to `is null`.
 - Values from `Sql.expand(…)`, which `Sql` pastes into the text instead of binding, are rejected by `param` and `sql`;
   use `trustedSql` for that. Typed parameters such as `Sql.VARCHAR(x)` are bound as usual.
 - A forgotten `param()` still interpolates: `trustedSql` is the only form meant to contain built text, which makes the
@@ -91,8 +95,14 @@ db.transaction { tx ->
 }   // committed on return, rolled back if the block throws
 ```
 
-A `transaction` inside another joins it: only the outermost block commits or rolls back. If the outer block catches an
-inner block's exception and returns normally, everything done so far, including the inner block's work, is committed.
-Like `Sql`, one `SqlDatabase` isn't meant for concurrent transactions from several threads.
+A `transaction` inside another on the same thread joins it: only the outermost block commits or rolls back. If the outer
+block catches an inner block's exception and returns normally, everything done so far, including the inner block's
+work, is committed. On a connection already in a transaction managed elsewhere (auto-commit off, as a borrowed
+connection may be), `transaction` joins that one and leaves committing to its owner. Exceptions propagate unchanged,
+checked ones included.
+
+A database from `of(dataSource)` can be shared between threads: each transaction runs on its own connection, and other
+threads' operations stay outside it. A database over a single connection (`connect`, `open`, `borrowing`) shares that
+connection, and any running transaction, between threads.
 
 Batches, stored procedures and anything else not offered here are available through `db.groovy`.
