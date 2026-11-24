@@ -8,11 +8,11 @@ plugins {
 
 group = "com.kelvsyc.kotlin"
 
-// Prototype: moves to libs.groovy3 and libs.groovy once the shared catalog has them.
-val groovy3 = "org.codehaus.groovy:groovy:3.0.25"
-val latestGroovy = "org.apache.groovy:groovy:6.0.0"
+val groovy3 = libs.groovy3
+val latestGroovy = libs.groovy
 
-fun majorOf(coordinates: String) = coordinates.substringAfterLast(':').substringBefore('.')
+fun majorOf(groovy: Provider<MinimalExternalModuleDependency>) =
+    checkNotNull(groovy.get().version) { "Groovy catalog entries must declare a version" }.substringBefore('.')
 
 // Consumers bring their own Groovy (3.x as org.codehaus.groovy, 4+ as org.apache.groovy), so it is never published as a
 // dependency: compile against the oldest supported line, and test against it and the newest.
