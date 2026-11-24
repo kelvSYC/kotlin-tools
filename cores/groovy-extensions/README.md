@@ -128,6 +128,8 @@ builder.withGroovyBuilder {
   `GroovyObject`s.
 - A call returns what the builder returns (for example `NodeBuilder`'s nodes), and a block's result is returned to the
   builder, `Unit` as `null`.
+- `withGroovyBuilder` is inline, so its outermost block can `return` from the enclosing function. Nested blocks can't:
+  the builder runs them as Groovy closures.
 
 ### Typed scopes for specific builders
 
@@ -139,6 +141,7 @@ class AntScope(scope: GroovyBuilderScope) : GroovyBuilderScope by scope {
 }
 ```
 
-Such scopes inherit the `@GroovyBuilderDsl` marker from `GroovyBuilderScope`, which stops a nested block from implicitly
+`GroovyBuilderScope`'s members are kept stable for such implementations: this library adds new capabilities as
+extension functions, not members. Such scopes inherit the `@GroovyBuilderDsl` marker from `GroovyBuilderScope`, which stops a nested block from implicitly
 calling an outer scope's functions (that would send them to the wrong delegate). Annotate any other receiver type used
 inside builder blocks with it.

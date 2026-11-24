@@ -29,6 +29,13 @@ private class TreeScope(scope: GroovyBuilderScope) : GroovyBuilderScope by scope
     fun branch(name: String, block: TreeScope.() -> Unit = {}) = "branch"("name" to name) { TreeScope(this).block() }
 }
 
+private fun firstCallOrSkip(builder: GroovyObject, skip: Boolean): Any? {
+    builder.withGroovyBuilder {
+        if (skip) return "skipped"
+        return "m"()
+    }
+}
+
 class GroovyBuilderScopeTest : FunSpec({
     test("positional arguments pass through") {
         val rec = recorder()
@@ -215,5 +222,10 @@ class GroovyBuilderScopeTest : FunSpec({
         ) as GroovyObject
         builder.withGroovyBuilder { "each" { "note"("seen") } }
         builder["log"] shouldBe listOf("seen", "seen")
+    }
+
+    test("the outermost block can return from the enclosing function") {
+        firstCallOrSkip(recorder(), skip = true) shouldBe "skipped"
+        firstCallOrSkip(recorder(), skip = false) shouldBe "ret:m"
     }
 })

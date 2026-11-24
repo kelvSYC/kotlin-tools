@@ -20,6 +20,10 @@ annotation class GroovyBuilderDsl
  *
  * Typed scopes for specific builders can be built by delegation: `class AntScope(s: GroovyBuilderScope) :
  * GroovyBuilderScope by s`. They inherit the [GroovyBuilderDsl] marker from this interface.
+ *
+ * Implementations outside this library are expected, so this interface's members are kept stable: the library adds new
+ * capabilities as extension functions on [GroovyBuilderScope], never as members, which could break implementations or
+ * silently take precedence over their own extensions.
  */
 @GroovyBuilderDsl
 interface GroovyBuilderScope {
@@ -62,9 +66,12 @@ interface GroovyBuilderScope {
 }
 
 /**
- * Runs [block] in a [GroovyBuilderScope] over this object, returning the block's result.
+ * Runs [block] in a [GroovyBuilderScope] over this object, returning the block's result. Like Kotlin's scope functions
+ * it is inline, so the block can `return` from the enclosing function; nested blocks can't, since the builder runs them
+ * as Groovy closures.
  */
-fun <T> GroovyObject.withGroovyBuilder(block: GroovyBuilderScope.() -> T): T = GroovyBuilderScope.of(this).block()
+inline fun <T> GroovyObject.withGroovyBuilder(block: GroovyBuilderScope.() -> T): T =
+    GroovyBuilderScope.of(this).block()
 
 private class DefaultGroovyBuilderScope(override val delegate: GroovyObject) : GroovyBuilderScope
 
