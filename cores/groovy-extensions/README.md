@@ -58,3 +58,18 @@ val sum: Closure<Int> = …
 sum(1, 2)                                        // closure.call(1, 2)
 val f: (Int, Int) -> Int = sum.toFunction2()
 ```
+
+## Dynamic Groovy objects
+
+Properties and methods of a `GroovyObject` (any Groovy class, and dynamic types such as `groovy.sql.GroovyResultSet`)
+can be reached by name:
+
+```kotlin
+person["name"]                       // obj.name
+person["name"] = "Grace"             // obj.name = "Grace"
+person.callMethod("greet", "hello")  // obj.greet("hello")
+```
+
+The method call is `callMethod`, not `invoke`, because a `Closure` is itself a `GroovyObject` and `invoke` calls the
+closure. Types that also implement `Map`, such as `groovy.sql.GroovyRowResult`, resolve `obj["key"]` to their own
+`Map.get`, not to this extension.
