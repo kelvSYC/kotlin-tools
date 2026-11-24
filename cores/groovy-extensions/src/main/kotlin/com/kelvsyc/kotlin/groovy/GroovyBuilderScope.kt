@@ -34,6 +34,14 @@ interface GroovyBuilderScope {
         delegate.invokeMethod(this, groovyArguments(arguments, null))
 
     /**
+     * Calls the method named by this string on [delegate] with [block] as a nested-block closure after the other
+     * arguments, returning what the builder returns. The block runs in a scope over the delegate the builder sets on the
+     * closure, or over the closure's argument when the builder sets none.
+     */
+    operator fun <T> String.invoke(vararg arguments: Any?, block: GroovyBuilderScope.() -> T): Any? =
+        delegate.invokeMethod(this, groovyArguments(arguments, KotlinBuilderClosure(block)))
+
+    /**
      * Reads the property [name] of [delegate].
      */
     operator fun get(name: String): Any? = delegate.getProperty(name)

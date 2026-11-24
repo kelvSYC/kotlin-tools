@@ -1,7 +1,12 @@
 package com.kelvsyc.kotlin.groovy
 
 import groovy.lang.GroovyObject
+import groovy.util.Node
+import groovy.util.NodeBuilder
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 
@@ -60,5 +65,115 @@ class GroovyBuilderScopeTest : FunSpec({
     test("of exposes the delegate") {
         val rec = recorder()
         GroovyBuilderScope.of(rec).delegate shouldBeSameInstanceAs rec
+    }
+
+    test("NodeBuilder builds a tree") {
+        val root = NodeBuilder().withGroovyBuilder {
+            "root"("id" to 1) {
+                "child"("text")
+                "a"("href" to "x", "link")
+            }
+        } as Node
+        root.name() shouldBe "root"
+        root.attributes() shouldBe mapOf("id" to 1)
+        val (child, a) = root.children().map { it as Node }
+        child.name() shouldBe "child"
+        child.value() shouldBe "text"
+        a.attributes() shouldBe mapOf("href" to "x")
+        a.value() shouldBe "link"
+    }
+
+    test("ObjectGraphBuilder builds objects") {
+        val builder = evalGroovy(
+            """
+            class Company { String name; List employees = [] }
+            class Employee { String name }
+            def b = new groovy.util.ObjectGraphBuilder()
+            b.classLoader = this.class.classLoader
+            b.classNameResolver = { it.capitalize() }
+            b
+            """.trimIndent()
+        ) as GroovyObject
+        val company = builder.withGroovyBuilder {
+            "company"("name" to "ACME") { "employee"("name" to "Duke") }
+        } as GroovyObject
+        company["name"] shouldBe "ACME"
+        val employees = company["employees"] as List<*>
+        employees.size shouldBe 1
+        (employees.single() as GroovyObject)["name"] shouldBe "Duke"
+    }
+
+    test("blocks follow the delegate the builder sets") {
+        val outer = evalGroovy(
+            """
+            class Inner { List log; def methodMissing(String n, args) { log << "inner:" + n; null } }
+            class Outer {
+                List log = []
+                def methodMissing(String n, args) {
+                    log << "outer:" + n
+                    def c = args.find { it instanceof Closure }
+                    if (c) { c.delegate = new Inner(log: log); c.resolveStrategy = Closure.DELEGATE_FIRST; c() }
+                    null
+                }
+            }
+            new Outer()
+            """.trimIndent()
+        ) as GroovyObject
+        outer.withGroovyBuilder { "a" { "b"() } }
+        outer["log"] shouldBe listOf("outer:a", "inner:b")
+    }
+
+    test("blocks with an argument and no delegate use the argument") {
+        val builder = evalGroovy(
+            """
+            class Child { List log; def methodMissing(String n, args) { log << "child:" + n; null } }
+            class ArgBuilder {
+                List log = []
+                def methodMissing(String n, args) {
+                    log << n
+                    def c = args.find { it instanceof Closure }
+                    if (c) c.call(new Child(log: log))
+                    null
+                }
+            }
+            new ArgBuilder()
+            """.trimIndent()
+        ) as GroovyObject
+        builder.withGroovyBuilder { "a" { "b"() } }
+        builder["log"] shouldBe listOf("a", "child:b")
+    }
+
+    test("a non-GroovyObject delegate fails clearly") {
+        val builder = evalGroovy(
+            """
+            class Plain {
+                def methodMissing(String n, args) {
+                    def c = args.find { it instanceof Closure }
+                    c.delegate = "plain"
+                    c()
+                }
+            }
+            new Plain()
+            """.trimIndent()
+        ) as GroovyObject
+        val e = shouldThrow<IllegalStateException> { builder.withGroovyBuilder { "a" { "b"() } } }
+        e.message shouldContain "GroovyObject"
+    }
+
+    test("block results reach the builder") {
+        val builder = evalGroovy(
+            """
+            class Returning {
+                def methodMissing(String n, args) {
+                    def c = args.find { it instanceof Closure }
+                    if (c) { c.delegate = this; return c() }
+                    null
+                }
+            }
+            new Returning()
+            """.trimIndent()
+        ) as GroovyObject
+        builder.withGroovyBuilder { "m" { 42 } } shouldBe 42
+        builder.withGroovyBuilder { "m" { } }.shouldBeNull()
     }
 })

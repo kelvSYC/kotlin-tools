@@ -102,3 +102,41 @@ read into a non-null property fails with `NullPointerException`. For types that 
 this library's `getValue` is imported (imports take precedence over Kotlin's default imports). Groovy reads a map's
 properties as its keys, so the result is the same, except that a missing key reads as `null` instead of throwing
 `NoSuchElementException`.
+
+## Groovy builders
+
+`withGroovyBuilder` drives any Groovy builder (`NodeBuilder`, `ObjectGraphBuilder`, `MarkupBuilder`, `JsonBuilder`,
+`AntBuilder`, …) with Groovy's calling conventions, so builder code translates line by line:
+
+```kotlin
+// Groovy: repository(url: "scp://repos.example.com/releases") { authentication(userName: "me", password: "secret") }
+builder.withGroovyBuilder {
+    "repository"("url" to "scp://repos.example.com/releases") {
+        "authentication"("userName" to "me", "password" to "secret")
+    }
+    "a"("href" to "https://example.com", "link text")   // Groovy: a(href: "https://example.com", "link text")
+    this["title"] = "Report"                              // property access on the builder
+}
+```
+
+- **Named arguments.** Every `"key" to value` argument, wherever it is written, is gathered in order into one map passed
+  first, then the other arguments, then the nested block. A Kotlin `Pair` therefore can't be passed as an ordinary value.
+- **Nested blocks** run against the delegate the builder sets on them (some builders, such as `JsonBuilder`, use an
+  internal object rather than themselves), or against the argument the builder passes when it sets none. Builders and
+  their delegates must be `GroovyObject`s.
+- A call returns what the builder returns (for example `NodeBuilder`'s nodes), and a block's result is returned to the
+  builder, `Unit` as `null`.
+
+### Typed scopes for specific builders
+
+`GroovyBuilderScope` is an interface, so a builder-specific layer can add typed functions by delegation:
+
+```kotlin
+@GroovyBuilderDsl
+class AntScope(scope: GroovyBuilderScope) : GroovyBuilderScope by scope {
+    fun copy(todir: String, block: AntScope.() -> Unit = {}) = "copy"("todir" to todir) { AntScope(this).block() }
+}
+```
+
+Annotate such scopes with `@GroovyBuilderDsl`: it stops a nested block from implicitly calling an outer scope's
+functions, which would send them to the wrong delegate.
