@@ -14,8 +14,10 @@ import javax.sql.DataSource
  * [of] (a pooled [DataSource]; recommended), [connect] (owned, closed when its block ends), [open] (owned, an
  * [OwnedSqlDatabase] to `use`), [borrowing] (the caller's connection, never closed here) and [wrapping] (an existing
  * [Sql], which the caller keeps owning).
+ *
+ * Like [Sql], one `SqlDatabase` isn't meant for concurrent transactions from several threads.
  */
-interface SqlDatabase {
+sealed interface SqlDatabase {
     /**
      * The underlying [Sql], for anything this wrapper doesn't offer. For a database made by [borrowing], closing it
      * leaves the borrowed connection open.
@@ -72,6 +74,64 @@ interface SqlDatabase {
         }
     }
 
+    /**
+     * Runs [query], an `insert`, `update` or `delete`, and returns the number of rows it changed.
+     */
+    fun executeUpdate(query: SqlQuery): Int = when (val form = query.form) {
+        is SqlQuery.Form.Template -> groovy.executeUpdate(form.gstring)
+        is SqlQuery.Form.Text ->
+            if (form.parameters.isEmpty()) {
+                groovy.executeUpdate(form.text)
+            } else {
+                groovy.executeUpdate(form.text, form.parameters)
+            }
+    }
+
+    /**
+     * Runs the statement built by [block] (see [query]); see the [SqlQuery] overload.
+     */
+    fun executeUpdate(block: SqlQueryScope.() -> String): Int = executeUpdate(query(block))
+
+    /**
+     * Runs [query], any statement; returns `true` when its first result is a result set, as `Sql.execute` does.
+     */
+    fun execute(query: SqlQuery): Boolean = when (val form = query.form) {
+        is SqlQuery.Form.Template -> groovy.execute(form.gstring)
+        is SqlQuery.Form.Text ->
+            if (form.parameters.isEmpty()) groovy.execute(form.text) else groovy.execute(form.text, form.parameters)
+    }
+
+    /**
+     * Runs the statement built by [block] (see [query]); see the [SqlQuery] overload.
+     */
+    fun execute(block: SqlQueryScope.() -> String): Boolean = execute(query(block))
+
+    /**
+     * Runs [query], an `insert`, and returns the keys it generated: one list of key columns per inserted row.
+     */
+    fun executeInsert(query: SqlQuery): List<List<Any?>> = when (val form = query.form) {
+        is SqlQuery.Form.Template -> groovy.executeInsert(form.gstring)
+        is SqlQuery.Form.Text ->
+            if (form.parameters.isEmpty()) {
+                groovy.executeInsert(form.text)
+            } else {
+                groovy.executeInsert(form.text, form.parameters)
+            }
+    }
+
+    /**
+     * Runs the insert built by [block] (see [query]); see the [SqlQuery] overload.
+     */
+    fun executeInsert(block: SqlQueryScope.() -> String): List<List<Any?>> = executeInsert(query(block))
+
+    /**
+     * Runs [block] in a transaction: committed when it returns, rolled back when it throws (the exception propagates).
+     * A `transaction` inside another joins it: it neither commits nor rolls back by itself, and only the outermost
+     * block does. If the outer block catches an inner block's exception and returns normally, everything done so far,
+     * including the inner block's work, is committed.
+     */
+    fun <T> transaction(block: (SqlDatabase) -> T): T
+
     companion object {
         /**
          * A database over a (typically pooled) [DataSource]: each operation borrows a connection and returns it, so
@@ -126,9 +186,24 @@ interface SqlDatabase {
 /**
  * A [SqlDatabase] that owns its connection: close it when done.
  */
-interface OwnedSqlDatabase : SqlDatabase, AutoCloseable
+sealed interface OwnedSqlDatabase : SqlDatabase, AutoCloseable
 
-internal open class DefaultSqlDatabase(override val groovy: Sql) : SqlDatabase
+internal open class DefaultSqlDatabase(override val groovy: Sql) : SqlDatabase {
+    private var inTransaction = false
+
+    override fun <T> transaction(block: (SqlDatabase) -> T): T {
+        if (inTransaction) return block(this)
+        inTransaction = true
+        try {
+            var result: Any? = null
+            groovy.withTransaction(closureOf { -> result = block(this) })
+            @Suppress("UNCHECKED_CAST")
+            return result as T
+        } finally {
+            inTransaction = false
+        }
+    }
+}
 
 internal class DefaultOwnedSqlDatabase(groovy: Sql) : DefaultSqlDatabase(groovy), OwnedSqlDatabase {
     override fun close() = groovy.close()

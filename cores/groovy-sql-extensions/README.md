@@ -77,3 +77,22 @@ db.forEachRow(query) { row -> … }                     // streams rows while th
 `row["title"]`, or declare typed accessors with `groovy-extensions`:
 `val GroovyRowResult.title: String by groovyProperty()`. `forEachRow` doesn't load all rows first; an exception from its
 action stops the iteration and propagates.
+
+## Writing and transactions
+
+```kotlin
+db.executeUpdate { "update books set year = ${param(year)} where id = ${param(id)}" }   // rows changed
+db.executeInsert(sql("insert into books (title) values (?)", title))                   // generated keys
+db.execute(trustedSql("create table archive (id integer)"))                              // any statement
+
+db.transaction { tx ->
+    tx.executeUpdate { … }
+    tx.executeUpdate { … }
+}   // committed on return, rolled back if the block throws
+```
+
+A `transaction` inside another joins it: only the outermost block commits or rolls back. If the outer block catches an
+inner block's exception and returns normally, everything done so far, including the inner block's work, is committed.
+Like `Sql`, one `SqlDatabase` isn't meant for concurrent transactions from several threads.
+
+Batches, stored procedures and anything else not offered here are available through `db.groovy`.
