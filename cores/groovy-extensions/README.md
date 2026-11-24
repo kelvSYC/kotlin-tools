@@ -110,9 +110,10 @@ values differently from its text. `gstring` builds a real `GString` from a Kotli
 value:
 
 ```kotlin
-val g = gstring { "select * from books where author = ${value(author)}" }
-g.strings   // ["select * from books where author = ", ""]
-g.values    // [author]
+val g = gstring { "Hello, ${value(name)}! You have ${value(count)} new messages." }
+g.strings   // ["Hello, ", "! You have ", " new messages."]
+g.values    // [name, count]
+g.toString() // "Hello, Ada! You have 3 new messages."
 ```
 
 A recorded value whose marker is missing from the returned text, used twice, or taken from another `gstring` block
