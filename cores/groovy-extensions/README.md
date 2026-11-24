@@ -106,8 +106,8 @@ properties as its keys, so the result is the same, except that a missing key rea
 ## Building GStrings
 
 A Kotlin string template is a plain `String`: the values are pasted into the text. Some Groovy APIs treat a `GString`'s
-values specially; `groovy.sql.Sql`, for one, binds them as query parameters. `gstring` builds a real `GString` from a
-Kotlin template, with `value(x)` marking each value:
+values differently from its text. `gstring` builds a real `GString` from a Kotlin template, with `value(x)` marking each
+value:
 
 ```kotlin
 val g = gstring { "select * from books where author = ${value(author)}" }
@@ -117,6 +117,12 @@ g.values    // [author]
 
 A recorded value whose marker is missing from the returned text, used twice, or taken from another `gstring` block
 throws `IllegalStateException`.
+
+**Not for SQL.** Don't pass a `gstring` to `groovy.sql.Sql`: `Sql` doesn't bind every value of a GString. Before
+Groovy 6, a value written between quotes (`where name = '${value(name)}'`) is pasted into the SQL text, which is an
+injection risk (Groovy 6 rejects it unless `groovy.sql.injection.lenient` is set), and `= ${value(null)}` is rewritten
+to `is null`, so it matches `NULL` rows. For database access use
+[groovy-sql-extensions](../groovy-sql-extensions/README.md), which always binds parameters.
 
 ## Groovy builders
 

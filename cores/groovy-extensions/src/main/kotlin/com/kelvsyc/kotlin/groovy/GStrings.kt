@@ -46,12 +46,16 @@ class GStringScope internal constructor() {
 }
 
 /**
- * Builds a Groovy [GString] from a Kotlin template: interpolate `value(x)` wherever a value belongs, and every such value
- * becomes one of the GString's values rather than part of its text, as in Groovy's `"… ${x} …"`. Groovy APIs that treat
- * a GString's values specially (for example `groovy.sql.Sql`, which binds them as query parameters) see them that way.
+ * Builds a Groovy [GString] from a Kotlin template: interpolate `value(x)` wherever a value belongs, and every such
+ * value becomes one of the GString's values rather than part of its text, as in Groovy's `"… ${x} …"`, for Groovy APIs
+ * that treat a GString's values differently from its text.
  *
  * Throws [IllegalStateException] when a recorded value's marker is missing from the returned text, used twice, or comes
  * from another `gstring` block.
+ *
+ * Don't use it to build queries for `groovy.sql.Sql`. `Sql` doesn't bind every value of a GString: before Groovy 6
+ * it pastes a value written between quotes (`'${value(x)}'`) into the SQL text, which is an injection risk, and it
+ * rewrites `= ${value(null)}` to `is null`. Use `groovy-sql-extensions`, which always binds, instead.
  */
 fun gstring(block: GStringScope.() -> String): GString {
     val scope = GStringScope()
