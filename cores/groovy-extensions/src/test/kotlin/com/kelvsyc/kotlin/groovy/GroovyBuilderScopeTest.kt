@@ -24,6 +24,11 @@ private fun recorder() = evalGroovy(
 @Suppress("UNCHECKED_CAST")
 private fun GroovyObject.calls() = this["calls"] as List<List<Any?>>
 
+@GroovyBuilderDsl
+private class TreeScope(scope: GroovyBuilderScope) : GroovyBuilderScope by scope {
+    fun branch(name: String, block: TreeScope.() -> Unit = {}) = "branch"("name" to name) { TreeScope(this).block() }
+}
+
 class GroovyBuilderScopeTest : FunSpec({
     test("positional arguments pass through") {
         val rec = recorder()
@@ -175,5 +180,14 @@ class GroovyBuilderScopeTest : FunSpec({
         ) as GroovyObject
         builder.withGroovyBuilder { "m" { 42 } } shouldBe 42
         builder.withGroovyBuilder { "m" { } }.shouldBeNull()
+    }
+
+    test("a typed scope can be layered on by delegation") {
+        val root = NodeBuilder().withGroovyBuilder {
+            "root" { TreeScope(this).run { branch("a") { branch("b") } } }
+        } as Node
+        val a = root.children().single() as Node
+        a.attributes() shouldBe mapOf("name" to "a")
+        (a.children().single() as Node).attributes() shouldBe mapOf("name" to "b")
     }
 })
