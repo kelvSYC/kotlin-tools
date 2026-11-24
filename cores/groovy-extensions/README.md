@@ -103,6 +103,21 @@ this library's `getValue` is imported (imports take precedence over Kotlin's def
 properties as its keys, so the result is the same, except that a missing key reads as `null` instead of throwing
 `NoSuchElementException`.
 
+## Building GStrings
+
+A Kotlin string template is a plain `String`: the values are pasted into the text. Some Groovy APIs treat a `GString`'s
+values specially; `groovy.sql.Sql`, for one, binds them as query parameters. `gstring` builds a real `GString` from a
+Kotlin template, with `value(x)` marking each value:
+
+```kotlin
+val g = gstring { "select * from books where author = ${value(author)}" }
+g.strings   // ["select * from books where author = ", ""]
+g.values    // [author]
+```
+
+A recorded value whose marker is missing from the returned text, used twice, or taken from another `gstring` block
+throws `IllegalStateException`.
+
 ## Groovy builders
 
 `withGroovyBuilder` drives any Groovy builder (`NodeBuilder`, `ObjectGraphBuilder`, `MarkupBuilder`, `JsonBuilder`,
