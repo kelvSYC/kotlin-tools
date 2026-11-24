@@ -7,6 +7,7 @@ plugins {
     id("com.kelvsyc.internal.kotlin-multiplatform-jvm")
     id("com.kelvsyc.internal.kotlin-multiplatform-js")
     id("com.kelvsyc.internal.kotlin-multiplatform-native")
+    id("com.kelvsyc.internal.kover")
 }
 
 group = "com.kelvsyc.kotlin"
