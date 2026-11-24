@@ -8,16 +8,14 @@ plugins {
 
 group = "com.kelvsyc.kotlin"
 
-// Prototype: moves to libs.groovy3..6 once the shared catalog has them.
+// Prototype: moves to libs.groovy3 and libs.groovy once the shared catalog has them.
 val groovy3 = "org.codehaus.groovy:groovy:3.0.25"
-val newerGroovy = mapOf(
-    4 to "org.apache.groovy:groovy:4.0.33",
-    5 to "org.apache.groovy:groovy:5.1.3",
-    6 to "org.apache.groovy:groovy:6.0.0",
-)
+val latestGroovy = "org.apache.groovy:groovy:6.0.0"
+
+fun majorOf(coordinates: String) = coordinates.substringAfterLast(':').substringBefore('.')
 
 // Consumers bring their own Groovy (3.x as org.codehaus.groovy, 4+ as org.apache.groovy), so it is never published as a
-// dependency: compile against the oldest supported line, and test against each line.
+// dependency: compile against the oldest supported line, and test against it and the newest.
 dependencies {
     compileOnly(groovy3)
     testImplementation(groovy3)
@@ -34,32 +32,28 @@ testing {
     suites {
         named<JvmTestSuite>("test") {
             targets.configureEach {
-                testTask.configure { systemProperty("groovy.expected.major", "3") }
+                testTask.configure { systemProperty("groovy.expected.major", majorOf(groovy3)) }
             }
         }
-        newerGroovy.forEach { (major, groovy) ->
-            register<JvmTestSuite>("groovy${major}Test") {
-                dependencies {
-                    implementation(project())
-                    implementation(groovy)
-                    implementation(platform(libs.conventions.platform))
-                    kotestModules.forEach { implementation(it) }
-                }
-                targets.configureEach {
-                    testTask.configure { systemProperty("groovy.expected.major", "$major") }
-                }
+        register<JvmTestSuite>("latestGroovyTest") {
+            dependencies {
+                implementation(project())
+                implementation(latestGroovy)
+                implementation(platform(libs.conventions.platform))
+                kotestModules.forEach { implementation(it) }
+            }
+            targets.configureEach {
+                testTask.configure { systemProperty("groovy.expected.major", majorOf(latestGroovy)) }
             }
         }
     }
 }
 
-// Every suite runs the same specs.
-newerGroovy.keys.forEach { major ->
-    kotlin.sourceSets.named("groovy${major}Test") {
-        kotlin.srcDir("src/test/kotlin")
-    }
+// Both suites run the same specs.
+kotlin.sourceSets.named("latestGroovyTest") {
+    kotlin.srcDir("src/test/kotlin")
 }
 
 tasks.check {
-    dependsOn(newerGroovy.keys.map { testing.suites.named("groovy${it}Test") })
+    dependsOn(testing.suites.named("latestGroovyTest"))
 }

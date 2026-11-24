@@ -8,8 +8,9 @@ inside Gradle's API; Gradle plugin authors should keep using those, since Gradle
 
 ## Requirements
 
-Supports Groovy 3.0 through 6.0. Groovy is **not** a dependency of this library: add it yourself, under the coordinates
-of your Groovy line.
+Supports Groovy 3.0 and later. It is tested against Groovy 3.0, the oldest supported line, and against the newest Groovy
+release (currently 6.0); the lines in between are expected to work but are not tested separately. Groovy is **not** a
+dependency of this library: add it yourself, under the coordinates of your Groovy line.
 
 ```kotlin
 dependencies {
