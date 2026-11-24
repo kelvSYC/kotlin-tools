@@ -47,3 +47,14 @@ val configure = delegateClosureOf<Server> { port = 8080 }
 ```
 
 A non-reified overload, `delegateClosureOf(Server::class.java) { … }`, takes the type explicitly.
+
+## Calling closures from Kotlin
+
+A `Closure` handed back by Groovy can be called like a Kotlin function, or converted to a Kotlin function type of up to
+three parameters.
+
+```kotlin
+val sum: Closure<Int> = …
+sum(1, 2)                                        // closure.call(1, 2)
+val f: (Int, Int) -> Int = sum.toFunction2()
+```
