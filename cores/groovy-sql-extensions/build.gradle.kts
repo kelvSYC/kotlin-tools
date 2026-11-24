@@ -8,13 +8,15 @@ plugins {
 
 group = "com.kelvsyc.kotlin"
 
-// Prototype: moves to the shared catalog (groovy3, groovy-sql3, groovy, groovy-sql) once it has the groovy-sql entries.
-val groovy3 = "org.codehaus.groovy:groovy:3.0.25"
-val groovySql3 = "org.codehaus.groovy:groovy-sql:3.0.25"
-val latestGroovy = "org.apache.groovy:groovy:6.0.0"
-val latestGroovySql = "org.apache.groovy:groovy-sql:6.0.0"
+val groovy3 = libs.groovy3
+val groovySql3 = libs.groovy.sql3
+// Looked up by name: with the groovy-sql entries in the catalog, `libs.groovy` is a group accessor rather than a
+// Provider.
+val latestGroovy = versionCatalogs.named("libs").findLibrary("groovy").get()
+val latestGroovySql = libs.groovy.sql
 
-fun majorOf(coordinates: String) = coordinates.substringAfterLast(':').substringBefore('.')
+fun majorOf(groovy: Provider<MinimalExternalModuleDependency>) =
+    checkNotNull(groovy.get().version) { "Groovy catalog entries must declare a version" }.substringBefore('.')
 
 // Consumers bring their own Groovy and groovy-sql (3.x as org.codehaus.groovy, 4+ as org.apache.groovy), so neither is
 // published as a dependency: compile against the oldest supported line, and test against it and the newest.
