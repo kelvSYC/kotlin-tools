@@ -6,10 +6,13 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import kotlin.properties.ReadWriteProperty
 
 private val GroovyObject.name: String by groovyProperty()
 private val GroovyObject.personName: String by groovyProperty("name")
 private var GroovyObject.mutableName: String by groovyProperty("name")
+private val GroovyObject.maybeName: String? by groovyProperty("name")
+private val GroovyObject.nameAsInt: Int by groovyProperty("name")
 
 private class MapObject : GroovyObjectSupport(), Map<String, Any?> by mapOf("name" to "Ada")
 
@@ -66,5 +69,22 @@ class GroovyPropertyDelegationTest : FunSpec({
         val missing: String? by row
         name shouldBe "Ada"
         missing.shouldBeNull()
+    }
+
+    test("groovyProperty is a ReadWriteProperty") {
+        val delegate: ReadWriteProperty<GroovyObject, String> = groovyProperty("name")
+        delegate.getValue(person(), Pair<String, String>::first) shouldBe "Ada"
+    }
+
+    test("a nullable extension property reads null") {
+        person(null).maybeName.shouldBeNull()
+    }
+
+    test("an extension property of the wrong type fails with ClassCastException") {
+        shouldThrow<ClassCastException> { person().nameAsInt }
+    }
+
+    test("an extension property reading null into a non-null type fails") {
+        shouldThrow<NullPointerException> { person(null).personName }
     }
 })

@@ -93,6 +93,9 @@ val GroovyRowResult.firstName: String by groovyProperty("first_name")
 val GroovyRowResult.age: Int by groovyProperty()
 ```
 
+`groovyProperty()` returns a standard `ReadWriteProperty<GroovyObject, V>`, with `V` inferred from the property's type, so
+the delegate can also be stored, passed around or wrapped.
+
 Values are cast to the property's type when read: a value of the wrong type fails with `ClassCastException`, and `null`
 read into a non-null property fails with `NullPointerException`. For types that also implement `Map`, such as
 `GroovyRowResult`, `val x by row` resolves to this delegate rather than the standard library's `Map` delegate whenever
