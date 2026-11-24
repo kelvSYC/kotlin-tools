@@ -37,3 +37,43 @@ example for embedded databases), and `driverClassName` loads a JDBC driver first
 
 Every database exposes the underlying `Sql` as `db.groovy`, for anything not offered here. For `borrowing`, closing
 `db.groovy` still leaves your connection open.
+
+## Queries
+
+Every operation takes a `SqlQuery`, never a plain `String`: in Kotlin, `"… where id = $id"` pastes the value into the
+SQL text, where Groovy would have bound it as a parameter. A query is made one of three ways:
+
+```kotlin
+// Template: param() binds each value (the usual way)
+db.rows { "select * from books where author = ${param(author)} and year > ${param(year)}" }
+
+// Placeholders and values, JDBC style
+db.rows(sql("select * from books where author = ? and year > ?", author, year))
+
+// Explicitly trusted text, for SQL you build yourself (table names, generated clauses): nothing in it is bound
+db.rows(trustedSql("select * from $table"))
+```
+
+- `param(collection)` (or an array) expands to one parameter per element, for `in` lists:
+  `"… where id in (${param(ids)})"`. An empty collection throws `IllegalArgumentException`, since `in ()` isn't valid
+  SQL. A `ByteArray` binds as one binary value. `sql(…)` doesn't expand: its parameters bind one per `?`.
+- `param(null)` binds SQL `NULL`, so `= ${param(null)}` matches nothing, as in SQL.
+- Values from `Sql.expand(…)`, which `Sql` pastes into the text instead of binding, are rejected by `param` and `sql`;
+  use `trustedSql` for that. Typed parameters such as `Sql.VARCHAR(x)` are bound as usual.
+- A forgotten `param()` still interpolates: `trustedSql` is the only form meant to contain built text, which makes the
+  risky case stand out in review.
+- `query.text` (with `?` placeholders) and `query.parameters` show what will be run, for logging.
+
+## Reading
+
+```kotlin
+db.rows(query): List<GroovyRowResult>                 // all rows
+db.rows(query) { row -> Book(row.title, row.year) }   // all rows, mapped
+db.firstRow(query): GroovyRowResult?                  // null when there are none
+db.forEachRow(query) { row -> … }                     // streams rows while the result set is open
+```
+
+`rows` and `firstRow` also take the template block directly: `db.rows { "… ${param(x)}" }`. Read columns with
+`row["title"]`, or declare typed accessors with `groovy-extensions`:
+`val GroovyRowResult.title: String by groovyProperty()`. `forEachRow` doesn't load all rows first; an exception from its
+action stops the iteration and propagates.

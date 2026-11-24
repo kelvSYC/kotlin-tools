@@ -70,7 +70,9 @@ class SqlDatabaseOwnershipTest : FunSpec({
 
     test("credentials and driver class are accepted") {
         withTestDatabase { _, url ->
-            val count = SqlDatabase.connect(url, user = "", password = "", driverClassName = "org.sqlite.JDBC") { it.count() }
+            val count = SqlDatabase.connect(url, user = "", password = "", driverClassName = "org.sqlite.JDBC") {
+                it.count()
+            }
             count shouldBe 3
             SqlDatabase.open(url, driverClassName = "org.sqlite.JDBC").use { it.count() shouldBe 3 }
         }

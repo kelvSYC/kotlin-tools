@@ -33,7 +33,8 @@ class SqlQueryTest : FunSpec({
     }
 
     test("expanded values are rejected") {
-        shouldThrow<IllegalArgumentException> { query { "x = ${param(Sql.expand("x"))}" } }.message shouldContain "trustedSql"
+        val e = shouldThrow<IllegalArgumentException> { query { "x = ${param(Sql.expand("x"))}" } }
+        e.message shouldContain "trustedSql"
         shouldThrow<IllegalArgumentException> { query { "in (${param(listOf(Sql.expand("x")))})" } }
         shouldThrow<IllegalArgumentException> { sql("select ?", Sql.expand("x")) }.message shouldContain "trustedSql"
     }

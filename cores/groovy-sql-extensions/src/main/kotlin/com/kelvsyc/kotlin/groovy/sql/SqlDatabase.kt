@@ -1,5 +1,8 @@
 package com.kelvsyc.kotlin.groovy.sql
 
+import com.kelvsyc.kotlin.groovy.closureOf
+import groovy.sql.GroovyResultSet
+import groovy.sql.GroovyRowResult
 import groovy.sql.Sql
 import java.sql.Connection
 import javax.sql.DataSource
@@ -18,6 +21,56 @@ interface SqlDatabase {
      * leaves the borrowed connection open.
      */
     val groovy: Sql
+
+    /**
+     * Runs [query] and returns all its rows.
+     */
+    fun rows(query: SqlQuery): List<GroovyRowResult> = when (val form = query.form) {
+        is SqlQuery.Form.Template -> groovy.rows(form.gstring)
+        is SqlQuery.Form.Text ->
+            if (form.parameters.isEmpty()) groovy.rows(form.text) else groovy.rows(form.text, form.parameters)
+    }
+
+    /**
+     * Runs the query built by [block] (see [query]) and returns all its rows.
+     */
+    fun rows(block: SqlQueryScope.() -> String): List<GroovyRowResult> = rows(query(block))
+
+    /**
+     * Runs [query] and returns its rows, each mapped by [transform].
+     */
+    fun <T> rows(query: SqlQuery, transform: (GroovyRowResult) -> T): List<T> = rows(query).map(transform)
+
+    /**
+     * Runs [query] and returns its first row, or `null` when there is none.
+     */
+    fun firstRow(query: SqlQuery): GroovyRowResult? = when (val form = query.form) {
+        is SqlQuery.Form.Template -> groovy.firstRow(form.gstring)
+        is SqlQuery.Form.Text ->
+            if (form.parameters.isEmpty()) groovy.firstRow(form.text) else groovy.firstRow(form.text, form.parameters)
+    }
+
+    /**
+     * Runs the query built by [block] (see [query]) and returns its first row, or `null` when there is none.
+     */
+    fun firstRow(block: SqlQueryScope.() -> String): GroovyRowResult? = firstRow(query(block))
+
+    /**
+     * Runs [query] and passes each row to [action] while the result set is open, without loading all rows first. An
+     * exception from [action] stops the iteration and propagates.
+     */
+    fun forEachRow(query: SqlQuery, action: (GroovyResultSet) -> Unit) {
+        val closure = closureOf { row: GroovyResultSet -> action(row) }
+        when (val form = query.form) {
+            is SqlQuery.Form.Template -> groovy.eachRow(form.gstring, closure)
+            is SqlQuery.Form.Text ->
+                if (form.parameters.isEmpty()) {
+                    groovy.eachRow(form.text, closure)
+                } else {
+                    groovy.eachRow(form.text, form.parameters, closure)
+                }
+        }
+    }
 
     companion object {
         /**

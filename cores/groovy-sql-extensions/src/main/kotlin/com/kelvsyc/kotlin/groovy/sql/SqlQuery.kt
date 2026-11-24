@@ -6,12 +6,13 @@ import groovy.lang.GString
 import groovy.sql.ExpandedVariable
 
 private const val EXPANDED_VARIABLE_MESSAGE =
-    "Sql.expand(…) values are pasted into the SQL text, not bound; use trustedSql(…) for SQL text you build yourself"
+    "Sql.expand(…) values are pasted into the SQL text, not bound; " +
+        "use trustedSql(…) for SQL text you build yourself"
 
 /**
- * A query for a [SqlDatabase]. There is deliberately no way to make one from a plain `String` other than [sql] (with `?`
- * placeholders) and [trustedSql] (explicitly trusted text), so values can't be pasted into SQL by accident. Build one
- * with [query].
+ * A query for a [SqlDatabase]. There is deliberately no way to make one from a plain `String` other than [sql] (with
+ * `?` placeholders) and [trustedSql] (explicitly trusted text), so values can't be pasted into SQL by accident. Build
+ * one with [query].
  */
 class SqlQuery internal constructor(internal val form: Form) {
     /**
