@@ -2,7 +2,7 @@
 # com.kelvsyc.internal.settings plugin registers as `libs`. This pins the shared build conventions
 # version once: the settings plugin's version determines the catalog and platform versions.
 [versions]
-gradle-build-conventions = "0.5.0"
+gradle-build-conventions = "0.7.0"
 
 [libraries]
 conventions-settings-plugin = { module = "com.kelvsyc.internal:settings-plugin", version.ref = "gradle-build-conventions" }
