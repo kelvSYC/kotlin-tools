@@ -169,11 +169,7 @@ class GroovyBuilderScopeTest : FunSpec({
         val builder = evalGroovy(
             """
             class Returning {
-                def methodMissing(String n, args) {
-                    def c = args.find { it instanceof Closure }
-                    if (c) { c.delegate = this; return c() }
-                    null
-                }
+                def methodMissing(String n, args) { def c = args.find { it instanceof Closure }; c ? c() : null }
             }
             new Returning()
             """.trimIndent()
@@ -189,5 +185,35 @@ class GroovyBuilderScopeTest : FunSpec({
         val a = root.children().single() as Node
         a.attributes() shouldBe mapOf("name" to "a")
         (a.children().single() as Node).attributes() shouldBe mapOf("name" to "b")
+    }
+
+    test("blocks with neither delegate nor argument run against the enclosing scope") {
+        val html = evalGroovy(
+            """
+            class Html {
+                StringBuilder out = new StringBuilder()
+                def body(Closure c) { out << "<body>"; c(); out << "</body>"; null }
+                def p(String s) { out << "<p>" + s + "</p>"; null }
+            }
+            new Html()
+            """.trimIndent()
+        ) as GroovyObject
+        html.withGroovyBuilder { "body" { "p"("x") } }
+        html["out"].toString() shouldBe "<body><p>x</p></body>"
+    }
+
+    test("a non-GroovyObject argument without a delegate falls back to the enclosing scope") {
+        val builder = evalGroovy(
+            """
+            class Items {
+                List log = []
+                def each(Closure c) { ["a", "b"].each { c.call(it) }; null }
+                def note(String s) { log << s; null }
+            }
+            new Items()
+            """.trimIndent()
+        ) as GroovyObject
+        builder.withGroovyBuilder { "each" { "note"("seen") } }
+        builder["log"] shouldBe listOf("seen", "seen")
     }
 })

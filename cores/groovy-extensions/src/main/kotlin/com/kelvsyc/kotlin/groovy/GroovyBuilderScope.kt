@@ -5,7 +5,8 @@ import groovy.lang.GroovyObject
 
 /**
  * Marks Groovy builder scopes, so that a nested block can't implicitly call an outer scope's members, which would send
- * them to the wrong delegate. Typed scopes built on [GroovyBuilderScope] should carry it too.
+ * them to the wrong delegate. Scopes implementing [GroovyBuilderScope] inherit it; annotate other receiver types used
+ * inside builder blocks with it.
  */
 @DslMarker
 annotation class GroovyBuilderDsl
@@ -13,12 +14,12 @@ annotation class GroovyBuilderDsl
 /**
  * Drives a Groovy builder from Kotlin with Groovy's calling conventions: `"name"(arguments) { nested block }`.
  *
- * Every `"key" to value` argument, wherever it is written, is gathered (in order) into one map passed first, as Groovy
- * passes named arguments; the other arguments follow in order, then the nested block. A Kotlin [Pair] therefore can't be
- * passed as an ordinary argument.
+ * Every `"key" to value` argument (a [Pair] with a `String` key), wherever it is written, is gathered (in order) into
+ * one map passed first, as Groovy passes named arguments; the other arguments follow in order, then the nested block.
+ * Such a `Pair` therefore can't be passed as an ordinary argument.
  *
  * Typed scopes for specific builders can be built by delegation: `class AntScope(s: GroovyBuilderScope) :
- * GroovyBuilderScope by s`, annotated with [GroovyBuilderDsl].
+ * GroovyBuilderScope by s`. They inherit the [GroovyBuilderDsl] marker from this interface.
  */
 @GroovyBuilderDsl
 interface GroovyBuilderScope {
@@ -35,11 +36,12 @@ interface GroovyBuilderScope {
 
     /**
      * Calls the method named by this string on [delegate] with [block] as a nested-block closure after the other
-     * arguments, returning what the builder returns. The block runs in a scope over the delegate the builder sets on the
-     * closure, or over the closure's argument when the builder sets none.
+     * arguments, returning what the builder returns. The block runs in a scope over the delegate the builder sets on
+     * the closure; when it sets none, over the closure's argument if that is a `GroovyObject`, else over this scope's
+     * delegate.
      */
     operator fun <T> String.invoke(vararg arguments: Any?, block: GroovyBuilderScope.() -> T): Any? =
-        delegate.invokeMethod(this, groovyArguments(arguments, KotlinBuilderClosure(block)))
+        delegate.invokeMethod(this, groovyArguments(arguments, KotlinBuilderClosure(delegate, block)))
 
     /**
      * Reads the property [name] of [delegate].

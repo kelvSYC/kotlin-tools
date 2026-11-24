@@ -119,11 +119,13 @@ builder.withGroovyBuilder {
 }
 ```
 
-- **Named arguments.** Every `"key" to value` argument, wherever it is written, is gathered in order into one map passed
-  first, then the other arguments, then the nested block. A Kotlin `Pair` therefore can't be passed as an ordinary value.
+- **Named arguments.** Every `"key" to value` argument (a `Pair` with a `String` key), wherever it is written, is gathered
+  in order into one map passed first, then the other arguments, then the nested block. Such a `Pair` therefore can't be
+  passed as an ordinary value.
 - **Nested blocks** run against the delegate the builder sets on them (some builders, such as `JsonBuilder`, use an
-  internal object rather than themselves), or against the argument the builder passes when it sets none. Builders and
-  their delegates must be `GroovyObject`s.
+  internal object rather than themselves). When the builder sets none, they run against the argument it passes if that
+  is a `GroovyObject`, else against the enclosing scope, as a Groovy closure would. Builders and their delegates must be
+  `GroovyObject`s.
 - A call returns what the builder returns (for example `NodeBuilder`'s nodes), and a block's result is returned to the
   builder, `Unit` as `null`.
 
@@ -132,11 +134,11 @@ builder.withGroovyBuilder {
 `GroovyBuilderScope` is an interface, so a builder-specific layer can add typed functions by delegation:
 
 ```kotlin
-@GroovyBuilderDsl
 class AntScope(scope: GroovyBuilderScope) : GroovyBuilderScope by scope {
     fun copy(todir: String, block: AntScope.() -> Unit = {}) = "copy"("todir" to todir) { AntScope(this).block() }
 }
 ```
 
-Annotate such scopes with `@GroovyBuilderDsl`: it stops a nested block from implicitly calling an outer scope's
-functions, which would send them to the wrong delegate.
+Such scopes inherit the `@GroovyBuilderDsl` marker from `GroovyBuilderScope`, which stops a nested block from implicitly
+calling an outer scope's functions (that would send them to the wrong delegate). Annotate any other receiver type used
+inside builder blocks with it.
