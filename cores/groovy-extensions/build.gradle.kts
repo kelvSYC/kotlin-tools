@@ -9,7 +9,9 @@ plugins {
 group = "com.kelvsyc.kotlin"
 
 val groovy3 = libs.groovy3
-val latestGroovy = libs.groovy
+// Looked up by name: once the catalog has groovy-* entries (e.g. groovy-sql), `libs.groovy` is a group accessor rather
+// than a Provider.
+val latestGroovy = versionCatalogs.named("libs").findLibrary("groovy").get()
 
 fun majorOf(groovy: Provider<MinimalExternalModuleDependency>) =
     checkNotNull(groovy.get().version) { "Groovy catalog entries must declare a version" }.substringBefore('.')
