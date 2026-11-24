@@ -103,6 +103,28 @@ this library's `getValue` is imported (imports take precedence over Kotlin's def
 properties as its keys, so the result is the same, except that a missing key reads as `null` instead of throwing
 `NoSuchElementException`.
 
+## Building GStrings
+
+A Kotlin string template is a plain `String`: the values are pasted into the text. Some Groovy APIs treat a `GString`'s
+values differently from its text. `gstring` builds a real `GString` from a Kotlin template, with `value(x)` marking each
+value:
+
+```kotlin
+val g = gstring { "Hello, ${value(name)}! You have ${value(count)} new messages." }
+g.strings   // ["Hello, ", "! You have ", " new messages."]
+g.values    // [name, count]
+g.toString() // "Hello, Ada! You have 3 new messages."
+```
+
+A recorded value whose marker is missing from the returned text, used twice, or taken from another `gstring` block
+throws `IllegalStateException`.
+
+**Not for SQL.** Don't pass a `gstring` to `groovy.sql.Sql`: `Sql` doesn't bind every value of a GString. Before
+Groovy 6, a value written between quotes (`where name = '${value(name)}'`) is pasted into the SQL text, which is an
+injection risk (Groovy 6 rejects it unless `groovy.sql.injection.lenient` is set), and `= ${value(null)}` is rewritten
+to `is null`, so it matches `NULL` rows. For database access use
+[groovy-sql-extensions](../groovy-sql-extensions/README.md), which always binds parameters.
+
 ## Groovy builders
 
 `withGroovyBuilder` drives any Groovy builder (`NodeBuilder`, `ObjectGraphBuilder`, `MarkupBuilder`, `JsonBuilder`,
