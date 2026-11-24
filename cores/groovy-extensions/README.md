@@ -17,3 +17,18 @@ dependencies {
     implementation("org.apache.groovy:groovy:<4.x, 5.x or 6.x>") // or org.codehaus.groovy:groovy:3.0.x
 }
 ```
+
+## Kotlin lambdas as closures
+
+`closureOf` turns a Kotlin lambda of up to three parameters into a `Closure`. Groovy APIs that inspect a closure's
+parameter count see the lambda's: `Map.each` passes an entry to a one-parameter closure, but key and value to a
+two-parameter one.
+
+```kotlin
+val answer = closureOf { -> 42 }                       // no parameters: write the arrow
+val double = closureOf { x: Int -> x * 2 }             // name and type each parameter
+val entries = closureOf { key: String, value: Int -> println("$key=$value") }
+```
+
+Declare parameters explicitly: `closureOf { 42 }` and `closureOf { it }` are ambiguous between the overloads. A lambda
+returning `Unit` returns `null` to Groovy, so `[1, 2].collect(closureOf { x: Int -> println(x) })` gives `[null, null]`.
