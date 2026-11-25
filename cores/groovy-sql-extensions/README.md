@@ -94,7 +94,8 @@ db.firstRow(query): GroovyRowResult?                  // null when there are non
 db.forEachRow(query) { row -> … }                     // streams rows while the result set is open
 ```
 
-`rows` (also mapped) and `firstRow` take the template block directly too: `db.rows { "… ${param(x)}" }`. Read columns with
+`rows` and `firstRow` take the template block directly too: `db.rows { "… ${param(x)}" }`, or, mapped,
+`db.rows({ "… ${param(x)}" }) { row -> … }`. Read columns with
 `row["title"]`, or declare typed accessors with `groovy-extensions`:
 `val GroovyRowResult.title: String by groovyProperty()`. `forEachRow` doesn't load all rows first; an exception from its
 action stops the iteration and propagates.
@@ -114,11 +115,14 @@ db.transaction { tx ->
 
 A `transaction` inside another on the same thread joins it: only the outermost block commits or rolls back. If the outer
 block catches an inner block's exception and returns normally, everything done so far, including the inner block's
-work, is committed. On a connection already in a transaction managed elsewhere (auto-commit off: a borrowed connection
-in your own transaction, or `db.groovy` inside your own `withTransaction`), `transaction` joins that one and leaves
-committing to its owner. Databases wrapping the same `Sql` share their transactions, while two databases made separately
-from one `DataSource` are independent and run separate transactions on separate connections. Exceptions propagate
-unchanged, checked ones included.
+work, is committed. Databases wrapping the same `Sql` share their transactions, while two databases made separately from
+one `DataSource` are independent and run separate transactions on separate connections. Exceptions propagate unchanged,
+checked ones included.
+
+On a single connection already in your own transaction (auto-commit off, as a borrowed connection may be),
+`transaction` joins it and leaves committing and rolling back to you: commit it yourself. Over a `DataSource`, each
+transaction runs on a connection of its own, so don't nest `db.transaction` inside `db.groovy.withTransaction` or
+`cacheConnection`: it would be a separate transaction. Use `db.transaction` throughout.
 
 A database from `of(dataSource)` can be shared between threads: each transaction runs on its own connection, and other
 threads' operations stay outside it. A database over a single connection (`connect`, `open`, `borrowing`) shares that
