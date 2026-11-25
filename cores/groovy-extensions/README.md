@@ -179,12 +179,17 @@ each item to the block as its argument, which the block doesn't receive.
 `GroovyBuilderScope` is an interface, so a builder-specific layer can add typed functions by delegation:
 
 ```kotlin
-class AntScope(scope: GroovyBuilderScope) : GroovyBuilderScope by scope {
-    fun copy(todir: String, block: AntScope.() -> Unit = {}) = "copy"("todir" to todir) { AntScope(this).block() }
+// A typed scope for NodeBuilder trees: branch(name) instead of "branch"("name" to name)
+class TreeScope(scope: GroovyBuilderScope) : GroovyBuilderScope by scope {
+    fun branch(name: String, block: TreeScope.() -> Unit = {}) = "branch"("name" to name) { TreeScope(this).block() }
+}
+
+val tree = NodeBuilder().withGroovyBuilder {
+    "root" { TreeScope(this).run { branch("a") { branch("b") } } }
 }
 ```
 
 `GroovyBuilderScope`'s members are kept stable for such implementations: this library adds new capabilities as
-extension functions, not members. Such scopes inherit the `@GroovyBuilderDsl` marker from `GroovyBuilderScope`, which stops a nested block from implicitly
-calling an outer scope's functions (that would send them to the wrong delegate). Annotate any other receiver type used
-inside builder blocks with it.
+extension functions, not members. Such scopes inherit the `@GroovyBuilderDsl` marker from `GroovyBuilderScope`, which
+stops a nested block from implicitly calling an outer scope's functions (that would send them to the wrong delegate).
+Annotate any other receiver type used inside builder blocks with it.
