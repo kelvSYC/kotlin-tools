@@ -1,6 +1,7 @@
 package com.kelvsyc.kotlin.groovy.sql
 
 import com.kelvsyc.kotlin.groovy.closureOf
+import groovy.sql.BatchingPreparedStatementWrapper
 import groovy.sql.GroovyResultSet
 import groovy.sql.GroovyRowResult
 import groovy.sql.Sql
@@ -119,6 +120,15 @@ sealed interface SqlDatabase {
      * Runs the insert built by [block] (see [query]); see the [SqlQuery] overload.
      */
     fun executeInsert(block: SqlQueryScope.() -> String): List<List<Any?>> = executeInsert(query(block))
+
+    /**
+     * Runs one statement many times in a batch, sending it to the database in one go, or in chunks of [batchSize]
+     * executions when it is positive, and returns the update counts, one per [SqlBatch.add]. The first `add` fixes the
+     * statement; every later one must have the same SQL text, with only its bound values different. Values are bound,
+     * never pasted, as for every other query. The queued values are held in memory until [block] returns, so split very
+     * large imports across several batches. An empty batch runs nothing.
+     */
+    fun batch(batchSize: Int = 0, block: SqlBatch.() -> Unit): List<Int>
 
     /**
      * Runs [block] in a transaction: committed when it returns, rolled back when it throws (the exception propagates
@@ -250,6 +260,17 @@ internal open class DefaultSqlDatabase(private val base: Sql) : SqlDatabase {
         }
         @Suppress("UNCHECKED_CAST")
         return result as T
+    }
+
+    override fun batch(batchSize: Int, block: SqlBatch.() -> Unit): List<Int> {
+        require(batchSize >= 0) { "batchSize must not be negative" }
+        val batch = SqlBatch().apply(block)
+        val text = batch.text ?: return emptyList()
+        val closure = closureOf { statement: BatchingPreparedStatementWrapper ->
+            batch.parameterSets.forEach { statement.addBatch(it) }
+        }
+        val counts = if (batchSize > 0) groovy.withBatch(batchSize, text, closure) else groovy.withBatch(text, closure)
+        return counts.toList()
     }
 
     override fun executeUpdate(query: SqlQuery): Int =

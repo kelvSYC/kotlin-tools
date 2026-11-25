@@ -143,4 +143,20 @@ A database from `of(dataSource)` can be shared between threads: each transaction
 threads' operations stay outside it. A database over a single connection (`connect`, `open`, `borrowing`) shares that
 connection, and any running transaction, between threads.
 
-Batches, stored procedures and anything else not offered here are available through `db.groovy`.
+### Batches
+
+`batch` runs one statement many times, sending it to the database in one go, or in chunks of `batchSize`, and returns
+the update counts. Each `add` queues one execution, written like any other query; the first fixes the statement, and
+every later one must have the same SQL text, with only its bound values different:
+
+```kotlin
+val counts = db.batch(batchSize = 500) {
+    books.forEach { add { "insert into books (title, author) values (${param(it.title)}, ${param(it.author)})" } }
+}
+```
+
+The queued values are held in memory until the block returns, so split very large imports across several batches.
+Inside a `transaction`, a batch commits or rolls back with it. `Sql`'s statement-only `withBatch { addBatch(sqlText) }`
+form isn't offered: plain statement batches can't bind values, so any value in them is pasted into the SQL text.
+
+Stored procedures and anything else not offered here are available through `db.groovy`.
