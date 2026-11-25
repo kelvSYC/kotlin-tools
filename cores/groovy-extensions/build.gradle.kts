@@ -17,9 +17,14 @@ fun majorOf(groovy: Provider<MinimalExternalModuleDependency>) =
 
 // Consumers bring their own Groovy (3.x as org.codehaus.groovy, 4+ as org.apache.groovy), so it is never published as a
 // dependency: compile against the oldest supported line, and test against it and the newest.
+// Real builders for the builder DSL's smoke tests, per Groovy line.
+val groovy3BuilderModules = listOf(libs.groovy.xml3, libs.groovy.json3, libs.groovy.ant3)
+val latestGroovyBuilderModules = listOf(libs.groovy.xml, libs.groovy.json, libs.groovy.ant)
+
 dependencies {
     compileOnly(groovy3)
     testImplementation(groovy3)
+    groovy3BuilderModules.forEach { testImplementation(it) }
 }
 
 val kotestModules = listOf(
@@ -40,6 +45,7 @@ testing {
             dependencies {
                 implementation(project())
                 implementation(latestGroovy)
+                latestGroovyBuilderModules.forEach { implementation(it) }
                 implementation(platform(libs.conventions.platform))
                 kotestModules.forEach { implementation(it) }
             }
