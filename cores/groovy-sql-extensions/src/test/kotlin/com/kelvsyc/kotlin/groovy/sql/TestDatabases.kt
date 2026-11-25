@@ -45,7 +45,8 @@ fun SqlDatabase.insertBook(title: String) =
 /** A data source whose connections start with auto-commit off, as some pools are configured. */
 fun SQLiteDataSource.withAutoCommitOff(): DataSource {
     val delegate = this
-    return Proxy.newProxyInstance(DataSource::class.java.classLoader, arrayOf(DataSource::class.java)) { _, method, args ->
+    val interfaces = arrayOf(DataSource::class.java)
+    return Proxy.newProxyInstance(DataSource::class.java.classLoader, interfaces) { _, method, args ->
         try {
             val result = method.invoke(delegate, *(args ?: emptyArray()))
             if (result is Connection) result.autoCommit = false
