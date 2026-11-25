@@ -5,6 +5,7 @@ import groovy.sql.GroovyResultSet
 import groovy.sql.GroovyRowResult
 import groovy.sql.Sql
 import java.sql.Connection
+import java.sql.ResultSet
 import java.util.Collections
 import java.util.WeakHashMap
 import javax.sql.DataSource
@@ -71,6 +72,23 @@ sealed interface SqlDatabase {
      * exception from [action] stops the iteration and propagates.
      */
     fun forEachRow(query: SqlQuery, action: (GroovyResultSet) -> Unit)
+
+    /**
+     * Runs [query] and passes its rows to [block] as a lazy sequence, read from the database as the sequence is
+     * iterated, and returns the block's result. The statement and its connection are closed when [block] returns or
+     * throws, also when it stops early (`first`, `take`), so nothing can be left open.
+     *
+     * Each row is a snapshot, which stays readable after iteration. The sequence can be iterated once, and only inside
+     * [block]: using it afterwards throws [IllegalStateException].
+     */
+    fun <T> useRows(query: SqlQuery, block: (Sequence<GroovyRowResult>) -> T): T
+
+    /**
+     * Runs the query built by [template] (see [query]) and passes its rows to [block] as a lazy sequence; see the
+     * [SqlQuery] overload.
+     */
+    fun <T> useRows(template: SqlQueryScope.() -> String, block: (Sequence<GroovyRowResult>) -> T): T =
+        useRows(query(template), block)
 
     /**
      * Runs [query], an `insert`, `update` or `delete`, and returns the number of rows it changed.
@@ -215,6 +233,25 @@ internal open class DefaultSqlDatabase(private val base: Sql) : SqlDatabase {
         }
     }
 
+    override fun <T> useRows(query: SqlQuery, block: (Sequence<GroovyRowResult>) -> T): T {
+        var result: Any? = null
+        val closure = closureOf { resultSet: ResultSet ->
+            val rows = ResultSetRows(resultSet)
+            try {
+                result = block(rows.sequence)
+            } finally {
+                rows.close()
+            }
+        }
+        if (query.parameters.isEmpty()) {
+            groovy.query(query.text, closure)
+        } else {
+            groovy.query(query.text, query.parameters, closure)
+        }
+        @Suppress("UNCHECKED_CAST")
+        return result as T
+    }
+
     override fun executeUpdate(query: SqlQuery): Int =
         if (query.parameters.isEmpty()) {
             groovy.executeUpdate(query.text)
@@ -300,6 +337,37 @@ private fun <T> runInTransaction(sql: Sql, block: () -> T): T {
     )
     @Suppress("UNCHECKED_CAST")
     return result as T
+}
+
+/**
+ * The rows of an open [resultSet] as a sequence of snapshots, usable until [close].
+ */
+private class ResultSetRows(private val resultSet: ResultSet) {
+    private var open = true
+    private val labels = resultSet.metaData.let { metaData -> (1..metaData.columnCount).map(metaData::getColumnLabel) }
+
+    val sequence: Sequence<GroovyRowResult> = Sequence {
+        checkOpen()
+        iterator {
+            while (true) {
+                checkOpen()
+                if (!resultSet.next()) break
+                yield(snapshot())
+            }
+        }
+    }.constrainOnce()
+
+    fun close() {
+        open = false
+    }
+
+    private fun checkOpen() = check(open) { "useRows: its sequence can only be used inside the useRows block" }
+
+    private fun snapshot(): GroovyRowResult {
+        val row = LinkedHashMap<String, Any?>()
+        labels.forEachIndexed { index, label -> row[label] = resultSet.getObject(index + 1) }
+        return GroovyRowResult(row)
+    }
 }
 
 /**

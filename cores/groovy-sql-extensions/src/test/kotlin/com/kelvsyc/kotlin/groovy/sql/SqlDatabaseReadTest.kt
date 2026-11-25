@@ -101,4 +101,87 @@ class SqlDatabaseReadTest : FunSpec({
             ds.bookCount() shouldBe 4
         }
     }
+
+    test("useRows filters and maps lazily") {
+        withBooks { db ->
+            var pulled = 0
+            val titles = db.useRows(trustedSql("select title, author from books order by id")) { rows ->
+                rows.onEach { pulled++ }.filter { it["author"] == "Austen" }.map { it["title"] }.toList()
+            }
+            titles shouldBe listOf("Emma", "Persuasion")
+            pulled shouldBe 3
+        }
+    }
+
+    test("useRows stops early without leaving a cursor open") {
+        withTestDatabase { ds, _ ->
+            ds.connection.use { conn ->
+                val db = SqlDatabase.borrowing(conn)
+                var pulled = 0
+                db.useRows(trustedSql("select title from books order by id")) { rows ->
+                    rows.onEach { pulled++ }.first()["title"]
+                } shouldBe "Dune"
+                pulled shouldBe 1
+                // A cursor left open on conn would block this write from another connection.
+                SqlDatabase.of(ds).insertBook("After") shouldBe 1
+            }
+        }
+    }
+
+    test("useRows rows stay readable after iteration") {
+        withBooks { db ->
+            val kept = db.useRows(trustedSql("select id, title as name from books order by id")) { it.toList() }
+            kept.map { it["name"] } shouldBe listOf("Dune", "Emma", "Persuasion")
+            kept.first()["id"] shouldBe 1
+        }
+    }
+
+    test("useRows' sequence can't be used after the block") {
+        withBooks { db ->
+            val escaped = db.useRows(trustedSql("select title from books")) { it }
+            shouldThrow<IllegalStateException> { escaped.toList() }
+        }
+    }
+
+    test("useRows' sequence can be iterated only once") {
+        withBooks { db ->
+            db.useRows(trustedSql("select title from books")) { rows ->
+                rows.count() shouldBe 3
+                shouldThrow<IllegalStateException> { rows.count() }
+            }
+        }
+    }
+
+    test("useRows takes a template block") {
+        withBooks { db ->
+            db.useRows({ "select title from books where author = ${param("Austen")} order by id" }) { rows ->
+                rows.map { it["title"] }.toList()
+            } shouldBe listOf("Emma", "Persuasion")
+        }
+    }
+
+    test("useRows inside a transaction sees its uncommitted rows") {
+        withTestDatabase { ds, _ ->
+            SqlDatabase.of(ds).transaction { tx ->
+                tx.insertBook("Pending")
+                tx.useRows(trustedSql("select count(*) c from books")) { it.single()["c"] } shouldBe 4
+                ds.bookCount() shouldBe 3
+            }
+        }
+    }
+
+    test("an exception in useRows' block propagates and leaves no cursor open") {
+        withTestDatabase { ds, _ ->
+            ds.connection.use { conn ->
+                val db = SqlDatabase.borrowing(conn)
+                shouldThrow<IllegalArgumentException> {
+                    db.useRows(trustedSql("select title from books")) { rows ->
+                        rows.first()
+                        throw IllegalArgumentException("stop")
+                    }
+                }
+                SqlDatabase.of(ds).insertBook("After") shouldBe 1
+            }
+        }
+    }
 })

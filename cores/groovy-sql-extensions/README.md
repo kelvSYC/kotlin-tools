@@ -92,6 +92,7 @@ db.rows(query): List<GroovyRowResult>                 // all rows
 db.rows(query) { row -> Book(row.title, row.year) }   // all rows, mapped
 db.firstRow(query): GroovyRowResult?                  // null when there are none
 db.forEachRow(query) { row -> … }                     // streams rows while the result set is open
+db.useRows(query) { rows -> rows.filter { … }.take(10).toList() }   // a lazy Sequence, closed when the block ends
 ```
 
 `rows` and `firstRow` take the template block directly too: `db.rows { "… ${param(x)}" }`, or, mapped,
@@ -99,6 +100,20 @@ db.forEachRow(query) { row -> … }                     // streams rows while th
 `row["title"]`, or declare typed accessors with `groovy-extensions`:
 `val GroovyRowResult.title: String by groovyProperty()`. `forEachRow` doesn't load all rows first; an exception from its
 action stops the iteration and propagates.
+
+### Lazy sequences
+
+`useRows` passes the rows to its block as a Kotlin `Sequence`, read from the database as it is iterated, and returns
+the block's result. Like `File.useLines`, the sequence lives only inside the block: the statement and connection are
+closed when the block returns or throws, also when it stops early with `first` or `take`, so nothing can leak. The
+sequence can be iterated once; using it after the block throws `IllegalStateException`. Each row is a snapshot
+(`GroovyRowResult`), which stays readable after iteration:
+
+```kotlin
+val recent = db.useRows({ "select * from books where year > ${param(1900)} order by year" }) { rows ->
+    rows.map { Book(it["title"] as String, it["year"] as Int) }.take(20).toList()
+}
+```
 
 ## Writing and transactions
 
