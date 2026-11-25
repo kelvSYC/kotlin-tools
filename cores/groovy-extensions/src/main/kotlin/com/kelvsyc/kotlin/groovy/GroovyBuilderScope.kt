@@ -18,7 +18,7 @@ annotation class GroovyBuilderDsl
  * one map passed first, as Groovy passes named arguments; the other arguments follow in order, then the nested block.
  * Such a `Pair` therefore can't be passed as an ordinary argument.
  *
- * Typed scopes for specific builders can be built by delegation: `class AntScope(s: GroovyBuilderScope) :
+ * Typed scopes for specific builders can be built by delegation: `class TreeScope(s: GroovyBuilderScope) :
  * GroovyBuilderScope by s`. They inherit the [GroovyBuilderDsl] marker from this interface.
  *
  * Implementations outside this library are expected, so this interface's members are kept stable: the library adds new
