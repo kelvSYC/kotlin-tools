@@ -69,17 +69,36 @@ class SqlDatabaseReadTest : FunSpec({
         }
     }
 
-    test("an exception in forEachRow's action propagates and leaves the database usable") {
-        withBooks { db ->
-            var seen = 0
-            shouldThrow<IllegalStateException> {
-                db.forEachRow(trustedSql("select title from books order by id")) {
-                    seen++
-                    check(seen < 2) { "stop" }
+    test("an exception in forEachRow's action propagates and leaves no cursor open") {
+        withTestDatabase { ds, _ ->
+            ds.connection.use { conn ->
+                val db = SqlDatabase.borrowing(conn)
+                shouldThrow<IllegalStateException> {
+                    db.forEachRow(trustedSql("select title from books order by id")) { error("stop") }
                 }
+                // A cursor left open on conn would hold a read lock, and this write from another connection would
+                // fail with SQLITE_BUSY.
+                SqlDatabase.of(ds).insertBook("After") shouldBe 1
             }
-            seen shouldBe 2
-            db.rows(trustedSql("select count(*) c from books")).single()["c"] shouldBe 3
+        }
+    }
+
+    test("rows takes a template block and a transform") {
+        withTestDatabase { ds, _ ->
+            SqlDatabase.of(ds).rows({ "select title from books where author = ${param("Austen")} order by id" }) {
+                it["title"]
+            } shouldBe listOf("Emma", "Persuasion")
+        }
+    }
+
+    test("param(null) binds NULL, matching nothing, on both query forms") {
+        withTestDatabase { ds, _ ->
+            val db = SqlDatabase.of(ds)
+            db.executeUpdate(trustedSql("insert into books (title, author, year) values ('Anonymous', null, 1900)"))
+            db.rows { "select * from books where author = ${param(null)}" } shouldBe emptyList()
+            db.rows(sql("select * from books where author = ?", null)) shouldBe emptyList()
+            db.executeUpdate { "delete from books where author = ${param(null)}" } shouldBe 0
+            ds.bookCount() shouldBe 4
         }
     }
 })

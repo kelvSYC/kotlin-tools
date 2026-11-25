@@ -3,6 +3,7 @@ package com.kelvsyc.kotlin.groovy.sql
 import groovy.sql.Sql
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.maps.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import java.sql.Connection
@@ -82,6 +83,22 @@ class SqlDatabaseOwnershipTest : FunSpec({
         withTestDatabase { ds, _ ->
             (SqlDatabase.of(ds) is AutoCloseable) shouldBe false
             ds.connection.use { (SqlDatabase.borrowing(it) is AutoCloseable) shouldBe false }
+        }
+    }
+
+    test("closing a borrowed database's Sql closes its cached statements but not the connection") {
+        withTestDatabase { ds, _ ->
+            ds.connection.use { conn ->
+                val tracker = StatementTracker(conn)
+                val db = SqlDatabase.borrowing(tracker.connection)
+                db.groovy.setCacheStatements(true)
+                db.rows(sql("select * from books where id = ?", 1)).size shouldBe 1
+                db.groovy.close()
+                tracker.closed.shouldNotBeEmpty()
+                tracker.closed.values.toList() shouldBe List(tracker.closed.size) { true }
+                conn.isClosed shouldBe false
+                db.rows(sql("select * from books where id = ?", 2)).size shouldBe 1
+            }
         }
     }
 })
