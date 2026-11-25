@@ -67,8 +67,8 @@ tasks.check {
     dependsOn(testing.suites.named("latestGroovyTest"))
 }
 
-// Link Groovy types (Closure, GroovyObject, GString, ...) to Groovy's API docs. The linked types are the same in every
-// supported Groovy line, so the latest docs serve.
+// Link Groovy types (Sql, GroovyRowResult, GroovyResultSet, ...) to Groovy's API docs. These types exist in every
+// supported Groovy line, so the latest docs serve, though they may list members newer than Groovy 3.
 dokka {
     dokkaSourceSets.configureEach {
         externalDocumentationLinks.register("groovy") {
