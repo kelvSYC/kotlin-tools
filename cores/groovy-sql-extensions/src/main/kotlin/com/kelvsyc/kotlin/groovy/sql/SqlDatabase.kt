@@ -5,6 +5,8 @@ import groovy.sql.GroovyResultSet
 import groovy.sql.GroovyRowResult
 import groovy.sql.Sql
 import java.sql.Connection
+import java.util.Collections
+import java.util.WeakHashMap
 import javax.sql.DataSource
 
 /**
@@ -47,6 +49,12 @@ sealed interface SqlDatabase {
      * Runs [query] and returns its rows, each mapped by [transform].
      */
     fun <T> rows(query: SqlQuery, transform: (GroovyRowResult) -> T): List<T> = rows(query).map(transform)
+
+    /**
+     * Runs the query built by [block] (see [query]) and returns its rows, each mapped by [transform].
+     */
+    fun <T> rows(block: SqlQueryScope.() -> String, transform: (GroovyRowResult) -> T): List<T> =
+        rows(query(block), transform)
 
     /**
      * Runs [query] and returns its first row, or `null` when there is none.
@@ -101,9 +109,15 @@ sealed interface SqlDatabase {
      *
      * A `transaction` inside another on the same thread joins it: it neither commits nor rolls back by itself, and
      * only the outermost block does. If the outer block catches an inner block's exception and returns normally,
-     * everything done so far, including the inner block's work, is committed. Likewise, on a connection already in a
-     * transaction managed elsewhere (auto-commit off, for example a borrowed connection), `transaction` joins it and
-     * leaves committing and rolling back to its owner.
+     * everything done so far, including the inner block's work, is committed. Databases wrapping the same [Sql] share
+     * their transactions, and so does a database wrapping a transaction's own [groovy]; databases made separately over
+     * the same [DataSource] don't, and run theirs on separate connections.
+     *
+     * On a single connection already in the caller's transaction (auto-commit off, as a borrowed connection may be),
+     * `transaction` joins it and leaves committing and rolling back to its owner, who must commit. Over a [DataSource],
+     * each transaction runs on a connection of its own, so a `transaction` inside the underlying [Sql]'s own
+     * `withTransaction` or `cacheConnection` is a separate transaction: use this database's `transaction` instead of
+     * `Sql.withTransaction`.
      */
     fun <T> transaction(block: (SqlDatabase) -> T): T
 
@@ -120,7 +134,8 @@ sealed interface SqlDatabase {
         fun borrowing(connection: Connection): SqlDatabase = DefaultSqlDatabase(NonClosingSql(connection))
 
         /**
-         * A database over an existing [sql], which the caller keeps owning.
+         * A database over an existing [sql], which the caller keeps owning. Every database wrapping the same [sql]
+         * shares its transactions.
          */
         fun wrapping(sql: Sql): SqlDatabase = DefaultSqlDatabase(sql)
 
@@ -163,13 +178,24 @@ sealed interface SqlDatabase {
  */
 sealed interface OwnedSqlDatabase : SqlDatabase, AutoCloseable
 
+/**
+ * The running transaction's Sql on each thread, per base Sql, so that every database wrapping one Sql shares its
+ * transactions. Weak keys: an entry goes away with its Sql.
+ */
+private val transactionSqls: MutableMap<Sql, ThreadLocal<Sql>> = Collections.synchronizedMap(WeakHashMap())
+
+/** The transaction Sqls this library has running, so that a database wrapping one joins its transaction. */
+private val activeTransactionSqls: MutableSet<Sql> =
+    Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
+
 /*
  * Queries are always run through Sql's String overloads, never its GString ones: given a GString, Sql pastes values
  * that are surrounded by quotes into the SQL text and rewrites `= null` to `is null`, so a bound parameter would not
  * stay bound.
  */
+
 internal open class DefaultSqlDatabase(private val base: Sql) : SqlDatabase {
-    private val transactionSql = ThreadLocal<Sql>()
+    private val transactionSql: ThreadLocal<Sql> = transactionSqls.computeIfAbsent(base) { ThreadLocal() }
 
     override val groovy: Sql
         get() = transactionSql.get() ?: base
@@ -207,22 +233,43 @@ internal open class DefaultSqlDatabase(private val base: Sql) : SqlDatabase {
         }
 
     override fun <T> transaction(block: (SqlDatabase) -> T): T {
-        if (transactionSql.get() != null || inForeignTransaction()) return block(this)
-        // Over a DataSource, a copy of the Sql holds this transaction's connection, so other threads keep using
-        // connections of their own.
-        val sql = if (base.dataSource != null) Sql(base) else base
+        if (transactionSql.get() != null || base in activeTransactionSqls || inCallersTransaction()) return block(this)
+        // Over a DataSource, the transaction runs on a fresh Sql and connection of its own: other threads keep using
+        // connections of their own, and a connection someone else pinned on the base Sql (inside cacheConnection, or
+        // with statement caching on) is never committed or closed here.
+        val sql = if (base.dataSource != null) freshSqlLike(base) else base
         transactionSql.set(sql)
+        activeTransactionSqls += sql
         try {
             return runInTransaction(sql) { block(this) }
         } finally {
+            activeTransactionSqls -= sql
             transactionSql.remove()
         }
     }
 
-    private fun inForeignTransaction(): Boolean {
+    /**
+     * Whether [base] is a connection-based Sql whose connection is already in the caller's transaction (auto-commit
+     * off). A DataSource-based Sql is never treated so: its pinned connection may simply come from a pool whose
+     * connections start with auto-commit off.
+     */
+    private fun inCallersTransaction(): Boolean {
+        if (base.dataSource != null) return false
         val connection = base.connection ?: return false
-        return base.dataSource == null && !connection.autoCommit
+        return !connection.autoCommit
     }
+}
+
+/**
+ * A new Sql over [base]'s DataSource with [base]'s settings, but none of its connection state.
+ */
+private fun freshSqlLike(base: Sql): Sql = Sql(base.dataSource).apply {
+    resultSetType = base.resultSetType
+    resultSetConcurrency = base.resultSetConcurrency
+    resultSetHoldability = base.resultSetHoldability
+    isEnableNamedQueries = base.isEnableNamedQueries
+    isCacheNamedQueries = base.isCacheNamedQueries
+    isCacheStatements = base.isCacheStatements
 }
 
 internal class DefaultOwnedSqlDatabase(sql: Sql) : DefaultSqlDatabase(sql), OwnedSqlDatabase {
@@ -260,5 +307,15 @@ private fun <T> runInTransaction(sql: Sql, block: () -> T): T {
  * doesn't.
  */
 private class NonClosingSql(connection: Connection) : Sql(connection) {
-    override fun close() = Unit
+    /**
+     * Closes cached statements, as `Sql.close()` does, but leaves the borrowed connection open. (`Sql.close()` also
+     * forgets its parsed named-query text, which holds no resources.)
+     */
+    override fun close() {
+        if (isCacheStatements) {
+            // Turning statement caching off closes the cached statements; turn it back on for further use.
+            isCacheStatements = false
+            isCacheStatements = true
+        }
+    }
 }

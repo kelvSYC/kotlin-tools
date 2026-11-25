@@ -64,4 +64,11 @@ class SqlQueryTest : FunSpec({
         }
         shouldThrow<IllegalStateException> { query { "x $leaked" } }
     }
+
+    test("a quoted param marker is rejected instead of pasted") {
+        val e = shouldThrow<IllegalArgumentException> {
+            query { "select title from books where author = '${param("x' OR '1'='1")}'" }
+        }
+        e.message shouldContain "quote"
+    }
 })
