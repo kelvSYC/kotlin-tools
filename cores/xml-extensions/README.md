@@ -212,3 +212,18 @@ Common `XmlSlurper` patterns translate as follows:
 | `root.'**'.findAll { it.name() == 'x' }` | `root.query("//x")` |
 | `root.deps.dep.findAll { it.@scope == 'test' }` | `root.query("deps/dep[@scope='test']")` |
 | `root.deps.dep[0]` | `root.query("deps/dep[1]")` (1-based) |
+
+### From existing Groovy objects
+
+When Groovy code hands you an already parsed document, a `GPathResult` from `XmlSlurper` or a `groovy.util.Node` from
+`XmlParser`, serialize it with Groovy's own `XmlUtil` and parse the text:
+
+```kotlin
+import groovy.xml.XmlUtil
+
+val root = XmlUtil.serialize(gpathResult).parseXml()   // or XmlUtil.serialize(node)
+```
+
+`groovy.xml.XmlUtil` exists under that name from Groovy 3.0 on (use the `groovy.xml` package, not the deprecated
+`groovy.util` one, which Groovy 4 removed). This module doesn't depend on Groovy; the caller already has it. The round
+trip re-parses the document, which only matters for very large ones.
