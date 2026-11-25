@@ -19,6 +19,7 @@ A composite build of Kotlin Multiplatform libraries, published to GitHub Package
 | `commons-numbers-extensions` | JVM | Apache Commons Numbers extensions |
 | `commons-collections-extensions` | JVM | Apache Commons Collections 4 extensions |
 | `groovy-extensions` | JVM | Kotlin adapters for Groovy closures and dynamic objects |
+| `groovy-sql-extensions` | JVM | Safe, Kotlin-idiomatic database access through groovy.sql |
 
 All libraries are published under the group `com.kelvsyc.kotlin`.
 
