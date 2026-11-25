@@ -15,4 +15,8 @@ class GroovyVersionTest : FunSpec({
     test("evalGroovy evaluates with bindings") {
         evalGroovy("x + 1", "x" to 41) shouldBe 42
     }
+
+    test("only one Groovy is on the classpath") {
+        GroovySystem::class.java.classLoader.getResources("groovy/lang/GroovySystem.class").toList().size shouldBe 1
+    }
 })

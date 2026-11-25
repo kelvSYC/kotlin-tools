@@ -31,8 +31,11 @@ class GStringScope internal constructor() {
         var start = 0
         for (match in MARKER.findAll(text)) {
             val (scope, index) = match.destructured
-            check(scope.toLong() == id) { "gstring: a value marker from another gstring builder was used" }
-            val i = index.toInt()
+            check(scope.toLongOrNull() == id) { "gstring: a value marker from another gstring builder was used" }
+            val i = index.toIntOrNull()
+            check(i != null && i in values.indices) {
+                "gstring: a value marker that this builder didn't create was used"
+            }
             check(!used[i]) { "gstring: the marker of a value was used more than once" }
             used[i] = true
             strings += text.substring(start, match.range.first)

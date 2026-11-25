@@ -13,7 +13,7 @@ operator fun GroovyObject.get(name: String): Any? = getProperty(name)
 /**
  * Writes the property [name] of this object, as Groovy's `obj.name = value` does.
  */
-operator fun GroovyObject.set(name: String, value: Any?) = setProperty(name, value)
+operator fun GroovyObject.set(name: String, value: Any?): Unit = setProperty(name, value)
 
 /**
  * Calls the method [method] of this object with [args], dispatched dynamically as Groovy's `obj.method(args)` is.
@@ -23,8 +23,8 @@ operator fun GroovyObject.set(name: String, value: Any?) = setProperty(name, val
 fun GroovyObject.callMethod(method: String, vararg args: Any?): Any? = invokeMethod(method, args)
 
 /**
- * Delegates a property to the property of the same name of this object: `val name: String by groovyObject`. The value is
- * cast to the property's type when read, so a value of the wrong type fails there with [ClassCastException].
+ * Delegates a property to the property of the same name of this object: `val name: String by groovyObject`. The value
+ * is cast to the property's type when read, so a value of the wrong type fails there with [ClassCastException].
  */
 inline operator fun <reified T> GroovyObject.getValue(thisRef: Any?, property: KProperty<*>): T =
     getProperty(property.name) as T
@@ -60,11 +60,12 @@ internal class GroovyPropertyDelegate<V>(
 }
 
 /**
- * Returns a delegate for extension properties over Groovy objects, reading and writing the receiver's property [name], or
- * the Kotlin property's own name when [name] is `null`:
- * `val GroovyRowResult.firstName: String by groovyProperty("first_name")`. [V] is inferred from the property's type, and
- * reads are cast to it: a value of the wrong type fails with [ClassCastException], and `null` read into a non-null
- * property with [NullPointerException]. The delegate holds no per-receiver state, so one instance serves every receiver.
+ * Returns a delegate for extension properties over Groovy objects, reading and writing the receiver's property [name],
+ * or the Kotlin property's own name when [name] is `null`:
+ * `val GroovyRowResult.firstName: String by groovyProperty("first_name")`. [V] is inferred from the property's type,
+ * and reads are cast to it: a value of the wrong type fails with [ClassCastException], and `null` read into a non-null
+ * property with [NullPointerException]. The delegate holds no per-receiver state, so one instance serves every
+ * receiver.
  */
 inline fun <reified V> groovyProperty(name: String? = null): ReadWriteProperty<GroovyObject, V> =
     GroovyPropertyDelegate(name, (V::class as KClass<*>).javaObjectType, null is V)
