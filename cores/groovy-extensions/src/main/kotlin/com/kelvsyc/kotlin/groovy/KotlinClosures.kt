@@ -4,9 +4,10 @@ import groovy.lang.Closure
 import groovy.lang.GroovyObject
 
 /*
- * Groovy dispatches a closure call to the public `doCall` methods of the closure's class, found by name, and derives the
- * closure's parameter count from them; `Closure` itself declares none. Hence one lambda adapter per arity, each with
- * exactly one `doCall` of that arity. The delegate-based closures declare two, so that callers may pass the target or not.
+ * Groovy dispatches a closure call to the public `doCall` methods of the closure's class, found by name, and derives
+ * the closure's parameter count from them; `Closure` itself declares none. Hence one lambda adapter per arity, each
+ * with exactly one `doCall` of that arity. The delegate-based closures declare two, so that callers may pass the target
+ * or not.
  */
 
 /**
@@ -35,9 +36,9 @@ internal class KotlinClosure3<P1, P2, P3, V>(private val function: (P1, P2, P3) 
 }
 
 /**
- * Runs [action] on the closure's delegate, resolving names against the delegate first. Callers differ in whether they pass
- * the target as an argument (`with` and configure-style helpers do), so both forms are accepted; when no delegate is set,
- * the argument is the target (as in `[server].each(closure)`).
+ * Runs [action] on the closure's delegate, resolving names against the delegate first. Callers differ in whether they
+ * pass the target as an argument (`with` and configure-style helpers do), so both forms are accepted; when no delegate
+ * is set, the argument is the target (as in `[server].each(closure)`).
  */
 internal class KotlinDelegateClosure<T : Any>(
     private val type: Class<T>,

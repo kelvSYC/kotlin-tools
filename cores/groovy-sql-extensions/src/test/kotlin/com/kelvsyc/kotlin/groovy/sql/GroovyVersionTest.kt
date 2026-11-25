@@ -11,4 +11,8 @@ class GroovyVersionTest : FunSpec({
         expected.shouldNotBeNull()
         GroovySystem.getVersion().substringBefore('.') shouldBe expected
     }
+
+    test("only one Groovy is on the classpath") {
+        GroovySystem::class.java.classLoader.getResources("groovy/lang/GroovySystem.class").toList().size shouldBe 1
+    }
 })

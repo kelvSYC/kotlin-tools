@@ -21,8 +21,8 @@ fun <P1, V> closureOf(function: (P1) -> V): Closure<V?> = KotlinClosure1(functio
 fun <P1, P2, V> closureOf(function: (P1, P2) -> V): Closure<V?> = KotlinClosure2(function)
 
 /**
- * Adapts a Kotlin function of three parameters to a Groovy [Closure] taking three, as seen by Groovy APIs that inspect a
- * closure's parameter count. A [Unit] result is returned to Groovy as `null`.
+ * Adapts a Kotlin function of three parameters to a Groovy [Closure] taking three, as seen by Groovy APIs that inspect
+ * a closure's parameter count. A [Unit] result is returned to Groovy as `null`.
  */
 fun <P1, P2, P3, V> closureOf(function: (P1, P2, P3) -> V): Closure<V?> = KotlinClosure3(function)
 
@@ -32,7 +32,8 @@ fun <P1, P2, P3, V> closureOf(function: (P1, P2, P3) -> V): Closure<V?> = Kotlin
  * target as its argument; with no delegate set, the argument is used. Calling it when the receiver is not a [T] throws
  * [ClassCastException], and with neither a delegate nor an argument, [IllegalStateException].
  */
-fun <T : Any> delegateClosureOf(type: Class<T>, action: T.() -> Unit): Closure<Unit?> = KotlinDelegateClosure(type, action)
+fun <T : Any> delegateClosureOf(type: Class<T>, action: T.() -> Unit): Closure<Unit?> =
+    KotlinDelegateClosure(type, action)
 
 /**
  * Adapts a Kotlin receiver lambda to a Groovy [Closure] that runs [action] on its delegate; see the [Class]-taking

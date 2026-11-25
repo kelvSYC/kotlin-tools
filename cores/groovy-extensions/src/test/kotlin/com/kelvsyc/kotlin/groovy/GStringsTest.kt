@@ -58,4 +58,22 @@ class GStringsTest : FunSpec({
     test("Groovy treats it as a GString") {
         evalGroovy("g instanceof GString && g.toUpperCase() == 'A 1'", "g" to gstring { "a ${value(1)}" }) shouldBe true
     }
+
+    test("a forged marker with a bad index fails with IllegalStateException") {
+        shouldThrow<IllegalStateException> {
+            gstring {
+                val marker = value(1)
+                marker + marker.replace(":0", ":99")
+            }
+        }
+    }
+
+    test("a forged marker with an overlong number fails with IllegalStateException") {
+        shouldThrow<IllegalStateException> {
+            gstring {
+                val marker = value(1)
+                marker + marker.replace(":0", ":99999999999999999999")
+            }
+        }
+    }
 })

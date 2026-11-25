@@ -152,6 +152,10 @@ builder.withGroovyBuilder {
   builder, `Unit` as `null`.
 - `withGroovyBuilder` is inline, so its outermost block can `return` from the enclosing function. Nested blocks can't:
   the builder runs them as Groovy closures.
+- Write a nested block after the parentheses: `"m"("a") { … }`. A lambda inside them, `"m"("a", { … })`, is passed to
+  the builder as a plain value and never run as a block.
+- Builders based on Groovy's `BuilderSupport` (`NodeBuilder`, `MarkupBuilder`, `AntBuilder`, …) wrap an exception
+  thrown inside a block in `groovy.lang.GroovyRuntimeException`; the original is its cause.
 
 ### Typed scopes for specific builders
 

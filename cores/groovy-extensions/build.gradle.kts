@@ -9,9 +9,8 @@ plugins {
 group = "com.kelvsyc.kotlin"
 
 val groovy3 = libs.groovy3
-// Looked up by name: once the catalog has groovy-* entries (e.g. groovy-sql), `libs.groovy` is a group accessor rather
-// than a Provider.
-val latestGroovy = versionCatalogs.named("libs").findLibrary("groovy").get()
+// `libs.groovy` is a group accessor (the catalog also has groovy-sql entries); asProvider() is the entry itself.
+val latestGroovy = libs.groovy.asProvider()
 
 fun majorOf(groovy: Provider<MinimalExternalModuleDependency>) =
     checkNotNull(groovy.get().version) { "Groovy catalog entries must declare a version" }.substringBefore('.')
@@ -58,4 +57,15 @@ kotlin.sourceSets.named("latestGroovyTest") {
 
 tasks.check {
     dependsOn(testing.suites.named("latestGroovyTest"))
+}
+
+// Link Groovy types (Closure, GroovyObject, GString, ...) to Groovy's API docs. The linked types are the same in every
+// supported Groovy line, so the latest docs serve.
+dokka {
+    dokkaSourceSets.configureEach {
+        externalDocumentationLinks.register("groovy") {
+            url("https://docs.groovy-lang.org/latest/html/api/")
+            packageListUrl("https://docs.groovy-lang.org/latest/html/api/element-list")
+        }
+    }
 }
