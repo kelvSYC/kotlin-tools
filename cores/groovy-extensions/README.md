@@ -127,8 +127,8 @@ to `is null`, so it matches `NULL` rows. For database access use
 
 ## Groovy builders
 
-`withGroovyBuilder` drives any Groovy builder (`NodeBuilder`, `ObjectGraphBuilder`, `MarkupBuilder`, `JsonBuilder`,
-`AntBuilder`, …) with Groovy's calling conventions, so builder code translates line by line:
+`withGroovyBuilder` drives any Groovy builder with Groovy's calling conventions; it is tested against `NodeBuilder`,
+`ObjectGraphBuilder`, `MarkupBuilder`, `JsonBuilder` and `AntBuilder`. Builder code translates line by line:
 
 ```kotlin
 // Groovy: repository(url: "scp://repos.example.com/releases") { authentication(userName: "me", password: "secret") }
@@ -156,6 +156,23 @@ builder.withGroovyBuilder {
   the builder as a plain value and never run as a block.
 - Builders based on Groovy's `BuilderSupport` (`NodeBuilder`, `MarkupBuilder`, `AntBuilder`, …) wrap an exception
   thrown inside a block in `groovy.lang.GroovyRuntimeException`; the original is its cause.
+
+### Iterating
+
+Iterate the Kotlin way. Build a collection with `map` where the builder takes one, or loop inside a block to produce
+one element per item:
+
+```kotlin
+json.withGroovyBuilder {
+    "authors"(authors.map { mapOf("name" to it.name, "born" to it.born) })   // a JSON array of objects
+}
+markup.withGroovyBuilder {
+    "authors" { authors.forEach { "author"("name" to it.name) } }            // one element per author
+}
+```
+
+A builder's own collection-plus-block form, Groovy's `authors(list) { a -> … }`, isn't available: the builder passes
+each item to the block as its argument, which the block doesn't receive.
 
 ### Typed scopes for specific builders
 
